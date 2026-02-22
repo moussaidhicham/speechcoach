@@ -21,8 +21,10 @@ class AudioMetrics:
 class VisionMetrics:
     face_presence_ratio: float = 0.0
     eye_contact_ratio: float = 0.0
-    hands_activity_score: float = 0.0
-    # Add brightness, stability later
+    hands_visibility_ratio: float = 0.0
+    hands_activity_score: float = 0.0 # 0.0 (static) to 1.0 (very active)
+    avg_brightness: float = 0.0
+    avg_blur: float = 0.0
 
 @dataclass
 class TranscriptionSegment:

@@ -1,0 +1,470 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{lmodern}
+\usepackage{tcolorbox}
+\usepackage{pifont}
+\usetikzlibrary{matrix, positioning, calc, shapes.geometric, arrows.meta, shadows, fadings}
+\tcbuselibrary{skins}
+
+% --- Premium Color Palette ---
+\definecolor{primary}{RGB}{12, 54, 106}      % Deep Navy
+\definecolor{secondary}{RGB}{234, 241, 255}  % Soft Glacier Blue
+\definecolor{accent}{RGB}{255, 111, 0}       % Vibrant Amber
+\definecolor{darktext}{RGB}{20, 33, 61}      % Dark Blue Gray
+\definecolor{lighttext}{RGB}{108, 117, 125}  % Muted Steel
+\definecolor{success}{RGB}{42, 157, 143}     % Teal Green
+\definecolor{danger}{RGB}{230, 57, 70}       % Soft Crimson
+\definecolor{warning}{RGB}{244, 162, 97}      % Sand Orange
+
+% --- Theme Settings ---
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\huge,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large,series=\normalfont}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=darktext}
+\setbeamercolor{frametitle}{fg=primary}
+\setbeamercolor{title}{fg=primary}
+\setbeamercolor{subtitle}{fg=lighttext}
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{item}{fg=accent}
+
+% --- Custom Image Border Command ---
+\newtcolorbox{imageframe}[1][]{
+    colframe=primary!20,
+    colback=white,
+    boxrule=1.5pt,
+    arc=6pt,
+    auto outer arc,
+    boxsep=1pt,
+    left=1pt,
+    right=1pt,
+    top=1pt,
+    bottom=1pt,
+    shadow={2pt}{-2pt}{0pt}{black!10},
+    center title,
+    halign=center,
+    valign=center,
+    #1
+}
+
+% --- Checkmarks ---
+\newcommand{\cmark}{\textcolor{success}{\ding{51}}}%
+\newcommand{\xmark}{\textcolor{danger}{\ding{55}}}%
+
+% --- Start of Document ---
+\begin{document}
+
+% --- Slide 1: Titre ---
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+    % Background layers
+    \fill[secondary!30] (current page.south west) rectangle (current page.north east);
+    \fill[primary!5, opacity=0.8] (current page.north west) -- (current page.south east) -- (current page.south west) -- cycle;
+    \fill[accent, opacity=0.1] ($(current page.center)+(3cm,1.5cm)$) circle (4cm);
+    
+    % Main Title
+    \node[anchor=center, align=center] at (current page.center) {
+        \vspace{-0.5cm}
+        {\Huge\bfseries\textcolor{primary}{SpeechCoach}}\\[0.3cm]
+        {\huge\bfseries\textcolor{darktext}{Coach Virtuel de Prise de Parole}}\\[0.6cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (3cm, 0.12cm);
+        \end{tikzpicture}\\[0.6cm]
+        {\Large\itshape\textcolor{lighttext}{Analyse Multimodale (Audio + Vision) par IA}}\\[1.5cm]
+    };
+    
+    % Team Info -> Replace Name
+    \node[anchor=south west, xshift=1.2cm, yshift=1.2cm, align=left] at (current page.south west) {
+        \textbf{\textcolor{primary}{\small PRÉSENTÉ PAR :}}\\[0.1cm]
+        \small Etudiant PFE \\
+    };
+    
+    % Context
+    \node[anchor=south, yshift=0.6cm, align=center] 
+    at (current page.south) {
+        \small\textcolor{primary!70}{Suivi de Projet PFE — Réunion d'Avancement n°1}
+    };
+\end{tikzpicture}
+\end{frame}
+
+% RE-ENABLE THE FOOTLINE
+\setbeamertemplate{footline}{
+    \begin{tikzpicture}[remember picture,overlay]
+        \fill[primary!5] (current page.south west) rectangle ($(current page.south east)+(0,15pt)$);
+        \node[anchor=south east, xshift=-15pt, yshift=4pt, text=primary!60, font=\scriptsize\bfseries] at (current page.south east) {
+            \insertframenumber~\textbar~\inserttotalframenumber
+        };
+        \fill[accent] (current page.south west) rectangle ($(current page.south west)+(3pt,15pt)$);
+        \node[anchor=south west, xshift=10pt, yshift=4pt, text=primary!60, font=\tiny\bfseries] at (current page.south west) {
+            SPEECHCOACH | AVANCEMENT PFE 2025
+        };
+    \end{tikzpicture}
+}
+
+% --- Slide 2: Plan ---
+\begin{frame}{Plan de la Présentation}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Section I : Présentation & Architecture}
+            \begin{itemize}
+                \item Objectif du Projet
+                \item Architecture Technique (Pipeline)
+                \item Stack Technologique
+            \end{itemize}
+            \vspace{0.5cm}
+            \textbf{Section II : Métriques & Formules}
+            \begin{itemize}
+                \item Analyse Audio (WPM, Pauses)
+                \item Analyse Vision (Regard, Posture)
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{Section III : État d'Avancement}
+            \begin{itemize}
+                \item Sprints Réalisés (0 à 5)
+                \item Problèmes Rencontrés
+                \item Démonstration (Live)
+            \end{itemize}
+            \vspace{0.5cm}
+            \textbf{Section IV : Prochaines Étapes}
+            \begin{itemize}
+                \item Sprint 6 : Scoring
+                \item Sprint 7 : Recommandations
+                \item Sprint 8 : Web App & LLM
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ============================================================================
+% SECTION I : ARCHITECTURE
+% ============================================================================
+\section{I. Présentation & Architecture}
+
+% --- Slide 3: Objectif ---
+\begin{frame}{Objectif : Au-delà de la Transcription}
+    \begin{tcolorbox}[colback=primary!5, colframe=primary!30, title=Le Problème]
+        \small
+        Les outils actuels analysent souvent \textbf{ce que l'on dit} (le texte), mais rarement \textbf{comment on le dit} (la voix, le corps).
+        Or, 93\% de la communication est non-verbale (Règle de Mehrabian).
+    \end{tcolorbox}
+    
+    \vspace{0.5cm}
+    
+    \begin{columns}[T]
+        \begin{column}{0.3\textwidth}
+            \centering
+            \textbf{\textcolor{primary}{Audio (Prosodie)}}
+            \begin{itemize} \scriptsize
+                \item Débit de parole
+                \item Hésitations
+                \item Silences
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            \centering
+            \textbf{\textcolor{accent}{Vision (Non-Verbal)}}
+            \begin{itemize} \scriptsize
+                \item Contact visuel
+                \item Gestuelle
+                \item Posture
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            \centering
+            \textbf{\textcolor{success}{Texte (Sémantique)}}
+            \begin{itemize} \scriptsize
+                \item Clarté
+                \item Structure
+                \item Tics de langage
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- Slide 4: Architecture Pipeline ---
+\begin{frame}{Architecture Technique : Un Pipeline Modulaire}
+    \centering
+    \vspace{0.4cm}
+    \begin{tikzpicture}[node distance=1.5cm, auto, >=stealth, scale=0.85, transform shape]
+        % Styles
+        \tikzstyle{block} = [rectangle, draw, fill=secondary!40, text width=2.5cm, text centered, rounded corners, minimum height=1.2cm]
+        \tikzstyle{cloud} = [draw, ellipse, fill=accent!20, node distance=2.5cm, minimum height=1cm]
+        \tikzstyle{line} = [draw, -latex']
+
+        % Nodes
+        \node [cloud] (input) {Vidéo MP4};
+        \node [block, right of=input, node distance=2.8cm] (ingest) {\textbf{Ingestion}\\(FFmpeg)};
+        
+        \node [block, above right of=ingest, node distance=2.5cm, yshift=0.3cm] (audio) {\textbf{Axe Audio}\\(Librosa + Whisper)};
+        \node [block, below right of=ingest, node distance=2.5cm, yshift=-0.3cm] (vision) {\textbf{Axe Vision}\\(MediaPipe)};
+        
+        \node [block, right of=ingest, node distance=5.5cm] (fusion) {\textbf{Fusion}\\(Data Schema)};
+        \node [cloud, right of=fusion, node distance=2.8cm] (output) {Rapport Final};
+
+        % Paths
+        \path [line] (input) -- (ingest);
+        \path [line] (ingest) -- node [above, sloped, font=\scriptsize] {WAV} (audio);
+        \path [line] (ingest) -- node [below, sloped, font=\scriptsize] {Frames} (vision);
+        \path [line] (audio) -- (fusion);
+        \path [line] (vision) -- (fusion);
+        \path [line] (fusion) -- (output);
+    \end{tikzpicture}
+    
+    \vspace{0.4cm}
+    \begin{itemize} \footnotesize
+        \setbeamertemplate{itemize items}[circle]
+        \item \textbf{\textcolor{primary}{Orchestration}} : \texttt{process\_video.py} gère le flux séquentiel automatiquement.
+        \item \textbf{\textcolor{primary}{Isolation}} : Chaque module (Axe Audio / Axe Vision) est indépendant.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 5: Stack Techno ---
+\begin{frame}{Stack Technologique : Les Outils}
+    \begin{imageframe}
+        \small
+        \begin{tabular}{lp{0.7\textwidth}}
+            \toprule
+            \textbf{Domaine} & \textbf{Technologie / Librairie} \\
+            \midrule
+            \textbf{Langage} & Python 3.9+ (Dataclasses, Type Hints) \\
+            \textbf{Ingestion} & \textbf{FFmpeg} (Extraction Audio/Vidéo robuste) \\
+            \textbf{Audio (ASR)} & \textbf{Faster-Whisper} (CTranslate2) - Modèle `medium` (INT8) \\
+            \textbf{Audio (Signal)} & \textbf{Librosa} (RMS Energy, Silence detection) \\
+            \textbf{Vision} & \textbf{MediaPipe} (Face Mesh, Hands) + \textbf{OpenCV} \\
+            \textbf{Visualisation} & \textbf{Matplotlib} (Génération de graphiques statiques) \\
+            \textbf{Rapport} & Markdown (Génération automatique) \\
+            \bottomrule
+        \end{tabular}
+    \end{imageframe}
+\end{frame}
+
+
+% ============================================================================
+% SECTION II : MÉTHODOLOGIE & FORMULES
+% ============================================================================
+\section{II. Métriques & Formules}
+
+% --- Slide 6: Audio Formulas ---
+\begin{frame}{Métriques Audio : Formules Clés}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Débit de Parole (WPM), colframe=primary!40]
+                \footnotesize
+                $$ WPM = \frac{\text{Nombre de Mots Transcrits}}{\text{Durée Parole Active (minutes)}} $$
+                \vspace{0.2cm}
+                \textbf{Logique :} Contrairement à la durée totale, la durée "active" (Timestamp Fin - Timestamp Début) ne penalise pas les silences volontaires.
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Détection de Pause, colframe=accent!40]
+                \footnotesize
+                Utilisation de l'énergie RMS (Root Mean Square).
+                $$ Silence = \{ t \mid \text{dB}(t) < \text{Max\_dB} - 30 \} $$
+                \vspace{0.2cm}
+                \textbf{Seuil :} Tout son inférieur à -30dB est considéré comme du silence. Une pause valide doit durer $> 0.5s$.
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- Slide 7: Vision Formulas ---
+\begin{frame}{Métriques Vision : Heuristiques Géométriques}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{primary}{1. Présence Visage}}
+            \footnotesize
+            $$ Ratio = \frac{\text{Frames avec Landmarks}}{\text{Total Frames}} $$
+            Si MediaPipe perd le tracking (visage tourné, hors champ), le ratio baisse.
+            
+            \vspace{0.5cm}
+            \textbf{\textcolor{primary}{3. Analyse des Mains}}
+            \footnotesize
+            $$ Activit\acute{e} = \text{Moyenne}(\text{Vitesse Poignets}) $$
+            Dérivée temporelle de la position $(x,y)$ des landmarks du poignet.
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{primary}{2. Contact Visuel (Eye Contact)}}
+            \footnotesize
+            Estimation de la pose de la tête (Head Pose Estimation PnP).
+            Angles d'Euler : Pitch (Haut/Bas), Yaw (Gauche/Droite).
+            
+            \begin{tcolorbox}[colback=secondary, colframe=primary!20]
+                \textbf{Règle Heuristique :}
+                Le contact est "bon" si :
+                $$ |Yaw| < 15^\circ \quad \text{ET} \quad -25^\circ < Pitch < 15^\circ $$
+            \end{tcolorbox}
+            Si on regarde ses notes ($Pitch < -25^\circ$), c'est détecté.
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ============================================================================
+% SECTION III : ÉTAT D'AVANCEMENT
+% ============================================================================
+\section{III. État d'Avancement}
+
+% --- Slide 8: Roadmap Check ---
+\begin{frame}{État d'Avancement : Sprints Validés}
+    Nous sommes en avance sur le planning initial.
+    
+    \vspace{0.3cm}
+    \begin{imageframe}
+        \small
+        \begin{tabular}{cllll} % Added extra column for Sprint number
+            \toprule
+            \textbf{Sprint} & \textbf{Module} & \textbf{Statut} & \textbf{Livrable} \\
+            \midrule
+            S0 & Socle Technique & \cmark & Pipeline FFmpeg, Structure \\
+            S1 & Transcription & \cmark & ASR (Whisper), Langue \\
+            \rowcolor{success!10}
+            S2 & Audio Analytics & \cmark & WPM, Pauses, Hésitations \\
+            \rowcolor{success!10}
+            S3 & Vision (Base) & \cmark & Présence, Qualité Image \\
+            \rowcolor{success!10}
+            S4 & Vision (Regard) & \cmark & Eye Contact Ratio \\
+            \rowcolor{success!10}
+            S5 & Gestuelle & \cmark & Hand Visibility, Intensity \\
+            S6 & Scoring & \dots & \textit{En cours de conception} \\
+            \bottomrule
+        \end{tabular}
+    \end{imageframe}
+\end{frame}
+
+% --- Slide 8b: Résultats des Tests ---
+\begin{frame}{Validation du Pipeline : Résultats des Tests}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Test 2 : Profil "Action", colframe=primary]
+                \footnotesize
+                \textbf{Durée} : 241s \textbar\ \textbf{Vitesse} : x2.48 RTF\\
+                \textbf{Vocal} : 194 WPM (Rapide), 13 pauses, 5 tics\\
+                \textbf{Visuel} : Regard 54\%, Mains 9\% (Figé)\\
+                \textbf{Résultat} : \textit{Orateur dynamique vocalement mais physiquement statique.}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Test 5 : Profil "Posé", colframe=success]
+                \footnotesize
+                \textbf{Durée} : 121s \textbar\ \textbf{Vitesse} : x2.77 RTF\\
+                \textbf{Vocal} : 143 WPM (Normal), 6 pauses, 2 tics\\
+                \textbf{Visuel} : Regard 86\%, Mains 94\% (Expressif)\\
+                \textbf{Résultat} : \textit{Excellente connexion visuelle et gestuelle adéquate.}
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Conclusion :} Extraction robuste des métriques multimodales validée avant la phase de scoring (Sprint 6).
+    \end{itemize}
+\end{frame}
+
+% --- Slide 9: Challenges ---
+\begin{frame}{Problèmes Rencontrés & Solutions}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[colframe=warning, title=Whisper "trop" intelligent]
+                \footnotesize
+                \textbf{Problème :} Le modèle de transcription Whisper a tendance à supprimer automatiquement les hésitations ("euh", "um") pour rendre le texte propre.
+                
+                \textbf{Impact :} On perdait la métrique de fluidité.
+                
+                \textbf{Solution :} Analyse hybride (Texte + Signal Audio) pour retrouver les disfluences.
+            \end{tcolorbox}
+            \vspace{0.1cm}
+            \begin{tcolorbox}[colframe=danger, title=Conflits de Dépendances]
+                \footnotesize
+                \textbf{Problème :} Numpy 2.x casse la compatibilité avec MediaPipe.
+                
+                \textbf{Solution :} Script \texttt{fix\_deps} forçant un environnement strict (Numpy $<2.0$).
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[colframe=danger, title=Seuils de Silence]
+                \footnotesize
+                \textbf{Problème :} Un seuil de décibels fixe (ex: -40dB) échoue si le micro est mauvais ou avec du bruit de fond.
+                
+                \textbf{Solution :} Utilisation d'un seuil relatif (`top_db=30`) par rapport au pic maximal du fichier.
+            \end{tcolorbox}
+            \vspace{0.1cm}
+            \begin{tcolorbox}[colframe=accent, title=Regard \& Angle Webcam]
+                \footnotesize
+                \textbf{Problème :} Les PC portables forcent un regard vers le bas (Pitch négatif), faussant l'Eye Contact.
+                
+                \textbf{Solution :} Tolérance asymétrique sur le Pitch ($-25^\circ$ vers le bas).
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ============================================================================
+% SECTION IV : FUTUR
+% ============================================================================
+\section{IV. Prochaines Étapes}
+
+% --- Slide 10: Roadmap & Prochaines Étapes ---
+\begin{frame}{Roadmap : Prochaines Étapes}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{primary}{Sprint 6 : Scoring \& Agrégation}}
+            \begin{itemize} \footnotesize
+                \item Rubrique Pédagogique (Voix, Posture).
+                \item Génération du \textit{Report v1} (Feedback chiffré).
+            \end{itemize}
+            \vspace{0.3cm}
+            \textbf{\textcolor{primary}{Sprint 7 : Recommandations}}
+            \begin{itemize} \footnotesize
+                \item Moteur de Règles (Conditions $\rightarrow$ Conseils).
+                \item Identification des "Top 3 Axes" d'amélioration.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{accent}{Sprint 8 : Base RAG}}
+            \begin{itemize} \footnotesize
+                \item Base de connaissances (Exercices, Théorie).
+                \item Indexation Vectorielle (FAISS).
+            \end{itemize}
+            \vspace{0.3cm}
+            \textbf{\textcolor{success}{Perspectives Futures (LLM \& UI)}}
+            \begin{itemize} \footnotesize
+                \item Utilisation d'un LLM Local pour un feedback "Coach".
+                \item Interface utilisateur Streamlit \& Export PDF.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+    \vspace{0.5cm}
+    \begin{tcolorbox}[colback=primary!5, colframe=primary]
+        \centering \small
+        \textbf{Objectif Final :} Un outil de coaching fonctionnel, testé et documenté pour la soutenance.
+    \end{tcolorbox}
+\end{frame}
+
+
+
+% --- Slide 11: Demo ---
+\begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+        \fill[primary] (current page.south west) rectangle (current page.north east);
+        \node[text=white, align=center] at (current page.center) {
+            {\Huge\bfseries DÉMONSTRATION}\\[0.5cm]
+            {\Large Analyse d'une vidéo en direct}\\[1cm]
+            \includegraphics[width=0.4\textwidth]{example-image-a} % Placeholder for screenshot
+        };
+    \end{tikzpicture}
+\end{frame}
+
+\end{document}

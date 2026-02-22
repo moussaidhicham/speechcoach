@@ -1,0 +1,74 @@
+\documentclass[12pt, a4paper]{report}
+
+% Paquets essentiels
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+% Configuration de la page
+\geometry{hmargin=2.5cm,vmargin=2.5cm}
+
+% Configuration des hyperliens
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Rapport Technique PFE - SpeechCoach},
+}
+
+% Configuration code source
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{purple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Informations du document
+\title{\textbf{SpeechCoach : Rapport Technique Continu} \\ \large Journal de Conception et Développement}
+\author{Étudiant PFE}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\chapter{Introduction et Cadrage}
+\input{chapters/01_introduction.tex}
+
+\chapter{Architecture et Choix Techniques}
+\input{chapters/02_architecture.tex}
+
+\chapter{Journal de Développement (Sprints)}
+\input{chapters/03_implementation_log.tex}
+
+\chapter{Problèmes Rencontrés et Solutions}
+\input{chapters/04_limitations_solutions.tex}
+
+\end{document}

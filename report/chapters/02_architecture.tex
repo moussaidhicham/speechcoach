@@ -1,0 +1,17 @@
+\section{Architecture Globale}
+Le système repose sur une architecture de pipeline séquentiel "Batch Processing".
+Flux de données :
+\begin{enumerate}
+    \item \textbf{Ingestion} : Extraction Audio (WAV 16kHz) et Images (JPG 1fps) via FFmpeg.
+    \item \textbf{Parallélisation} : Traitement disjoint des flux Audio et Vidéo.
+    \item \textbf{Fusion} : Agrégation des métriques dans un rapport JSON centralisé.
+\end{enumerate}
+
+\section{Stack Technologique}
+\begin{itemize}
+    \item \textbf{Langage} : Python 3.10
+    \item \textbf{Transcription (ASR)} : Faster-Whisper (modèle medium, int8). Optimisé pour CPU.
+    \item \textbf{Analyse Audio} : Librosa (traitement signal) + Regex (fillers).
+    \item \textbf{Vision} : MediaPipe (Face Mesh) + OpenCV (Qualité d'image).
+    \item \textbf{Orchestration} : Script Python natif.
+\end{itemize}

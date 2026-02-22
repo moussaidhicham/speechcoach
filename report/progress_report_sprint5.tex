@@ -1,0 +1,123 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{float}
+
+% --- Configuration de la mise en page ---
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Avancement - SpeechCoach}
+\rhead{Master SIE - 2026}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
+
+% --- Informations du document ---
+\title{
+    \vspace{-2cm}
+    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'État d'Avancement}\\
+    \large \textit{Projet : SpeechCoach}
+}
+\author{\textbf{Étudiant :} PFE Student (Hisham Moussaid) \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{Période du 26 Janvier 2026 au 20 Février 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Synthèse du Jalon}
+\begin{itemize}
+    \item \textbf{Jalon visé :} Fin Sprint 5 (Initialement prévu mi-avril) - Pose / Gestes (niveau MVP) et socle multimodal.
+    \item \textbf{État global :} \textbf{En avance}. Les jalons 0 à 5 ont été réalisés avec succès sur une période d'un mois.
+    \item \textbf{Objectif principal de la période :} Mettre en place la fondation technique (ingestion vidéo) et consolider les briques d'analyse audio (ASR, rythme, pauses) ainsi que les premières briques de vision (visage, eye contact, activité des mains).
+\end{itemize}
+
+\section{Travaux Réalisés \& Résultats Techniques}
+\subsection{Implémentation des Modules}
+\begin{itemize}
+    \item \textbf{Code développé :} Développement du script d'orchestration \texttt{process\_video.py} gérant l'ingestion multimodale, ainsi que des modules \texttt{audio/asr.py}, \texttt{audio/analytics.py} et \texttt{vision/analysis.py}.
+    \item \textbf{Modèles intégrés :} Intégration de \textbf{faster-whisper} (int8) pour une transcription rapide et précise de la parole, et de \textbf{MediaPipe} (Face Mesh, Hands, Pose) pour le tracking facial, l'axe du regard et l'intensité gestuelle.
+    \item \textbf{Extraction de métriques :}
+    \begin{itemize}
+        \item \textit{Audio} : Débit de parole (WPM), détection de pauses ($>0.5\text{s}$) via l'énergie RMS (Librosa), comptage de fillers.
+        \item \textit{Vision} : Ratio de présence visage, vérification de luminosité/flou, estimation de l'Eye Contact (Yaw/Pitch estimé via solvePnP), ratio de visibilité des mains et intensité des mouvements corporels.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Performance et Validation (DoD)}
+Afin de valider le système (DoD respectées pour Sprint 0-5), plusieurs tests batch ont été effectués :
+\begin{itemize}
+    \item \textbf{Stabilité :} Le système sort de manière constante un objet JSON stéréotypé contenant les données brutes (\texttt{report.json}), validant le contrat de l'architecture.
+    \item \textbf{Temps de traitement :} Sur une architecture CPU, on obtient actuellement des performances d'inférence allant de \textbf{2.48x à 2.77x le RTF} (Real Time Factor), soit ~10 minutes de traitement pour ~4 minutes de vidéo.
+    \item \textbf{Livrables produits :} Rapports d'analyse combinés au format Markdown (générant un "feedback" initial), graphiques `audio\_energy.png` (timeline énergie et silences) et `vision\_timeline.png` (timeline vision et tracking), plus les transcripts bruts.
+\end{itemize}
+
+\subsubsection*{Échantillons de validation récents :}
+\begin{itemize}
+    \item \textbf{Test 2 (Rapide) :} 194 WPM, Eye Contact 54\%, Intensité gestuelle 2.8/10 (corps figé avec présence de mains 9\% du temps). Traitement RTF 2.48x.
+    \item \textbf{Test 5 (Posé) :} 143 WPM, Eye Contact 86\%, Intensité gestuelle 3.3/10 (présence de mains 94\% du temps). Traitement RTF 2.77x.
+\end{itemize}
+
+\section{Stack Technique et Frameworks}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Composante} & \textbf{Outils / Librairies} \\
+        \midrule
+        Traitement Vidéo & FFmpeg, OpenCV \\
+        Transcription \& ASR & Faster-Whisper (modèle "medium" int8) \\
+        Analyse Audio & Librosa, Numpy \\
+        Analyse Vision & MediaPipe (Face Mesh, Pose, Hands) \\
+        Visualisation & Matplotlib \\
+        Output \& Serialization & Types natifs Python, JSON, Markdown \\
+        \bottomrule
+    \end{tabular}
+    \caption{Environnement de développement technique validé pour les Sprints 0-5.}
+\end{table}
+
+\section{Obstacles et Défis Rencontrés}
+\begin{itemize}
+    \item \textbf{Défis Techniques \& Dépendances :}
+    \begin{itemize}
+        \item \textbf{Conflits de bibliothèques} : Le passage à NumPy 2.x cassait la compatibilité binaire de MediaPipe et générait des erreurs d'attributs. Il a fallu créer un script de résolution (\texttt{fix\_dependencies.py}) pour forcer le downgrade (NumPy < 2.0.0, Protobuf 3.20.3) et stabiliser l'environnement.
+        \item Le comportement de Whisper "aseptise" certaines hésitations ("euh", "hmm"), faussant le décompte des tics de langage.
+        \item L'angle par défaut des webcams de PC portable force un regard subjectif vers le bas, faussant la métrique de l'Eye Contact pur.
+        \item Les seuils de silence absolus sont faussés par le bruit de fond, nécessitant un seuil relatif adaptatif (\texttt{top\_db=30}).
+    \end{itemize}
+    \item \textbf{Contraintes Matérielles :} L'inférence en parallèle de Whisper avec MediaPipe sur un environnement purement CPU occasionne un délai un peu supérieur au temps réel (RTF $\approx 2.5$).
+    \item \textbf{Solutions :} Asymétrie appliquée aux marges d'angle Pitch ($-25^\circ$). Adaptation algorithmique pour le filtrage audio. Verrouillage strict des versions de l'environnement Python.
+\end{itemize}
+
+\section{Planning et Prochaines Étapes}
+\begin{itemize}
+    \item \textbf{Retard éventuel :} Aucun retard, le projet avance de manière exceptionnellement rapide par rapport à la macro-programmation (Sprints prévus jusqu'en avril terminés mi-février).
+    \item \textbf{Objectifs du prochain sprint (Sprint 6) :} \textbf{Agrégation et scoring pédagogique}. Le but est d'utiliser toutes ces métriques pour calculer des notes sur des axes précis (ex. Rythme, Regard, Gestuelle) et de générer un résumé déterministe (sans LLM) listant "Forces" et "Faiblesse".
+    \item \textbf{Priorités (Plan d'accélération) :} Focus critique sur une rubrique d'évaluation pédagogique correcte et justifiée qui servira de base solide avant d'aborder les générations de conseils et la phase RAG (Sprints 7 \& 8).
+\end{itemize}
+
+\section{Références et Veille}
+\begin{itemize}
+    \item Documentation officielle de \textbf{Google MediaPipe Solutions} (Face Mesh, Pose, Hands).
+    \item \textit{Robust Speech Recognition via Large-Scale Weak Supervision} (Radford et al., 2022) - Modèle \textbf{OpenAI Whisper}.
+    \item \textbf{CTranslate2} (Système d'inférence) via l'implémentation \texttt{faster-whisper}.
+    \item Bibliothèque d'analyse audio \textbf{Librosa} (McFee et al., 2015) pour l'extraction de l'énergie (RMS).
+    \item \textbf{OpenCV} (Open Source Computer Vision Library) pour le calcul matriciel de head pose (\texttt{solvePnP}) et la détection bas niveau.
+    \item Modèle tridimensionnel (Mehrabian's Communication Model) justifiant la pondération de l'impact du langage non-verbal face au verbal dans la qualité oratoire.
+\end{itemize}
+
+\end{document}

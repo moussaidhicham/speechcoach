@@ -114,8 +114,11 @@
   },
   "vision_metrics": {
     "face_presence_ratio": 1.0,
-    "eye_contact_ratio": 0.0,
-    "hands_activity_score": 0.0
+    "eye_contact_ratio": 0.33,
+    "hands_visibility_ratio": 0.35,
+    "hands_activity_score": 10.0,
+    "avg_brightness": 106.0,
+    "avg_blur": 36.3
   },
   "recommendations": []
 }

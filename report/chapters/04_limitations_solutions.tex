@@ -1,0 +1,15 @@
+\section{Problème Technique Majeur : Conflit de Dépendances (DLL Hell)}
+\textbf{Description} : Lors de l'installation de \texttt{mediapipe}, une erreur \texttt{AttributeError: module 'mediapipe' has no attribute 'solutions'} empêchait l'exécution.
+\textbf{Cause} : Incompatibilité entre \texttt{numpy 2.x}, \texttt{protobuf 4.x} et \texttt{mediapipe} sur l'environnement Windows. MediaPipe nécessite des versions spécifiques de Protobuf (< 4.0) pour fonctionner correctement avec son backend C++.
+
+\textbf{Solution Appliquée} :
+\begin{enumerate}
+    \item Création d'un script de nettoyage de dépendances (\texttt{fix\_dependencies.py}).
+    \item Downgrade forcé de Numpy vers \texttt{1.26.4}.
+    \item Downgrade forcé de Protobuf vers \texttt{3.20.3}.
+    \item Installation d'une version stable de MediaPipe (\texttt{0.10.11}).
+\end{enumerate}
+
+\section{Limite : Détection des Fillers}
+La détection des hésitations ("euh") repose actuellement sur la transcription textuelle de Whisper. Or, Whisper est entraîné pour nettoyer le texte et supprime souvent ces hésitations, rendant la métrique sous-estimée.
+\textbf{Piste d'amélioration} : Entraîner un petit classifieur audio spécifique pour les "euh" ou utiliser les probabilités de tokens de Whisper.

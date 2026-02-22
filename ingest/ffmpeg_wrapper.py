@@ -22,7 +22,8 @@ def extract_audio(video_path: str, output_wav_path: str) -> bool:
             .output(output_wav_path, acodec='pcm_s16le', ac=1, ar='16000')
             .overwrite_output()
             .run(quiet=True)
-        )
+        ) 
+        # ffmpeg -i video.mp4 -acodec pcm_s16le -ac 1 -ar 16000 output.wav
         return True
     except ffmpeg.Error as e:
         logger.error(f"FFmpeg error extracting audio: {e.stderr.decode('utf8') if e.stderr else str(e)}")
@@ -65,3 +66,36 @@ def get_video_duration(video_path: str) -> float:
     except Exception as e:
         logger.error(f"Error probing video duration: {e}")
         return 0.0
+
+def get_video_metadata(video_path: str) -> dict:
+    """
+    Returns dict with duration, fps, resolution (width, height).
+    """
+    try:
+        probe = ffmpeg.probe(video_path)
+        video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+        
+        if not video_stream:
+            return {"duration": 0.0, "fps": 0.0, "resolution": (0, 0)}
+
+        width = int(video_stream['width'])
+        height = int(video_stream['height'])
+        
+        # FPS can be "30/1" string
+        r_frame_rate = video_stream.get('r_frame_rate', '0/0')
+        if '/' in r_frame_rate:
+            num, den = map(int, r_frame_rate.split('/'))
+            fps = num / den if den > 0 else 0.0
+        else:
+            fps = float(r_frame_rate)
+            
+        duration = float(probe['format']['duration'])
+        
+        return {
+            "duration": duration,
+            "fps": fps,
+            "resolution": (width, height)
+        }
+    except Exception as e:
+        logger.error(f"Error probing video metadata: {e}")
+        return {"duration": 0.0, "fps": 0.0, "resolution": (0, 0)}

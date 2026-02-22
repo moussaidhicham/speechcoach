@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "filename": "Test3",
+    "duration_seconds": 136.413792,
+    "fps": 1.0,
+    "resolution": [
+      0,
+      0
+    ],
+    "detected_language": "en"
+  },
+  "transcript": [
+    {
+      "start": 0.0,
+      "end": 22.0,
+      "text": "Hello everyone, my name is Hisham Musaid, I am 24 years old, I was born originally in Al-Zilal, but 7 years ago, maybe 8 years ago, we moved here to Benin-Milas so I could continue my studies, right now I have a master's degree in intelligence systems for education"
+    },
+    {
+      "start": 22.0,
+      "end": 30.0,
+      "text": "I am passionate about technology, artificial intelligence and how these digital tools can help people learn better"
+    },
+    {
+      "start": 30.0,
+      "end": 39.0,
+      "text": "Before this master's degree I have studied computer science and intelligence systems, I was also able to work on multiple academic projects"
+    },
+    {
+      "start": 39.0,
+      "end": 56.0,
+      "text": "I was able to land an internship where I contributed to building educational platforms and it really helped me a lot to improve my technical skills and also my teamwork skills"
+    },
+    {
+      "start": 56.0,
+      "end": 66.0,
+      "text": "Right now I am working on a project called Speech Coach, what it does is basically it analyses a person speaking in a video"
+    },
+    {
+      "start": 66.0,
+      "end": 82.0,
+      "text": "So what it does is it takes the video, it extracts both audio and images, we call them frames, then later it studies audiometrics like for example speaking speed, the number of pauses, hesitation, etc"
+    },
+    {
+      "start": 82.0,
+      "end": 92.0,
+      "text": "Not only that, but it also analyses visual aspects like for example face, presence and also eye contact, hand gestures, etc"
+    },
+    {
+      "start": 92.0,
+      "end": 106.0,
+      "text": "The goal is to help students and presenters to improve their communication skills and give them insights and instructive feedback"
+    },
+    {
+      "start": 106.0,
+      "end": 120.0,
+      "text": "I really enjoy combining artificial intelligence and education because deep down I believe that these tools should be helping students and teachers in not replacing them"
+    },
+    {
+      "start": 120.0,
+      "end": 134.0,
+      "text": "Of course in the future I hope to become an educator who combines or uses these tools to provide more like a better learning experience"
+    }
+  ],
+  "audio_metrics": {
+    "wpm": 120.9,
+    "pause_count": 4,
+    "pause_duration_total": 13.5,
+    "filler_count": 3
+  },
+  "vision_metrics": {
+    "face_presence_ratio": 1.0,
+    "eye_contact_ratio": 0.7,
+    "hands_visibility_ratio": 0.92,
+    "hands_activity_score": 4.8,
+    "avg_brightness": 140.9,
+    "avg_blur": 12.6
+  },
+  "recommendations": []
+}

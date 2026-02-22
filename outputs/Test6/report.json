@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "filename": "Test6",
+    "duration_seconds": 96.883125,
+    "fps": 1.0,
+    "resolution": [
+      0,
+      0
+    ],
+    "detected_language": "en"
+  },
+  "transcript": [
+    {
+      "start": 0.0,
+      "end": 8.0,
+      "text": "Hello everyone, my name is Hisham Wissahid. I am currently a master's student in intelligence systems for education at UNS McNeese."
+    },
+    {
+      "start": 8.0,
+      "end": 14.0,
+      "text": "I am passionate about technology, artificial intelligence, and how digital tools can help people learn better."
+    },
+    {
+      "start": 14.0,
+      "end": 19.0,
+      "text": "Before this master's degree, I studied computer science and information systems."
+    },
+    {
+      "start": 19.0,
+      "end": 26.0,
+      "text": "During my studies, I worked on several academic projects related to programming, web development, and AI."
+    },
+    {
+      "start": 26.0,
+      "end": 42.0,
+      "text": "I also completed an internship where I contributed to building educational platforms, which helped me improve my technical and teamwork skills."
+    },
+    {
+      "start": 42.0,
+      "end": 50.0,
+      "text": "Right now, I am working on a project called Speech Coach. It is an AI application that analyzes a person's speaking in a video."
+    },
+    {
+      "start": 50.0,
+      "end": 57.0,
+      "text": "The system studies voice metrics like speaking speed, pauses, and hesitation words."
+    },
+    {
+      "start": 57.0,
+      "end": 63.0,
+      "text": "It also analyzes visual aspects like face presence and eye contact."
+    },
+    {
+      "start": 63.0,
+      "end": 70.0,
+      "text": "The goal is to help students and presenters improve their communication skills using automatic feedback."
+    },
+    {
+      "start": 71.0,
+      "end": 83.0,
+      "text": "I really enjoy combining artificial intelligence with education because I believe technology should support teachers and learners, not replace them."
+    },
+    {
+      "start": 83.0,
+      "end": 95.0,
+      "text": "In the future, I hope, of course, to become an educator who uses these tools to create a more interactive and effective learning experience."
+    }
+  ],
+  "audio_metrics": {
+    "wpm": 120.6,
+    "pause_count": 11,
+    "pause_duration_total": 15.23,
+    "filler_count": 2
+  },
+  "vision_metrics": {
+    "face_presence_ratio": 0.58,
+    "eye_contact_ratio": 0.54,
+    "hands_visibility_ratio": 0.0,
+    "hands_activity_score": 0,
+    "avg_brightness": 125.7,
+    "avg_blur": 9.1
+  },
+  "recommendations": []
+}

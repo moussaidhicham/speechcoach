@@ -1,7 +1,7 @@
-# Rapport SpeechCoach : test
+# Rapport SpeechCoach : test 
 
-**Langue détectée** : EN
-**Durée** : 95.30 secondes
+**Langue détectée** : EN  
+**Durée** : 95.30 secondes 
 
 ## 🎤 Métriques Vocales (Audio)
 - **Débit (WPM)** : 146.2 mots/min ✅ (Bon rythme)
@@ -10,6 +10,10 @@
 
 ## 📷 Métriques Visuelles (Vision)
 - **Présence Visage** : 100% du temps ✅
+- **Contact Visuel (Regard Caméra)** : 33% ℹ️ (Moyen)
+- **Mains Visibles** : 35% du temps ℹ️
+- **Intensité Gestuelle** : 10.0/10 ⚠️ (Trop agité ?)
+
 ## 📝 Transcription
 
 - **[0.0s - 5.0s]** : Let me give you some tips and tricks on how to become a confident speaker and

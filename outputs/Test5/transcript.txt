@@ -1,0 +1,19 @@
+Hello everyone, my name is Hisha Moussaid, I am 24 years old, I was originally born in
+Az-Zilal, but 7 years ago, maybe 8 years ago, we moved here to Beni Millal so I could
+continue my studies. Currently I am a master's student in intelligence systems for education.
+I am passionate about technology, artificial intelligence and how digital tools can be
+used to improve and learn better. Before my master's degree, I have studied computer
+science and information systems. During my studies, I have worked on multiple academic
+projects related to web development, programming and also AI. I was also able to land an
+internship in a company here in Beni Millal called GMsoft. This helped me a lot to improve
+my communication, technical skills, also my teamwork skills. Currently or right now
+I am working on a project called Speech Coach. It is an AI application that analyses a person
+speaking in a video. What it does basically is it takes a video, it extracts both
+audio and images, we call them also frames, then the system studies voice metrics like
+for example speaking speed, the number of pauses, hesitations etc. Not only that,
+it also studies visual aspects like for example face presence, eye contact, hand
+gestures etc. The goal is to help students and speakers to improve their communication
+skills using automatic feedback. I really enjoy combining artificial intelligence and
+education because I believe that technology should be used to help and support teachers
+and learners and not replace them. Of course in the future I hope to become an educator
+who uses these digital tools to give AI better interactive and effective learning experiences.

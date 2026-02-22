@@ -1,0 +1,124 @@
+{
+  "metadata": {
+    "filename": "Test5",
+    "duration_seconds": 121.753542,
+    "fps": 1.0,
+    "resolution": [
+      0,
+      0
+    ],
+    "detected_language": "en"
+  },
+  "transcript": [
+    {
+      "start": 0.0,
+      "end": 6.92,
+      "text": "Hello everyone, my name is Hisha Moussaid, I am 24 years old, I was originally born in"
+    },
+    {
+      "start": 6.92,
+      "end": 11.120000000000001,
+      "text": "Az-Zilal, but 7 years ago, maybe 8 years ago, we moved here to Beni Millal so I could"
+    },
+    {
+      "start": 11.120000000000001,
+      "end": 17.88,
+      "text": "continue my studies. Currently I am a master's student in intelligence systems for education."
+    },
+    {
+      "start": 17.88,
+      "end": 22.16,
+      "text": "I am passionate about technology, artificial intelligence and how digital tools can be"
+    },
+    {
+      "start": 22.16,
+      "end": 28.76,
+      "text": "used to improve and learn better. Before my master's degree, I have studied computer"
+    },
+    {
+      "start": 28.76,
+      "end": 33.64,
+      "text": "science and information systems. During my studies, I have worked on multiple academic"
+    },
+    {
+      "start": 33.64,
+      "end": 40.400000000000006,
+      "text": "projects related to web development, programming and also AI. I was also able to land an"
+    },
+    {
+      "start": 40.400000000000006,
+      "end": 46.36,
+      "text": "internship in a company here in Beni Millal called GMsoft. This helped me a lot to improve"
+    },
+    {
+      "start": 46.36,
+      "end": 54.28,
+      "text": "my communication, technical skills, also my teamwork skills. Currently or right now"
+    },
+    {
+      "start": 54.28,
+      "end": 59.480000000000004,
+      "text": "I am working on a project called Speech Coach. It is an AI application that analyses a person"
+    },
+    {
+      "start": 59.480000000000004,
+      "end": 65.36,
+      "text": "speaking in a video. What it does basically is it takes a video, it extracts both"
+    },
+    {
+      "start": 65.36,
+      "end": 71.16,
+      "text": "audio and images, we call them also frames, then the system studies voice metrics like"
+    },
+    {
+      "start": 71.16,
+      "end": 77.28,
+      "text": "for example speaking speed, the number of pauses, hesitations etc. Not only that,"
+    },
+    {
+      "start": 77.28,
+      "end": 84.28,
+      "text": "it also studies visual aspects like for example face presence, eye contact, hand"
+    },
+    {
+      "start": 84.28,
+      "end": 90.04,
+      "text": "gestures etc. The goal is to help students and speakers to improve their communication"
+    },
+    {
+      "start": 90.04,
+      "end": 96.92,
+      "text": "skills using automatic feedback. I really enjoy combining artificial intelligence and"
+    },
+    {
+      "start": 96.92,
+      "end": 104.32,
+      "text": "education because I believe that technology should be used to help and support teachers"
+    },
+    {
+      "start": 104.56,
+      "end": 109.84,
+      "text": "and learners and not replace them. Of course in the future I hope to become an educator"
+    },
+    {
+      "start": 109.84,
+      "end": 116.84,
+      "text": "who uses these digital tools to give AI better interactive and effective learning experiences."
+    }
+  ],
+  "audio_metrics": {
+    "wpm": 143.3,
+    "pause_count": 6,
+    "pause_duration_total": 15.69,
+    "filler_count": 2
+  },
+  "vision_metrics": {
+    "face_presence_ratio": 1.0,
+    "eye_contact_ratio": 0.86,
+    "hands_visibility_ratio": 0.94,
+    "hands_activity_score": 3.3,
+    "avg_brightness": 145.1,
+    "avg_blur": 11.9
+  },
+  "recommendations": []
+}
