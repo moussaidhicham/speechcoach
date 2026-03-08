@@ -8,6 +8,13 @@
 \geometry{margin=2.5cm}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+}
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{xcolor}
@@ -18,7 +25,7 @@
 % --- Configuration de la mise en page ---
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{Rapport d'Avancement - SpeechCoach}
+\lhead{Rapport d'Avancement n°1 - SpeechCoach}
 \rhead{Master SIE - 2026}
 \cfoot{\thepage}
 
@@ -32,7 +39,7 @@
     \huge \textbf{Rapport d'État d'Avancement}\\
     \large \textit{Projet : SpeechCoach}
 }
-\author{\textbf{Étudiant :} PFE Student (Hisham Moussaid) \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\author{\textbf{Étudiant :} Hisham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
 \date{Période du 26 Janvier 2026 au 20 Février 2026}
 
 \begin{document}
@@ -50,11 +57,11 @@
 \subsection{Implémentation des Modules}
 \begin{itemize}
     \item \textbf{Code développé :} Développement du script d'orchestration \texttt{process\_video.py} gérant l'ingestion multimodale, ainsi que des modules \texttt{audio/asr.py}, \texttt{audio/analytics.py} et \texttt{vision/analysis.py}.
-    \item \textbf{Modèles intégrés :} Intégration de \textbf{faster-whisper} (int8) pour une transcription rapide et précise de la parole, et de \textbf{MediaPipe} (Face Mesh, Hands, Pose) pour le tracking facial, l'axe du regard et l'intensité gestuelle.
+    \item \textbf{Modèles intégrés :} Intégration de \textbf{faster-whisper} (int8) \cite{radford2022robust} pour une transcription rapide et précise de la parole, et de \textbf{MediaPipe} (Face Mesh, Hands, Pose) \cite{mediapipe2023} pour le tracking facial, l'axe du regard et l'intensité gestuelle.
     \item \textbf{Extraction de métriques :}
     \begin{itemize}
-        \item \textit{Audio} : Débit de parole (WPM), détection de pauses ($>0.5\text{s}$) via l'énergie RMS (Librosa), comptage de fillers.
-        \item \textit{Vision} : Ratio de présence visage, vérification de luminosité/flou, estimation de l'Eye Contact (Yaw/Pitch estimé via solvePnP), ratio de visibilité des mains et intensité des mouvements corporels.
+        \item \textit{Audio} : Débit de parole (WPM), détection de pauses ($>0.5\text{s}$) via l'énergie RMS (\textbf{Librosa} \cite{mcfee2015librosa}), comptage de fillers.
+        \item \textit{Vision} : Ratio de présence visage, vérification de luminosité/flou, estimation de l'Eye Contact (Yaw/Pitch estimé via \texttt{solvePnP} utilisant \textbf{OpenCV} \cite{opencv_library}), ratio de visibilité des mains et intensité des mouvements corporels.
     \end{itemize}
 \end{itemize}
 
@@ -111,13 +118,8 @@ Afin de valider le système (DoD respectées pour Sprint 0-5), plusieurs tests b
 \end{itemize}
 
 \section{Références et Veille}
-\begin{itemize}
-    \item Documentation officielle de \textbf{Google MediaPipe Solutions} (Face Mesh, Pose, Hands).
-    \item \textit{Robust Speech Recognition via Large-Scale Weak Supervision} (Radford et al., 2022) - Modèle \textbf{OpenAI Whisper}.
-    \item \textbf{CTranslate2} (Système d'inférence) via l'implémentation \texttt{faster-whisper}.
-    \item Bibliothèque d'analyse audio \textbf{Librosa} (McFee et al., 2015) pour l'extraction de l'énergie (RMS).
-    \item \textbf{OpenCV} (Open Source Computer Vision Library) pour le calcul matriciel de head pose (\texttt{solvePnP}) et la détection bas niveau.
-    \item Modèle tridimensionnel (Mehrabian's Communication Model) justifiant la pondération de l'impact du langage non-verbal face au verbal dans la qualité oratoire.
-\end{itemize}
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references}
 
 \end{document}

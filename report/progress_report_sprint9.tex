@@ -1,0 +1,113 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{float}
+
+% --- Configuration de la mise en page ---
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Avancement n°2 - SpeechCoach}
+\rhead{Master SIE - 2026}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
+
+% --- Informations du document ---
+\title{
+    \vspace{-2cm}
+    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'État d'Avancement n°2}\\
+    \large \textit{Sprints 6 à 9 : Scoring, RAG et Coaching IA}
+}
+\author{\textbf{Étudiant :} Hisham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{Période : 20 Février 2026 --- 5 Mars 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Synthèse du Jalon}
+Le projet SpeechCoach a franchi une étape majeure au cours de cette période. Initialement focalisé sur l'extraction de métriques brutes, le système est désormais doté d'une couche d'intelligence supérieure capable d'interpréter ces données pour fournir un feedback pédagogique complet.
+\begin{itemize}
+    \item \textbf{État global :} \textbf{Excellent (En avance)}. Les fonctionnalités de coaching intelligent (RAG/LLM) prévues pour Mai sont d'ores et déjà fonctionnelles en version prototype.
+    \item \textbf{Avancée majeure :} Passage d'un rapport de chiffres à un véritable \textbf{Coach Virtuel} capable de guider l'étudiant avec des conseils sourcés.
+\end{itemize}
+
+\section{Développements Techniques \& Optimisations}
+
+\subsection{Intelligence Artificielle de Coaching (Agent Coach)}
+Le module \texttt{agent\_coach.py} orchestre désormais la génération du feedback final :
+\begin{itemize}
+    \item \textbf{Modèle Local :} Utilisation d'\textbf{Ollama} avec le modèle \textbf{Llama 3.2 (1B/3B)} \cite{meta2024llama}. Ce choix garantit la confidentialité des données (traitement 100\% local) tout en offrant une finesse de langage adaptée.
+    \item \textbf{Adaptation du Ton :} Le prompt système a été conçu pour différencier le niveau de l'utilisateur. Un score $>85/100$ déclenche un mode "Perfectionnement" (ton expert), tandis qu'un score $<60/100$ priorise des corrections simples et encourageantes.
+\end{itemize}
+
+\subsection{Architecture RAG (Retrieval-Augmented Generation)}
+Pour éviter les hallucinations du LLM et fonder les conseils sur des bases pédagogiques réelles, nous avons implémenté un système RAG :
+\begin{itemize}
+    \item \textbf{Base de Connaissances :} Un corpus structuré de fiches (gestion du regard, posture, élimination des parasites).
+    \item \textbf{Récupération Sémantique :} Utilisation de \texttt{paraphrase-multilingual-MiniLM-L12-v2} \cite{reimers-2019-sentence-bert} pour transformer les faiblesses détectées en vecteurs de recherche dans une base **FAISS** \cite{johnson2019billion}. 
+\end{itemize}
+
+\subsection{Optimisation drastique du temps de traitement (RTF)}
+Suite aux retours sur la lenteur initiale, le pipeline a été optimisé :
+\begin{itemize}
+    \item \textbf{Real-Time Factor (RTF) :} Le temps de traitement est passé de \textbf{2.77x} à \textbf{1.01x} (temps réel).
+    \item \textbf{Stratégies :} Downscaling FFmpeg des frames ($640\times360$), réduction du \textit{beam size} de Whisper \cite{radford2022robust} à 1, et parallélisation des pipelines Audio/Vision via \texttt{ThreadPoolExecutor}.
+    \item \textbf{Remarque :} La performance reste dépendante de la charge CPU et des processus concurrents du système hôte.
+\end{itemize}
+
+\section{Réponses aux Problématiques Techniques}
+Quatre points critiques soulevés lors du dernier suivi ont été adressés :
+
+\begin{enumerate}
+    \item \textbf{Variabilité du temps de traitement :} Nous avons identifié que le "Cold Start" (chargement des modèles en RAM) pèse pour ~45s. L'architecture finale (FastAPI) maintiendra ces modèles en mémoire pour stabiliser le temps de réponse.
+    \item \textbf{Détection de Langue :} Whisper propose désormais une option de "langue forcée" via le paramètre \texttt{language}. Cela court-circuite le scan initial de 30s et réduit le risque d'erreur de transcription.
+    \item \textbf{Bruit Visuel et Cadrage :} Le système ne tente pas de "nettoyer" l'image, mais diagnostique le \textit{Blur Score} (netteté) et la \textit{Luminosité}. Si le "bruit" est trop élevé, le score "Scène" baisse et une alerte de cadrage est générée.
+    \item \textbf{Isolation de l'Orateur :} Nous utilisons une heuristique de surface occupée ($>3\%$ de l'image) et sélectionnons systématiquement le visage ayant la plus grande aire. Cela permet d'isoler l'orateur principal même en présence d'un arrière-plan complexe ou de passants.
+\end{enumerate}
+
+\section{Planning : Vers la Phase "Produit" (Mars--Avril)}
+Le moteur étant stabilisé, l'effort se porte sur l'expérience utilisateur :
+\begin{itemize}
+    \item \textbf{Sprint 10 :} Développement de l'interface Dashboard moderne (FastAPI + React/Next.js) pour visualiser les scores et le feedback de manière interactive.
+    \item \textbf{Sprint 11 :} Implémentation d'un historique des sessions pour mesurer la progression de l'étudiant sur 7 jours.
+\end{itemize}
+
+\section{Obstacles et Solutions Techniques (Sprints 6--9)}
+Cette seconde phase a soulevé des défis liés à l'\textit{intelligence} du système et à la cohérence du feedback :
+
+\begin{itemize}
+    \item \textbf{Limites Cognitives des Petits Modèles (LLM 1B) :} L'utilisation initiale du modèle \textit{Llama 3.2 1B} a révélé de graves limites logiques (hallucinations, confusion entre les points forts et faibles, discours robotique). \textbf{Solution :} Migration vers le modèle \textbf{Llama 3.2 3B} et abandon des \textit{System Prompts} complexes au profit d'une stratégie de \textbf{Text Completion} ultra-simple ("Phrases à trous"). Le modèle 3B offre un raisonnement fluide tout en restant exécutable localement (2Go de VRAM/RAM).
+    \item \textbf{Calibrage du Scoring :} Les premiers tests donnaient des scores trop généreux (99/100). \textbf{Solution :} Recalibrage des seuils (ex: durcissement de la métrique Regard à $>92\%$) pour refléter une exigence professionnelle.
+    \item \textbf{Gestion des Ressources (RAM) :} L'enchaînement RAG $\rightarrow$ LLM est gourmand. \textbf{Solution :} Libération explicite de la mémoire des modèles d'embeddings (\textit{Sentence-Transformers}) avant l'appel à l'API Ollama.
+    \item \textbf{Pertinence du RAG :} Éviter les conseils génériques. \textbf{Solution :} Pondération de la recherche sémantique basée sur la faille prioritaire (le score le plus bas) pour garantir l'utilité immédiate du feedback.
+\end{itemize}
+
+\section{Références Bibliographiques}
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

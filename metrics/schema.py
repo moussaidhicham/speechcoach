@@ -10,6 +10,14 @@ class VideoMetadata:
     detected_language: str = "unknown"
 
 @dataclass
+class Scores:
+    voice_score: float = 0.0          # /10
+    presence_score: float = 0.0       # /10
+    body_language_score: float = 0.0  # /10
+    scene_score: float = 0.0          # /10
+    overall_score: float = 0.0        # /100
+
+@dataclass
 class AudioMetrics:
     wpm: float = 0.0  
     pause_count: int = 0
@@ -45,7 +53,11 @@ class SpeechCoachReport:
     transcript: List[TranscriptionSegment] = field(default_factory=list)
     audio_metrics: AudioMetrics = field(default_factory=AudioMetrics)
     vision_metrics: VisionMetrics = field(default_factory=VisionMetrics)
+    scores: Scores = field(default_factory=Scores)
+    strengths: List[str] = field(default_factory=list)
+    weaknesses: List[str] = field(default_factory=list)
     recommendations: List[Recommendation] = field(default_factory=list)
+    retrieved_documents: List[Dict[str, Any]] = field(default_factory=list)
     
     def to_dict(self) -> Dict[str, Any]:
         import dataclasses

@@ -166,24 +166,33 @@ def analyze_frames(frames_dir: str) -> Tuple[VisionMetrics, List[Dict[str, Any]]
         results_face = FACE_MESH.process(rgb_image)
         
         if results_face.multi_face_landmarks:
-            face_detected_count += 1
-            frame_stats["face_present"] = True
-            
-            # Sprint 4: Head Pose & Eye Contact
             landmarks = results_face.multi_face_landmarks[0].landmark
-            pitch, yaw, roll = get_head_pose(landmarks, (img_h, img_w, 3))
             
-            pitch_sum += pitch
-            yaw_sum += yaw
-            frame_stats["pitch"] = pitch
-            frame_stats["yaw"] = yaw
+            # Calculate bounding box area to ignore background faces
+            x_coords = [lm.x for lm in landmarks]
+            y_coords = [lm.y for lm in landmarks]
+            face_area = (max(x_coords) - min(x_coords)) * (max(y_coords) - min(y_coords))
             
-            # Heuristic for Eye Contact
-            # Looking at camera ~ Pitch [-10, 10] and Yaw [-10, 10]
-            # BUT: Laptop screen is below camera -> Pitch is often negative (-15 to -20).
-            if -25 < pitch < 15 and -15 < yaw < 15:
-                eye_contact_count += 1
-                frame_stats["eye_contact"] = True
+            if face_area > 0.03:  # Face must occupy at least 3% of the image area
+                face_detected_count += 1
+                frame_stats["face_present"] = True
+                
+                # Sprint 4: Head Pose & Eye Contact
+                pitch, yaw, roll = get_head_pose(landmarks, (img_h, img_w, 3))
+                
+                pitch_sum += pitch
+                yaw_sum += yaw
+                frame_stats["pitch"] = pitch
+                frame_stats["yaw"] = yaw
+                
+                # Heuristic for Eye Contact
+                # Looking at camera ~ Pitch [-10, 10] and Yaw [-10, 10]
+                # BUT: Laptop screen is below camera -> Pitch is often negative (-15 to -20).
+                # Adjusting for PC screen usage:
+                if -30 < pitch < 10 and -15 < yaw < 15:
+                    eye_contact_count += 1
+                    frame_stats["eye_contact"] = True
+
                 
         # 3. Hand Detection (MediaPipe) ==========================================
         results_hands = HANDS.process(rgb_image)

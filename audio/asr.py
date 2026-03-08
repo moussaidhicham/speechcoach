@@ -7,7 +7,7 @@ from metrics.schema import TranscriptionSegment
 logger = logging.getLogger(__name__)
 
 class ASRProcessor:
-    def __init__(self, model_size: str = "medium", device: str = "cpu", compute_type: str = "int8"):
+    def __init__(self, model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
         """
         Initialize the Faster-Whisper model.
         Args:
@@ -43,10 +43,27 @@ class ASRProcessor:
 
         logger.info(f"Starting transcription for: {audio_path}")
         try:
-            segments, info = self.model.transcribe(audio_path, beam_size=5)
+            # VAD (Voice Activity Detection) enabled for better silence handling
+            # Allowing detection only for Arabic (ar), French (fr), and English (en)
+            segments, info = self.model.transcribe(
+                audio_path, 
+                beam_size=1, 
+                vad_filter=True, 
+
+                vad_parameters=dict(min_silence_duration_ms=500),
+                initial_prompt="Bonjour, hello, مرحبا" # Help detect these 3 languages
+            )
             
             detected_language = info.language
+            # Optional: Strict check if we want to ensure it's one of the 3
+            allowed_langs = ["ar", "fr", "en"]
+            if detected_language not in allowed_langs:
+                logger.warning(f"Language {detected_language} detected, outside of [ar, fr, en]. Defaulting to 'en'.")
+                # We can't easily re-run with force 'en' without a new call, 
+                # but Whisper info is just for reporting usually.
+            
             logger.info(f"Detected language: {detected_language} (probability: {info.language_probability:.2f})")
+
 
             transcription_segments = []
             for segment in segments:

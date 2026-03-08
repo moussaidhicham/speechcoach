@@ -50,7 +50,8 @@ def extract_frames(video_path: str, output_dir: str, fps: float = 1.0) -> bool:
             ffmpeg
             .input(video_path)
             .filter('fps', fps=fps)
-            .output(output_pattern, qscale=2) # qscale 2 = high quality jpg
+            .filter('scale', 640, 360) # Downscale for faster MediaPipe processing
+            .output(output_pattern, qscale=2, preset='ultrafast')
             .overwrite_output()
             .run(quiet=True)
         )

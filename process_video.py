@@ -32,13 +32,21 @@ def process_video(video_path: str, output_dir: str):
 
     # 1. Ingest (FFmpeg)
     logger.info("Step 1: Ingestion...")
-    if not extract_audio(video_path, audio_path):
-        logger.error("Audio extraction failed. Aborting.")
-        return
+    if os.path.exists(audio_path):
+        logger.info(f"Audio file already exists: {audio_path}")
+    else:
+        if not extract_audio(video_path, audio_path):
+            logger.error("Audio extraction failed. Aborting.")
+            return
+
     
-    if not extract_frames(video_path, frames_dir, fps=1.0):
-        logger.error("Frame extraction failed. Aborting.")
-        return
+    if os.path.exists(frames_dir) and os.listdir(frames_dir):
+        logger.info("Frames directory not empty, skipping extraction.")
+    else:
+        if not extract_frames(video_path, frames_dir, fps=1.0):
+            logger.error("Frame extraction failed. Aborting.")
+            return
+
 
     video_meta = get_video_metadata(video_path)
     duration = video_meta['duration']
@@ -47,28 +55,79 @@ def process_video(video_path: str, output_dir: str):
     
     # 2. Analysis
     logger.info("Step 2: Analysis...")
-    
-    # 2a. ASR (Transcription)
+    import concurrent.futures
     from audio.asr import ASRProcessor
-    
-    # Initialize ASR (Consider moving this outside if processing batch to avoid reload)
-    # Using 'medium' model by default, 'int8' for CPU performance
-    asr = ASRProcessor(model_size="medium", device="cpu", compute_type="int8")
-    
-    transcript_segments, language = asr.transcribe(audio_path)
-    
-    if not transcript_segments:
-        logger.warning("Transcription returned empty. Check audio quality.")
-    
-    # 2b. Audio Analytics (Sprint 2)
     from audio.analytics import analyze_audio_file
-    audio_metrics, energy_curve = analyze_audio_file(audio_path, transcript_segments, language=language)
-
-    # 2c. Vision Analytics (Sprint 3)
     from vision.analysis import analyze_frames
-    # Pass the frames directory
-    vision_metrics, frame_data_list = analyze_frames(frames_dir)
+    from metrics.scoring import calculate_scores, generate_feedback_summary
+    from metrics.recommendations import generate_recommendations, generate_training_plan
+
+    # Initialize ASR (Using 'small' model for CPU performance)
+    asr = ASRProcessor(model_size="small", device="cpu", compute_type="int8")
     
+    def run_audio_pipeline():
+        logger.info("Starting Audio Pipeline (ASR + Analytics)...")
+        t_segs, lang = asr.transcribe(audio_path)
+        if not t_segs:
+            logger.warning("Transcription returned empty. Check audio quality.")
+        a_metrics, e_curve = analyze_audio_file(audio_path, t_segs, language=lang)
+        return t_segs, lang, a_metrics, e_curve
+
+    def run_vision_pipeline():
+        logger.info("Starting Vision Pipeline...")
+        return analyze_frames(frames_dir)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        future_audio = executor.submit(run_audio_pipeline)
+        future_vision = executor.submit(run_vision_pipeline)
+        
+        transcript_segments, language, audio_metrics, energy_curve = future_audio.result()
+        vision_metrics, frame_data_list = future_vision.result()
+    
+    # Calculate Scores and Feedback
+    scores = calculate_scores(audio_metrics, vision_metrics)
+    strengths, weaknesses = generate_feedback_summary(scores, audio_metrics, vision_metrics)
+    
+    # Generate Recommendations and Training Plan
+    recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
+    training_plan = generate_training_plan(recommendations)
+    
+    # -- Step 2c: RAG Retrieval (initialized HERE, after ASR+Vision free their peak RAM) --
+    logger.info("Step 2c: RAG Retrieval...")
+    fetched_docs = []
+    rag_ready = False
+    try:
+        from rag.retriever import RAGRetriever
+        retriever = RAGRetriever()
+        rag_ready = True
+    except ImportError:
+        logger.warning("RAG Retriever could not be loaded. Skipping RAG.")
+
+    if rag_ready and recommendations:
+        top_rec = recommendations[0]
+        query = f"{top_rec.category} {top_rec.message}"
+        logger.info(f"Querying RAG with top weakness: {query}")
+        fetched_docs = retriever.retrieve(query, top_k=2)
+        # Free embedding model RAM before Ollama LLM loads
+        retriever.release()
+
+    # Run LLM Agent Coach (Sprint 9)
+    from agent.agent_coach import generate_coaching_text
+    logger.info("Step 2d: Generating LLM coaching text (Agent Coach)...")
+    llm_coaching = generate_coaching_text(
+        scores=scores,
+        strengths=strengths,
+        weaknesses=weaknesses,
+        recommendations=recommendations,
+        fetched_docs=fetched_docs,
+        language=language,
+        model="llama3.2"
+    )
+    if llm_coaching:
+        logger.info("Agent Coach text generated successfully.")
+    else:
+        logger.warning("Agent Coach unavailable (Ollama not installed or model missing). Skipping LLM text.")
+
     # Create the report object
     metadata = VideoMetadata(
         filename=video_name,
@@ -82,15 +141,26 @@ def process_video(video_path: str, output_dir: str):
         metadata=metadata,
         transcript=transcript_segments,
         audio_metrics=audio_metrics,
-        vision_metrics=vision_metrics
+        vision_metrics=vision_metrics,
+        scores=scores,
+        strengths=strengths,
+        weaknesses=weaknesses,
+        recommendations=recommendations,
+        retrieved_documents=fetched_docs
     )
+    
+    # Add training plan and llm coaching to report dict output
+    report_dict = report.to_dict()
+    report_dict['training_plan'] = training_plan
+    if llm_coaching:
+        report_dict['llm_coaching'] = llm_coaching
     
     # 3. Output
     logger.info("Step 3: Generating Output...")
     
     # JSON Dump
     with open(report_path, 'w', encoding='utf-8') as f:
-        json.dump(report.to_dict(), f, indent=2, ensure_ascii=False)
+        json.dump(report_dict, f, indent=2, ensure_ascii=False)
 
     # 3a. Export Raw Transcript (Roadmap Requirement)
     transcript_txt_path = os.path.join(session_dir, "transcript.txt")
@@ -154,6 +224,51 @@ def process_video(video_path: str, output_dir: str):
         minutes = int(total_time // 60)
         seconds = int(total_time % 60)
         f.write((f"**Temps de traitement** : {minutes}m {seconds}s ({total_time:.1f}s) (x{rtf:.2f} RTF)\n\n"))
+
+        f.write("## Scores & Bilan\n")
+        f.write(f"**Score Global : {scores.overall_score}/100**\n")
+        f.write(f"- Voix/Débit : {scores.voice_score}/10\n")
+        f.write(f"- Posture/Gestes : {scores.body_language_score}/10\n")
+        f.write(f"- Regard/Présence : {scores.presence_score}/10\n")
+        f.write(f"- Qualité/Cadrage : {scores.scene_score}/10\n\n")
+
+        # LLM Agent Coaching Summary (Sprint 9)
+        if llm_coaching:
+            f.write("## 🤖 Bilan du Coach IA\n")
+            f.write("> *Ce bilan a été généré par un agent IA local basé sur vos métriques et les fiches pédagogiques récupérées.*\n\n")
+            f.write(f"{llm_coaching.get('bilan_global', '')}\n\n")
+            f.write(f"**Point Prioritaire :** {llm_coaching.get('point_prioritaire', '')}\n\n")
+            f.write(f"**💡 Encouragement :** *{llm_coaching.get('encouragement', '')}*\n\n")
+            f.write("---\n\n")
+
+        f.write("### Points Forts 💪\n")
+        for s in strengths:
+            f.write(f"- {s}\n")
+        f.write("\n")
+        
+        f.write("### Axes d'Amélioration 📈\n")
+        for w in weaknesses:
+            f.write(f"- {w}\n")
+        f.write("\n")
+        
+        f.write("## Recommandations Actionnables (Top 3)\n")
+        if recommendations:
+            for rec in recommendations:
+                icon = "🔴" if rec.severity.lower() == "critical" else "🟠" if rec.severity.lower() == "warning" else "🔵"
+                f.write(f"### {icon} {rec.category}\n")
+                f.write(f"**Diagnostic :** {rec.message}\n\n")
+                f.write(f"**Action terrain :** {rec.actionable_tip}\n\n")
+        else:
+            f.write("Aucune recommandation critique.\n\n")
+            
+        if fetched_docs:
+            f.write("## 📚 Références & Exercices Complémentaires (Base RAG)\n")
+            f.write("> *Le système a récupéré ces fiches pédagogiques basées sur votre point faible principal.*\n\n")
+            for doc in fetched_docs:
+                f.write(f"### Fiche : {doc['title']} ({doc['category']})\n")
+                f.write(f"{doc['content']}\n\n")
+            
+        f.write(f"{training_plan}\n\n")
         
         f.write("## Métriques Vocales (Audio)\n")
         f.write(f"- **Débit (WPM)** : {audio_metrics.wpm} mots/min ")

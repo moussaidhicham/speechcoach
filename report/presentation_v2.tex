@@ -1,0 +1,632 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{lmodern}
+\usepackage{tcolorbox}
+\usepackage{pifont}
+\usetikzlibrary{matrix, positioning, calc, shapes.geometric, arrows.meta, shadows, fadings, fit}
+\tcbuselibrary{skins}
+
+% --- Premium Color Palette ---
+\definecolor{primary}{RGB}{12, 54, 106}
+\definecolor{secondary}{RGB}{234, 241, 255}
+\definecolor{accent}{RGB}{255, 111, 0}
+\definecolor{darktext}{RGB}{20, 33, 61}
+\definecolor{lighttext}{RGB}{108, 117, 125}
+\definecolor{success}{RGB}{42, 157, 143}
+\definecolor{danger}{RGB}{230, 57, 70}
+\definecolor{warning}{RGB}{244, 162, 97}
+
+% --- Theme Settings ---
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\huge,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large,series=\normalfont}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=darktext}
+\setbeamercolor{frametitle}{fg=primary}
+\setbeamercolor{title}{fg=primary}
+\setbeamercolor{subtitle}{fg=lighttext}
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{item}{fg=accent}
+
+% --- Custom ---
+\newtcolorbox{imageframe}[1][]{
+    colframe=primary!20, colback=white, boxrule=1.5pt, arc=6pt, auto outer arc,
+    boxsep=1pt, left=1pt, right=1pt, top=1pt, bottom=1pt,
+    shadow={2pt}{-2pt}{0pt}{black!10}, halign=center, valign=center, #1
+}
+\newcommand{\cmark}{\textcolor{success}{\ding{51}}}%
+\newcommand{\xmark}{\textcolor{danger}{\ding{55}}}%
+
+% ====================================================================
+\begin{document}
+
+% --- SLIDE 1: TITRE ---
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+    \fill[secondary!30] (current page.south west) rectangle (current page.north east);
+    \fill[primary!5, opacity=0.8] (current page.north west) -- (current page.south east) -- (current page.south west) -- cycle;
+    \fill[accent, opacity=0.1] ($(current page.center)+(3cm,1.5cm)$) circle (4cm);
+    \node[anchor=center, align=center] at (current page.center) {
+        \vspace{-0.5cm}
+        {\Huge\bfseries\textcolor{primary}{SpeechCoach}}\\[0.3cm]
+        {\huge\bfseries\textcolor{darktext}{De l'Extraction au Coaching IA}}\\[0.6cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (3cm, 0.12cm);
+        \end{tikzpicture}\\[0.6cm]
+        {\Large\itshape\textcolor{lighttext}{Sprints 6 à 9 : Scoring, RAG, LLM \& Optimisations}}\\[1.5cm]
+    };
+    \node[anchor=south west, xshift=1.2cm, yshift=1.2cm, align=left] at (current page.south west) {
+        \textbf{\textcolor{primary}{\small PRÉSENTÉ PAR :}}\\[0.1cm]
+        \small Hisham Moussaid \\
+        \scriptsize Master SIE --- ENS Meknès \\
+    };
+    \node[anchor=south east, xshift=-1.2cm, yshift=1.2cm, align=right] at (current page.south east) {
+        \textbf{\textcolor{primary}{\small ENCADRÉ PAR :}}\\[0.1cm]
+        \small Pr. Abdelaaziz Hessane \\
+    };
+    \node[anchor=south, yshift=0.6cm] at (current page.south) {
+        \small\textcolor{primary!70}{Suivi de Projet PFE --- Réunion d'Avancement n°2 --- Mars 2026}
+    };
+\end{tikzpicture}
+\end{frame}
+
+% FOOTLINE
+\setbeamertemplate{footline}{
+    \begin{tikzpicture}[remember picture,overlay]
+        \fill[primary!5] (current page.south west) rectangle ($(current page.south east)+(0,15pt)$);
+        \node[anchor=south east, xshift=-15pt, yshift=4pt, text=primary!60, font=\scriptsize\bfseries] at (current page.south east) {
+            \insertframenumber~\textbar~\inserttotalframenumber
+        };
+        \fill[accent] (current page.south west) rectangle ($(current page.south west)+(3pt,15pt)$);
+        \node[anchor=south west, xshift=10pt, yshift=4pt, text=primary!60, font=\tiny\bfseries] at (current page.south west) {
+            SPEECHCOACH | AVANCEMENT PFE 2026
+        };
+    \end{tikzpicture}
+}
+
+% --- SLIDE 2: PLAN ---
+\begin{frame}{Plan de la Présentation}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{primary}{I. Pipeline Global \& Avancement}}
+            \begin{itemize} \small
+                \item Flowchart complet du système
+                \item État des Sprints (0 à 9)
+            \end{itemize}
+            \vspace{0.4cm}
+            \textbf{\textcolor{primary}{II. Intelligence Pédagogique}}
+            \begin{itemize} \small
+                \item Sprint 6 : Scoring Multimodal
+                \item Sprint 7 : Architecture RAG
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{accent}{III. Agent Coach \& LLM}}
+            \begin{itemize} \small
+                \item Migration Llama 1B $\rightarrow$ 3B
+                \item Stratégie ``Text Completion''
+                \item Exemples de feedback réel
+            \end{itemize}
+            \vspace{0.4cm}
+            \textbf{\textcolor{success}{IV. Performance \& Perspectives}}
+            \begin{itemize} \small
+                \item Optimisation RTF (2.77x $\rightarrow$ 1.01x)
+                \item Gestion mémoire (RAM)
+                \item Sprint 10 : Dashboard Web
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ====================================================================
+\section{I. Pipeline Global}
+% ====================================================================
+
+% --- SLIDE 3: FLOWCHART GLOBAL ---
+\begin{frame}{Architecture Globale : De la Vidéo au Coaching}
+    \centering
+    \vspace{-0.1cm}
+    \begin{tikzpicture}[
+        node distance=0.5cm and 0.7cm,
+        >=Stealth,
+        scale=0.62, transform shape,
+        input/.style={draw, ellipse, fill=accent!25, minimum height=0.8cm, font=\small\bfseries},
+        process/.style={draw, rectangle, rounded corners=3pt, fill=secondary!60, minimum height=0.8cm, text width=1.8cm, text centered, font=\scriptsize},
+        output/.style={draw, rectangle, rounded corners=3pt, fill=success!25, minimum height=0.8cm, text width=1.8cm, text centered, font=\scriptsize\bfseries},
+        group/.style={draw, dashed, rounded corners=5pt, inner sep=8pt, fill opacity=0.15},
+        arrow/.style={->, thick, primary!70}
+    ]
+        \node[input] (video) {Vidéo MP4};
+        \node[process, right=of video] (ffmpeg) {Ingestion\\(FFmpeg)};
+        
+        \node[process, above right=1.4cm and 1cm of ffmpeg] (whisper) {Transcription\\(Whisper)};
+        \node[process, right=of whisper] (audio_an) {Analyse Audio\\(Librosa)};
+        
+        \node[process, below right=1.4cm and 1cm of ffmpeg] (mediapipe) {Analyse Vision\\(MediaPipe)};
+        \node[process, right=of mediapipe] (scene) {Qualité Scène\\(OpenCV)};
+        
+        \node[process, right=4cm of ffmpeg] (scoring) {Scoring\\Pédagogique};
+        \node[process, right=of scoring] (rag) {RAG\\(FAISS)};
+        \node[process, right=of rag] (llm) {Coach IA\\(Llama 3.2)};
+        \node[output, right=of llm] (report) {Rapport\\Final};
+        
+        \draw[arrow] (video) -- (ffmpeg);
+        \draw[arrow] (ffmpeg) -- node[above, sloped, font=\tiny] {WAV} (whisper);
+        \draw[arrow] (ffmpeg) -- node[below, sloped, font=\tiny] {Frames} (mediapipe);
+        \draw[arrow] (whisper) -- (audio_an);
+        \draw[arrow] (mediapipe) -- (scene);
+        \draw[arrow] (audio_an) -- (scoring);
+        \draw[arrow] (scene) -- (scoring);
+        \draw[arrow] (scoring) -- (rag);
+        \draw[arrow] (rag) -- (llm);
+        \draw[arrow] (llm) -- (report);
+        
+        % Group boxes — fill opacity keeps them translucent so nodes show through
+        \node[group, fill=primary!30] (gaudio) [fit=(whisper)(audio_an)] {};
+        \node[above=2pt of gaudio, font=\Large\bfseries, text=primary] {AXE AUDIO};
+        \node[group, fill=accent!30] (gvision) [fit=(mediapipe)(scene)] {};
+        \node[below=2pt of gvision, font=\Large\bfseries, text=accent] {AXE VISION};
+        \node[group, fill=success!30] (gintel) [fit=(rag)(llm)] {};
+        \node[above=2pt of gintel, font=\Large\bfseries, text=success] {INTELLIGENCE};
+    \end{tikzpicture}
+    
+    \vspace{0.4cm}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{itemize} \scriptsize
+                \item \textbf{Parallélisme} : Audio et Vision s'exécutent simultanément via \texttt{ThreadPoolExecutor}.
+                \item \textbf{Orchestration} : \texttt{process\_video.py} gère tout le flux.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{itemize} \scriptsize
+                \item \textbf{Modularité} : Chaque bloc est un module Python indépendant.
+                \item \textbf{100\% Local} : Aucune donnée ne quitte la machine.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 4: ROADMAP ---
+\begin{frame}{État d'Avancement : Sprints 0 à 9 Validés}
+    \small Nous sommes \textbf{en avance} sur le planning. Le coaching IA (prévu pour Mai) est déjà fonctionnel.
+    \vspace{0.2cm}
+    \begin{imageframe}
+        \scriptsize
+        \begin{tabular}{clll}
+            \toprule
+            \textbf{Sprint} & \textbf{Module} & \textbf{Statut} & \textbf{Livrable Clé} \\
+            \midrule
+            S0--S5 & Socle, Audio, Vision & \cmark & Pipeline complet (cf. Réunion n°1) \\
+            \rowcolor{accent!10}
+            S6 & \textbf{Scoring Pédagogique} & \cmark & \textbf{Score Global /100 (rubrique Mehrabian)} \\
+            \rowcolor{accent!10}
+            S7 & \textbf{Recommandations (Règles)} & \cmark & \textbf{Top 3 + Plan 7 jours} \\
+            \rowcolor{accent!10}
+            S8 & \textbf{Base RAG} & \cmark & \textbf{FAISS + Fiches pédagogiques} \\
+            \rowcolor{accent!10}
+            S9 & \textbf{Coach IA (LLM)} & \cmark & \textbf{Llama 3.2 3B + Text Completion} \\
+            \midrule
+            S10 & Dashboard Web & \dots & \textit{Prochain sprint (FastAPI + React)} \\
+            \bottomrule
+        \end{tabular}
+    \end{imageframe}
+\end{frame}
+
+% ====================================================================
+\section{II. Intelligence Pédagogique}
+% ====================================================================
+
+% --- SLIDE 5: SCORING ---
+\begin{frame}{Sprint 6 : Scoring Multimodal}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Axe Audio -- Voix \& Débit, colframe=primary, colback=primary!3]
+                \scriptsize
+                \begin{itemize}
+                    \item \textbf{Débit (WPM)} : Zone idéale $[130\text{-}160]$. Au-dessus de $180$ = pénalité.
+                    \item \textbf{Fluidité} : Fillers (``euh'') comptent $-0.5$ pt. Pauses $>2s$ = perte de fil.
+                    \item \textbf{Dynamique} : Variation d'énergie RMS. Monotone = pénalité.
+                \end{itemize}
+            \end{tcolorbox}
+            \begin{tcolorbox}[title=Axe Vision -- Corps \& Regard, colframe=accent, colback=accent!3]
+                \scriptsize
+                \begin{itemize}
+                    \item \textbf{Eye Contact} : Seuil pro $>92\%$ (calibré au niveau TED Talk).
+                    \item \textbf{Posture} : Mouvement des poignets. Corps figé = score faible.
+                    \item \textbf{Cadrage} : Présence visage, luminosité, pas de contre-jour.
+                \end{itemize}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{imageframe}
+                \footnotesize
+                \textbf{Formule du Score Global :}\\[0.2cm]
+                $\displaystyle \text{Score} = \frac{\text{Voix} + \text{Posture} + \text{Regard} + \text{Scène}}{4} \times 10$
+            \end{imageframe}
+            \vspace{0.3cm}
+            \begin{tcolorbox}[colframe=danger!50, title=Problème résolu : Scores Irréalistes, colback=danger!3]
+                \scriptsize
+                Les scores initiaux donnaient 99/100 systématiquement (seuils trop souples).
+                
+                \textbf{Solution :} Durcissement des seuils pour refléter une exigence professionnelle. Scores désormais entre 50 et 96/100.
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 6: RECOMMANDATIONS RULE-BASED (Sprint 7) ---
+\begin{frame}{Sprint 7 : Moteur de Recommandations (Règles)}
+    \small \textbf{Objectif :} Fournir un feedback utile et actionnable \textbf{sans LLM}, uniquement par des règles déterministes.
+    
+    \vspace{0.2cm}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Logique du Moteur, colframe=primary, colback=primary!3]
+                \scriptsize
+                \begin{itemize}
+                    \item \textbf{Conditions $\rightarrow$ Conseils} : Chaque métrique est testée contre des seuils. Ex: WPM $>160$ $\rightarrow$ ``Débit trop rapide''.
+                    \item \textbf{Priorisation} : Chaque règle a un score de sévérité (0--100). On garde le \textbf{Top 3} trié par criticité.
+                    \item \textbf{Catégories} : Voix, Regard, Gestuelle, Cadrage, Environnement.
+                \end{itemize}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Livrables du Sprint 7, colframe=success, colback=success!3]
+                \scriptsize
+                \begin{itemize}
+                    \item \textbf{\texttt{recommendations.py}} : Moteur de 10+ règles couvrant tous les axes.
+                    \item \textbf{Plan d'entraînement 7 jours} généré automatiquement à partir du Top 3.
+                    \item Chaque recommandation contient : \textit{catégorie, sévérité, message, conseil actionnable}.
+                \end{itemize}
+            \end{tcolorbox}
+            \vspace{0.2cm}
+            \begin{tcolorbox}[colback=accent!5, colframe=accent!40]
+                \scriptsize
+                \textbf{Exemple :} Eye contact $<40\%$ $\rightarrow$ \textit{``Collez un post-it à côté de l'objectif de votre caméra.''}
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 7: RAG (Sprint 8) ---
+\begin{frame}{Sprint 8 : Architecture RAG --- Des Conseils Sourcés}
+    \small \textbf{Principe :} Enrichir les recommandations avec des \textbf{fiches pédagogiques réelles} récupérées selon les faiblesses détectées.
+    
+    \vspace{0.3cm}
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.4cm and 0.6cm,
+        >=Stealth, scale=0.62, transform shape,
+        block/.style={draw, rectangle, rounded corners=3pt, fill=secondary!50, minimum height=0.9cm, text width=2.2cm, text centered, font=\scriptsize},
+        db/.style={draw, cylinder, cylinder uses custom fill, cylinder body fill=primary!10, cylinder end fill=primary!20, shape border rotate=90, minimum height=1cm, aspect=0.35, font=\scriptsize, text width=1.8cm, text centered},
+        io/.style={draw, ellipse, fill=accent!25, minimum height=0.7cm, font=\scriptsize\bfseries},
+        arrow/.style={->, thick, primary!70},
+        note/.style={font=\tiny\itshape, text=lighttext}
+    ]
+        \node[io] (input) {Faiblesses};
+        \node[block, right=of input] (reco) {Recommandations};
+        \node[block, right=of reco] (embed) {Vectorisation\\(MiniLM-L12)};
+        \node[db, right=of embed] (faiss) {FAISS\\(12 fiches)};
+        \node[block, right=of faiss] (topk) {Top-3\\Fiches};
+        \node[block, right=of topk] (prompt) {Prompt\\Enrichi};
+        \node[io, right=of prompt] (llm) {LLM};
+        
+        \draw[arrow] (input) -- (reco);
+        \draw[arrow] (reco) -- (embed);
+        \draw[arrow] (embed) -- (faiss);
+        \draw[arrow] (faiss) -- (topk);
+        \draw[arrow] (topk) -- (prompt);
+        \draw[arrow] (prompt) -- (llm);
+        
+        \node[note, below=0.2cm of embed] {Vecteur 384-dim};
+        \node[note, below=0.2cm of topk] {Similarité cosinus};
+    \end{tikzpicture}
+    
+    \vspace{0.4cm}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{Pourquoi le RAG ?}
+            \begin{itemize} \scriptsize
+                \item \textbf{Anti-hallucination} : Le LLM s'appuie sur des fiches réelles, pas sur son imagination.
+                \item \textbf{Traçabilité} : Chaque conseil est lié à une source identifiable.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \textbf{Technologies Utilisées :}
+            \begin{itemize} \scriptsize
+                \item \textbf{Sentence-Transformers} (paraphrase-multilingual-MiniLM) pour encoder les faiblesses.
+                \item \textbf{FAISS} (Meta AI) pour la recherche de similarité vectorielle rapide.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% ====================================================================
+\section{III. Agent Coach \& LLM}
+% ====================================================================
+
+% --- SLIDE 7: LLM 1B vs 3B ---
+\begin{frame}{Sprint 9 : Migration du LLM (1B $\rightarrow$ 3B)}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=\xmark~Llama 3.2 1B (Abandonné), colframe=danger, colback=danger!3]
+                \footnotesize
+                \begin{itemize}
+                    \item \textbf{Hallucinations} : Confondait forces et faiblesses. Ex: ``Votre point fort est un regard insuffisant''.
+                    \item \textbf{Ton robotique} : Listes à puces sans cohérence, répétitions.
+                    \item \textbf{Non-respect des consignes} : Ajoutait ``Bonjour, voici votre bilan...''.
+                    \item \textbf{Troncature} : Texte coupé en milieu de phrase.
+                \end{itemize}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=\cmark~Llama 3.2 3B (Version Finale), colframe=success, colback=success!3]
+                \footnotesize
+                \begin{itemize}
+                    \item \textbf{Raisonnement logique} : Distingue parfaitement forces et faiblesses.
+                    \item \textbf{Ton naturel} : Phrases fluides, vocabulaire riche, style coaching.
+                    \item \textbf{100\% local} via \textbf{Ollama} (pas d'API cloud, confidentialité totale).
+                    \item \textbf{Léger} : 2 Go de RAM, exécutable sur n'importe quel PC.
+                \end{itemize}
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+    \vspace{0.3cm}
+    \begin{tcolorbox}[colback=secondary, colframe=primary!30]
+        \centering \small
+        \textbf{Stratégie ``Text Completion''} : Au lieu d'instructions complexes, on donne au modèle des \textbf{``phrases à trous''} qu'il complète naturellement. Trois appels séquentiels : \textbf{Bilan} $\rightarrow$ \textbf{Conseil} $\rightarrow$ \textbf{Motivation}.
+    \end{tcolorbox}
+\end{frame}
+
+% --- SLIDE 8: EXEMPLES RÉELS ---
+\begin{frame}{Résultat : Exemples de Feedback Réels}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Test 6 --- Score : 52.6/100, colframe=warning, colback=warning!3]
+                \itshape\scriptsize
+                ``Vous avez fait un bon travail pour votre présentation. Cependant, il serait utile de travailler sur votre posture et votre positionnement visuel, en vous assurant que votre visage reste bien centré dans le cadre.''
+                
+                \vspace{0.15cm}
+                \normalfont\textbf{Conseil :} \scriptsize ``Maintenez vos mains légèrement ouvertes pour appuyer votre discours.''
+                
+                \vspace{0.1cm}
+                \textbf{Motivation :} \scriptsize\itshape ``Vous êtes capable de réaliser tout ce que vous vous mettez en tête !''
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[title=Test 5 --- Score : 95.7/100, colframe=success, colback=success!3]
+                \itshape\scriptsize
+                ``Vous avez fait un excellent travail, avec un score de 95.7/100. Votre rythme vocal exceptionnel est un atout. Cependant, pour atteindre la perfection, travaillez sur la cohérence de votre discours.''
+                
+                \vspace{0.15cm}
+                \normalfont\textbf{Conseil :} \scriptsize ``Vérifiez l'éclairage avant de filmer, un éclairage inadéquat réduit la qualité visuelle.''
+                
+                \vspace{0.1cm}
+                \textbf{Motivation :} \scriptsize\itshape ``Vous êtes capable de créer votre propre avenir !''
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+    \vspace{0.3cm}
+    \begin{itemize} \scriptsize
+        \item \textbf{Pas de ``Bonjour''} : Le modèle entre directement dans l'analyse.
+        \item \textbf{Cohérence logique} : Le score bas (52.6) génère un bilan plus critique ; le score haut (95.7) est félicitant.
+        \item \textbf{Perspective ``Vous''} : Ton Coach $\leftrightarrow$ Élève, engageant et respectueux.
+    \end{itemize}
+\end{frame}
+
+% ====================================================================
+\section{IV. Performance \& Perspectives}
+% ====================================================================
+
+% --- SLIDE 9: OPTIMISATION RTF ---
+\begin{frame}{Optimisation du Temps de Traitement (RTF)}
+    \small
+    \textbf{Problème :} L'analyse initiale prenait 2.77x le temps réel (10 min pour une vidéo de 4 min).
+    
+    \vspace{0.3cm}
+    \begin{columns}[T]
+        \begin{column}{0.3\textwidth}
+            \begin{tcolorbox}[title=\textbf{Levier Audio}, colframe=primary!60, colback=primary!3]
+                \scriptsize
+                \begin{itemize}
+                    \item Beam size : $5 \rightarrow 1$
+                    \item Quantification INT8
+                    \item Langue forcée
+                \end{itemize}
+                \textbf{Gain : $\times$2.5}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            \begin{tcolorbox}[title=\textbf{Levier Vision}, colframe=accent!60, colback=accent!3]
+                \scriptsize
+                \begin{itemize}
+                    \item Downscaling $720 \rightarrow 360$p
+                    \item Saut de frames
+                    \item FFmpeg pré-resize
+                \end{itemize}
+                \textbf{Gain : $\times$1.8}
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.3\textwidth}
+            \begin{tcolorbox}[title=\textbf{Levier Pipeline}, colframe=success!60, colback=success!3]
+                \scriptsize
+                \begin{itemize}
+                    \item ThreadPoolExecutor
+                    \item Audio \& Vision en //
+                    \item Cold Start isolé
+                \end{itemize}
+                \textbf{Gain : $\times$1.5}
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+    \vspace{0.3cm}
+    \begin{center}
+        \textbf{Résultat :} \textcolor{danger}{RTF 2.77x} $\longrightarrow$ \textcolor{success}{\textbf{RTF 1.01x (Temps Réel !)}}
+    \end{center}
+\end{frame}
+
+% --- SLIDE 10: MÉMOIRE ---
+\begin{frame}{Sprint 8 : Gestion Intelligente de la Mémoire}
+    \small \textbf{Contrainte :} Exécution 100\% locale sur un PC standard (8 Go RAM). On ne peut pas tout charger en même temps.
+    
+    \vspace{0.3cm}
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.4cm and 0.8cm,
+        >=Stealth, scale=0.65, transform shape,
+        phase/.style={draw, rectangle, rounded corners=4pt, fill=#1!15, minimum height=1cm, text width=3cm, text centered, font=\scriptsize},
+        arrow/.style={->, thick, primary!70},
+        destroy/.style={font=\tiny\bfseries, text=danger}
+    ]
+        \node[phase=primary] (p1) {\textbf{Phase 1}\\Whisper + Librosa\\$\sim$1.5 Go};
+        \node[phase=accent, right=of p1] (p2) {\textbf{Phase 2}\\MediaPipe + OpenCV\\$\sim$0.8 Go};
+        \node[phase=success, right=of p2] (p3) {\textbf{Phase 3}\\Sentence-Transformers\\$\sim$0.5 Go};
+        \node[phase=warning, right=of p3] (p4) {\textbf{Phase 4}\\Ollama (LLM)\\$\sim$2 Go};
+        
+        \draw[arrow] (p1) -- node[above, destroy] {\ding{55} Libéré} (p2);
+        \draw[arrow] (p2) -- node[above, destroy] {\ding{55} Libéré} (p3);
+        \draw[arrow] (p3) -- node[above, destroy] {\ding{55} Libéré} (p4);
+    \end{tikzpicture}
+    
+    \vspace{0.5cm}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{itemize} \scriptsize
+                \item Chaque modèle est \textbf{chargé puis détruit} avant de passer au suivant.
+                \item Ollama tourne dans un \textbf{process externe} séparé.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{center}
+                \textcolor{success}{\textbf{Résultat :}} Pic mémoire $<$ 2.5 Go.\\
+                Stable même sur des machines modestes.
+            \end{center}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 11: PROBLÈMES ---
+\begin{frame}{Problèmes Rencontrés \& Solutions}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[colframe=warning, title=Hallucinations du LLM 1B, colback=warning!3]
+                \scriptsize
+                \textbf{Problème :} Le modèle 1B confondait forces et faiblesses et ajoutait du texte conversationnel.
+                
+                \textbf{Solution :} Migration vers 3B + stratégie ``Text Completion'' à phrases à trous.
+            \end{tcolorbox}
+            \vspace{0.15cm}
+            \begin{tcolorbox}[colframe=danger, title=Scores Irréalistes (99/100), colback=danger!3]
+                \scriptsize
+                \textbf{Problème :} Seuils trop souples, pas de valeur pédagogique.
+
+                \textbf{Solution :} Recalibrage au niveau ``TED Talk'' ($>92\%$ pour le regard, zone WPM stricte).
+            \end{tcolorbox}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[colframe=danger, title=Régression de Performance, colback=danger!3]
+                \scriptsize
+                \textbf{Problème :} L'ajout du RAG + LLM a fait exploser le RTF à 2.0x.
+                
+                \textbf{Solution :} Garbage collection séquentiel et optimisation du pipeline Ollama.
+            \end{tcolorbox}
+            \vspace{0.15cm}
+            \begin{tcolorbox}[colframe=accent, title=Bug Regex Destructeur, colback=accent!3]
+                \scriptsize
+                \textbf{Problème :} La fonction de nettoyage du texte LLM supprimait des paragraphes entiers.
+                
+                \textbf{Solution :} Réécriture ciblée de \texttt{clean\_llm\_output}.
+            \end{tcolorbox}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 12: PERSPECTIVES ---
+\begin{frame}{Prochain Jalon : Du Code au Produit (Sprint 10-12)}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \textbf{\textcolor{primary}{Sprint 10 : Dashboard Web}}
+            \begin{itemize} \footnotesize
+                \item \textbf{Backend FastAPI} : Upload vidéo, rapport JSON.
+                \item \textbf{Frontend React} : Visualisation interactive des scores et du feedback (Chart.js).
+            \end{itemize}
+            \vspace{0.3cm}
+            \textbf{\textcolor{primary}{Sprint 11 : Historique}}
+            \begin{itemize} \footnotesize
+                \item Suivi de la progression sur 7 jours.
+                \item Analyse comparative des sessions.
+            \end{itemize}
+            \vspace{0.3cm}
+            \textbf{\textcolor{primary}{Sprint 12 : Soutenance}}
+            \begin{itemize} \footnotesize
+                \item Documentation finale.
+                \item Démonstration live du produit.
+            \end{itemize}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{tcolorbox}[colback=primary!5, colframe=primary]
+                \centering \small
+                \textbf{Objectif Final}\\[0.3cm]
+                \footnotesize
+                Un coach de prise de parole \textbf{fonctionnel et testé}, capable d'analyser une vidéo et de générer un feedback expert, le tout \textbf{100\% local et confidentiel}.
+            \end{tcolorbox}
+            \vspace{0.3cm}
+            \begin{imageframe}
+                \centering \scriptsize
+                \textbf{Stack Cible :}\\[0.15cm]
+                \begin{tabular}{ll}
+                    Backend & FastAPI \\
+                    Frontend & React + Tailwind \\
+                    Graphiques & Chart.js \\
+                    Base & SQLite \\
+                \end{tabular}
+            \end{imageframe}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 13: DEMO ---
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+    \fill[primary] (current page.south west) rectangle (current page.north east);
+    \node[text=white, align=center] at (current page.center) {
+        {\Huge\bfseries DÉMONSTRATION}\\[0.5cm]
+        {\Large Analyse d'une vidéo en direct}\\[0.8cm]
+        {\normalsize \texttt{python process\_video.py} sur un test réel}\\[1cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (4cm, 0.15cm);
+        \end{tikzpicture}
+    };
+\end{tikzpicture}
+\end{frame}
+
+% --- SLIDE 14: MERCI ---
+\begin{frame}[plain]
+    \centering
+    \vspace{1cm}
+    {\Huge\bfseries\textcolor{primary}{Merci de votre attention}}\\[0.8cm]
+    {\Large\textcolor{darktext}{Place aux questions}}\\[1.5cm]
+    \begin{tikzpicture}
+        \fill[accent] (0,0) rectangle (4cm, 0.15cm);
+    \end{tikzpicture}\\[1cm]
+    \small \textbf{Hisham Moussaid} \\
+    Master SIE --- ENS Meknès --- 2025-2026
+\end{frame}
+
+\end{document}
