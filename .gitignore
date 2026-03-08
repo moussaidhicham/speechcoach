@@ -1,0 +1,52 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# === Outputs (generated data, videos, frames, audio) ===
+outputs/
+
+# === Test videos (large files) ===
+*.mp4
+*.avi
+*.mkv
+*.mov
+*.wav
+*.mp3
+
+# === LaTeX build artifacts ===
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# === IDE / Editor ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# === OS files ===
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# === Debug scripts (optional, remove if you want to keep them) ===
+# debug_cv.py
+# debug_mp.py
