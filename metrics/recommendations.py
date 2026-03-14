@@ -10,14 +10,14 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
     # priority_score: higher meaning more critical
 
     # --- VOICE RULES ---
-    if audio.wpm < 100:
+    if audio.wpm < 110:
         all_recs.append((
             80, 
             Recommendation(
                 category="Voix & Débit",
                 severity="Critical",
-                message="Votre débit de parole est trop lent (moins de 100 mots par minute), ce qui peut endormir l'auditoire.",
-                actionable_tip="Entraînez-vous à lire un texte court d'une minute avec un chronomètre. L'objectif est d'atteindre entre 130 et 150 mots."
+                message=f"Votre débit de parole est trop lent ({round(audio.wpm)} mots/minute).",
+                actionable_tip="Entraînez-vous à viser entre 130 et 150 mots par minute pour maintenir l'intérêt de l'auditoire."
             )
         ))
     elif audio.wpm > 160:
@@ -26,13 +26,13 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             Recommendation(
                 category="Voix & Débit",
                 severity="Critical",
-                message="Votre débit de parole est trop rapide (plus de 160 mots par minute), risquant de perdre votre public.",
-                actionable_tip="Forcez-vous à marquer une pause de 2 secondes à chaque fin de phrase importante pour laisser le temps à l'audience d'assimiler."
+                message=f"Votre débit de parole est trop rapide ({round(audio.wpm)} mots/minute).",
+                actionable_tip="Forcez-vous à marquer une pause de 2 secondes à chaque fin de phrase pour laisser le temps à l'audience d'assimiler."
             )
         ))
 
-    # Guess duration in minutes for fillers per minute
-    estimated_mins = audio.wpm / 150.0 if audio.wpm > 0 else 1.0
+    # Guess duration in minutes for fillers per minute (Aligned with scoring.py: 140)
+    estimated_mins = audio.wpm / 140.0 if audio.wpm > 0 else 1.0
     fillers_per_min = audio.filler_count / estimated_mins
     
     if fillers_per_min > 5:
@@ -113,7 +113,7 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             )
         ))
 
-    if vision.avg_blur < 10:
+    if vision.avg_blur < 20:
          all_recs.append((
             55,
             Recommendation(

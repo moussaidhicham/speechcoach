@@ -40,7 +40,7 @@
     \huge \textbf{Rapport d'État d'Avancement n°2}\\
     \large \textit{Sprints 6 à 9 : Scoring, RAG et Coaching IA}
 }
-\author{\textbf{Étudiant :} Hisham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
 \date{Période : 20 Février 2026 --- 5 Mars 2026}
 
 \begin{document}
@@ -74,7 +74,7 @@ Pour éviter les hallucinations du LLM et fonder les conseils sur des bases péd
 Suite aux retours sur la lenteur initiale, le pipeline a été optimisé :
 \begin{itemize}
     \item \textbf{Real-Time Factor (RTF) :} Le temps de traitement est passé de \textbf{2.77x} à \textbf{1.01x} (temps réel).
-    \item \textbf{Stratégies :} Downscaling FFmpeg des frames ($640\times360$), réduction du \textit{beam size} de Whisper \cite{radford2022robust} à 1, et parallélisation des pipelines Audio/Vision via \texttt{ThreadPoolExecutor}.
+    \item \textbf{Stratégies :} Migration de Whisper \textbf{Medium vers Small} (gain de vitesse majeur), downscaling FFmpeg des frames ($640\times360$), réduction du \textit{beam size} à 1, et parallélisation.
     \item \textbf{Remarque :} La performance reste dépendante de la charge CPU et des processus concurrents du système hôte.
 \end{itemize}
 
@@ -85,13 +85,13 @@ Quatre points critiques soulevés lors du dernier suivi ont été adressés :
     \item \textbf{Variabilité du temps de traitement :} Nous avons identifié que le "Cold Start" (chargement des modèles en RAM) pèse pour ~45s. L'architecture finale (FastAPI) maintiendra ces modèles en mémoire pour stabiliser le temps de réponse.
     \item \textbf{Détection de Langue :} Whisper propose désormais une option de "langue forcée" via le paramètre \texttt{language}. Cela court-circuite le scan initial de 30s et réduit le risque d'erreur de transcription.
     \item \textbf{Bruit Visuel et Cadrage :} Le système ne tente pas de "nettoyer" l'image, mais diagnostique le \textit{Blur Score} (netteté) et la \textit{Luminosité}. Si le "bruit" est trop élevé, le score "Scène" baisse et une alerte de cadrage est générée.
-    \item \textbf{Isolation de l'Orateur :} Nous utilisons une heuristique de surface occupée ($>3\%$ de l'image) et sélectionnons systématiquement le visage ayant la plus grande aire. Cela permet d'isoler l'orateur principal même en présence d'un arrière-plan complexe ou de passants.
+    \item \textbf{Isolation de l'Orateur :} Pour économiser les ressources (CPU/RAM/Temps), le système n'effectue pas de segmentation lourde de l'image. Il s'appuie sur la robustesse de MediaPipe et une règle de sélection intelligente : seul le visage occupant plus de 3\% de la surface et possédant la plus grande aire est identifié comme l'orateur principal, permettant de traiter efficacement les scènes avec plusieurs personnes ou arrière-plans complexes.
 \end{enumerate}
 
 \section{Planning : Vers la Phase "Produit" (Mars--Avril)}
 Le moteur étant stabilisé, l'effort se porte sur l'expérience utilisateur :
 \begin{itemize}
-    \item \textbf{Sprint 10 :} Développement de l'interface Dashboard moderne (FastAPI + React/Next.js) pour visualiser les scores et le feedback de manière interactive.
+    \item \textbf{Sprint 10 :} Développement de l'**Application Web Complète** (FastAPI + React/Next.js).
     \item \textbf{Sprint 11 :} Implémentation d'un historique des sessions pour mesurer la progression de l'étudiant sur 7 jours.
 \end{itemize}
 
@@ -99,7 +99,7 @@ Le moteur étant stabilisé, l'effort se porte sur l'expérience utilisateur :
 Cette seconde phase a soulevé des défis liés à l'\textit{intelligence} du système et à la cohérence du feedback :
 
 \begin{itemize}
-    \item \textbf{Limites Cognitives des Petits Modèles (LLM 1B) :} L'utilisation initiale du modèle \textit{Llama 3.2 1B} a révélé de graves limites logiques (hallucinations, confusion entre les points forts et faibles, discours robotique). \textbf{Solution :} Migration vers le modèle \textbf{Llama 3.2 3B} et abandon des \textit{System Prompts} complexes au profit d'une stratégie de \textbf{Text Completion} ultra-simple ("Phrases à trous"). Le modèle 3B offre un raisonnement fluide tout en restant exécutable localement (2Go de VRAM/RAM).
+    \item \textbf{Limites Cognitives (LLM 1B) :} L'utilisation initiale de \textit{Llama 3.2 1B} a révélé des limites logiques (hallucinations, confusion). \textbf{Solution :} Migration vers le modèle \textbf{3B} et adoption d'une stratégie de \textbf{Prompts Directs \& Formatage Strict}. Le modèle 3B offre un raisonnement fluide tout en restant local (2 Go RAM).
     \item \textbf{Calibrage du Scoring :} Les premiers tests donnaient des scores trop généreux (99/100). \textbf{Solution :} Recalibrage des seuils (ex: durcissement de la métrique Regard à $>92\%$) pour refléter une exigence professionnelle.
     \item \textbf{Gestion des Ressources (RAM) :} L'enchaînement RAG $\rightarrow$ LLM est gourmand. \textbf{Solution :} Libération explicite de la mémoire des modèles d'embeddings (\textit{Sentence-Transformers}) avant l'appel à l'API Ollama.
     \item \textbf{Pertinence du RAG :} Éviter les conseils génériques. \textbf{Solution :} Pondération de la recherche sémantique basée sur la faille prioritaire (le score le plus bas) pour garantir l'utilité immédiate du feedback.

@@ -16,6 +16,10 @@
 \usepackage{pifont}
 \usetikzlibrary{matrix, positioning, calc, shapes.geometric, arrows.meta, shadows, fadings, fit}
 \tcbuselibrary{skins}
+\usepackage[style=numeric,backend=bibtex]{biblatex}
+\addbibresource{references.bib}
+\usepackage{csquotes}
+\renewcommand{\bibfont}{\tiny}
 
 % --- Premium Color Palette ---
 \definecolor{primary}{RGB}{12, 54, 106}
@@ -69,14 +73,11 @@
         \end{tikzpicture}\\[0.6cm]
         {\Large\itshape\textcolor{lighttext}{Sprints 6 à 9 : Scoring, RAG, LLM \& Optimisations}}\\[1.5cm]
     };
-    \node[anchor=south west, xshift=1.2cm, yshift=1.2cm, align=left] at (current page.south west) {
-        \textbf{\textcolor{primary}{\small PRÉSENTÉ PAR :}}\\[0.1cm]
-        \small Hisham Moussaid \\
+    \node[anchor=south, yshift=1.2cm, align=center] at (current page.south) {
+        \textbf{\textcolor{primary}{\small PRÉSENTÉ PAR :}} \small Hicham Moussaid \\
         \scriptsize Master SIE --- ENS Meknès \\
-    };
-    \node[anchor=south east, xshift=-1.2cm, yshift=1.2cm, align=right] at (current page.south east) {
-        \textbf{\textcolor{primary}{\small ENCADRÉ PAR :}}\\[0.1cm]
-        \small Pr. Abdelaaziz Hessane \\
+        \vspace{0.2cm}
+        \textbf{\textcolor{primary}{\small ENCADRÉ PAR :}} \small Pr. Abdelaaziz Hessane
     };
     \node[anchor=south, yshift=0.6cm] at (current page.south) {
         \small\textcolor{primary!70}{Suivi de Projet PFE --- Réunion d'Avancement n°2 --- Mars 2026}
@@ -219,9 +220,9 @@
             \rowcolor{accent!10}
             S8 & \textbf{Base RAG} & \cmark & \textbf{FAISS + Fiches pédagogiques} \\
             \rowcolor{accent!10}
-            S9 & \textbf{Coach IA (LLM)} & \cmark & \textbf{Llama 3.2 3B + Text Completion} \\
+            S9 & \textbf{Coach IA (LLM)} & \cmark & \textbf{Llama 3.2 3B + Prompts Directs} \\
             \midrule
-            S10 & Dashboard Web & \dots & \textit{Prochain sprint (FastAPI + React)} \\
+            S10 & Application Web & \dots & \textit{Prochain sprint (Accès complet + Profils)} \\
             \bottomrule
         \end{tabular}
     \end{imageframe}
@@ -255,8 +256,9 @@
         \begin{column}{0.48\textwidth}
             \begin{imageframe}
                 \footnotesize
-                \textbf{Formule du Score Global :}\\[0.2cm]
-                $\displaystyle \text{Score} = \frac{\text{Voix} + \text{Posture} + \text{Regard} + \text{Scène}}{4} \times 10$
+                \textbf{Formule du Score Global (Pondérée) :}\\[0.2cm]
+                \scriptsize
+                $\text{Score} = (0.3 \times \text{Voix} + 0.35 \times \text{Regard} + 0.25 \times \text{Posture} + 0.1 \times \text{Scène}) \times 10$
             \end{imageframe}
             \vspace{0.3cm}
             \begin{tcolorbox}[colframe=danger!50, title=Problème résolu : Scores Irréalistes, colback=danger!3]
@@ -389,7 +391,7 @@
     \vspace{0.3cm}
     \begin{tcolorbox}[colback=secondary, colframe=primary!30]
         \centering \small
-        \textbf{Stratégie ``Text Completion''} : Au lieu d'instructions complexes, on donne au modèle des \textbf{``phrases à trous''} qu'il complète naturellement. Trois appels séquentiels : \textbf{Bilan} $\rightarrow$ \textbf{Conseil} $\rightarrow$ \textbf{Motivation}.
+        \textbf{Stratégie ``Prompts Directs''} : Au lieu d'une conversation, on impose au modèle un \textbf{formatage strict} sans politesse inutile. Trois appels séquentiels : \textbf{Bilan} $\rightarrow$ \textbf{Conseil} $\rightarrow$ \textbf{Motivation}.
     \end{tcolorbox}
 \end{frame}
 
@@ -440,41 +442,41 @@
     
     \vspace{0.3cm}
     \begin{columns}[T]
-        \begin{column}{0.3\textwidth}
+        \hspace{-0.3cm}
+        \begin{column}{0.33\textwidth}
             \begin{tcolorbox}[title=\textbf{Levier Audio}, colframe=primary!60, colback=primary!3]
                 \scriptsize
                 \begin{itemize}
-                    \item Beam size : $5 \rightarrow 1$
-                    \item Quantification INT8
-                    \item Langue forcée
+                    \item \textbf{Whisper Medium $\rightarrow$ Small} : Réduction drastique du temps d'éocution sans perte majeure de précision.
+                    \item \textbf{Beam size} $5 \rightarrow 1$ : teste 1 seule hypothèse au lieu de 5 par mot.
+                    \item \textbf{INT8} (dès S1) : réduit la précision des calculs (32 bits $\rightarrow$ 8 bits).
                 \end{itemize}
-                \textbf{Gain : $\times$2.5}
             \end{tcolorbox}
         \end{column}
-        \begin{column}{0.3\textwidth}
+        \begin{column}{0.33\textwidth}
             \begin{tcolorbox}[title=\textbf{Levier Vision}, colframe=accent!60, colback=accent!3]
                 \scriptsize
                 \begin{itemize}
-                    \item Downscaling $720 \rightarrow 360$p
-                    \item Saut de frames
-                    \item FFmpeg pré-resize
+                    \item \textbf{Downscaling} $720 \text{p} \rightarrow 360\text{p}$ : réduit la taille des images avant analyse.
+                    \item \textbf{1 fps} (dès S0) : extrait 1 image/sec au lieu de 30 (suffisant pour regard/posture).
                 \end{itemize}
-                \textbf{Gain : $\times$1.8}
             \end{tcolorbox}
         \end{column}
-        \begin{column}{0.3\textwidth}
+        \begin{column}{0.33\textwidth}
             \begin{tcolorbox}[title=\textbf{Levier Pipeline}, colframe=success!60, colback=success!3]
                 \scriptsize
                 \begin{itemize}
-                    \item ThreadPoolExecutor
-                    \item Audio \& Vision en //
-                    \item Cold Start isolé
+                    \item \textbf{ThreadPoolExecutor} : Audio et Vision s'exécutent en parallèle au lieu de séquentiellement.
                 \end{itemize}
-                \textbf{Gain : $\times$1.5}
             \end{tcolorbox}
         \end{column}
     \end{columns}
-    \vspace{0.3cm}
+    \vspace{0.2cm}
+    \begin{itemize} \scriptsize
+        \item \textbf{Cold Start ($\sim$45s) :} Actuellement, les modèles sont rechargés à chaque exécution. \textbf{Sprint 10 (FastAPI)} résoudra ce problème : les modèles resteront en mémoire sur le serveur.
+        \item \textbf{Prévu Sprint 10 :} Possibilité de forcer la langue dans l'interface (évite $\sim$30s de détection auto par Whisper).
+    \end{itemize}
+    \vspace{0.2cm}
     \begin{center}
         \textbf{Résultat :} \textcolor{danger}{RTF 2.77x} $\longrightarrow$ \textcolor{success}{\textbf{RTF 1.01x (Temps Réel !)}}
     \end{center}
@@ -526,9 +528,9 @@
         \begin{column}{0.48\textwidth}
             \begin{tcolorbox}[colframe=warning, title=Hallucinations du LLM 1B, colback=warning!3]
                 \scriptsize
-                \textbf{Problème :} Le modèle 1B confondait forces et faiblesses et ajoutait du texte conversationnel.
+                \textbf{Problème :} Le modèle 1B confondait forces/faiblesses et ajoutait du bla-bla conversationnel.
                 
-                \textbf{Solution :} Migration vers 3B + stratégie ``Text Completion'' à phrases à trous.
+                \textbf{Solution :} Migration vers 3B + stratégie de \textbf{Prompts Directs \& Formatage Strict}.
             \end{tcolorbox}
             \vspace{0.15cm}
             \begin{tcolorbox}[colframe=danger, title=Scores Irréalistes (99/100), colback=danger!3]
@@ -557,25 +559,29 @@
 \end{frame}
 
 % --- SLIDE 12: PERSPECTIVES ---
-\begin{frame}{Prochain Jalon : Du Code au Produit (Sprint 10-12)}
+\begin{frame}{Prochain Jalon : Du Code au Produit (Sprints 10-11)}
     \begin{columns}[T]
         \begin{column}{0.48\textwidth}
-            \textbf{\textcolor{primary}{Sprint 10 : Dashboard Web}}
+            \begin{tcolorbox}[title=\textbf{Amélioration Continue}, colframe=accent, colback=accent!3]
+                \scriptsize
+                En parallèle des nouveaux sprints, un travail de \textbf{refinement} permanent sera mené pour garantir un produit final d'excellence :
+                \begin{itemize}
+                    \item Optimisation continue du scoring.
+                    \item Ajustement des prompts du coach.
+                    \item Tests sur un corpus de vidéos variées.
+                \end{itemize}
+            \end{tcolorbox}
+            \vspace{0.2cm}
+            \textbf{\textcolor{primary}{Sprint 10 : Application Web Complète}}
             \begin{itemize} \footnotesize
-                \item \textbf{Backend FastAPI} : Upload vidéo, rapport JSON.
-                \item \textbf{Frontend React} : Visualisation interactive des scores et du feedback (Chart.js).
+                \item Système complet : Inscription, Authentification, Profil.
+                \item Dashboard interactif : Upload et rapports dynamiques.
             \end{itemize}
-            \vspace{0.3cm}
+            \vspace{0.2cm}
             \textbf{\textcolor{primary}{Sprint 11 : Historique}}
             \begin{itemize} \footnotesize
-                \item Suivi de la progression sur 7 jours.
-                \item Analyse comparative des sessions.
-            \end{itemize}
-            \vspace{0.3cm}
-            \textbf{\textcolor{primary}{Sprint 12 : Soutenance}}
-            \begin{itemize} \footnotesize
-                \item Documentation finale.
-                \item Démonstration live du produit.
+                \item Suivi de la progression session après session.
+                \item Analyse comparative des métriques.
             \end{itemize}
         \end{column}
         \begin{column}{0.48\textwidth}
@@ -583,17 +589,17 @@
                 \centering \small
                 \textbf{Objectif Final}\\[0.3cm]
                 \footnotesize
-                Un coach de prise de parole \textbf{fonctionnel et testé}, capable d'analyser une vidéo et de générer un feedback expert, le tout \textbf{100\% local et confidentiel}.
+                Un coach de prise de parole \textbf{fonctionnel et testé}, capable d'analyser une vidéo et de générer un feedback expert, le tout \textbf{100\% local}.
             \end{tcolorbox}
             \vspace{0.3cm}
             \begin{imageframe}
                 \centering \scriptsize
-                \textbf{Stack Cible :}\\[0.15cm]
+                \textbf{Stack Technologique (En réflexion) :}\\[0.15cm]
                 \begin{tabular}{ll}
-                    Backend & FastAPI \\
-                    Frontend & React + Tailwind \\
-                    Graphiques & Chart.js \\
-                    Base & SQLite \\
+                    Backend & FastAPI / Django \\
+                    Frontend & React / Streamlit \\
+                    Graphiques & Chart.js / Plotly \\
+                    Base de données & SQLite / PostgreSQL \\
                 \end{tabular}
             \end{imageframe}
         \end{column}
@@ -616,7 +622,14 @@
 \end{tikzpicture}
 \end{frame}
 
-% --- SLIDE 14: MERCI ---
+% --- SLIDE 14: RÉFÉRENCES ---
+\begin{frame}{Références Bibliographiques}
+    \tiny
+    \nocite{*}
+    \printbibliography[heading=none]
+\end{frame}
+
+% --- SLIDE 15: MERCI ---
 \begin{frame}[plain]
     \centering
     \vspace{1cm}
@@ -625,7 +638,7 @@
     \begin{tikzpicture}
         \fill[accent] (0,0) rectangle (4cm, 0.15cm);
     \end{tikzpicture}\\[1cm]
-    \small \textbf{Hisham Moussaid} \\
+    \small \textbf{Hicham Moussaid} \\
     Master SIE --- ENS Meknès --- 2025-2026
 \end{frame}
 

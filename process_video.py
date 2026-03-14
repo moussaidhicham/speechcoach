@@ -41,12 +41,25 @@ def process_video(video_path: str, output_dir: str):
 
     
     if os.path.exists(frames_dir) and os.listdir(frames_dir):
-        logger.info("Frames directory not empty, skipping extraction.")
+        # We must check if the frames were extracted at 1 FPS or 30 FPS.
+        # If there are way too many frames (more than duration + 10%), it's an old run.
+        video_meta = get_video_metadata(video_path)
+        expected_frames = int(video_meta['duration'])
+        actual_frames = len([f for f in os.listdir(frames_dir) if f.endswith('.jpg')])
+        
+        if actual_frames > expected_frames * 1.5:
+            logger.info("Found old unoptimized frames (too many). Deleting and re-extracting...")
+            for f in os.listdir(frames_dir):
+                os.remove(os.path.join(frames_dir, f))
+            if not extract_frames(video_path, frames_dir, fps=1.0):
+                logger.error("Frame extraction failed. Aborting.")
+                return
+        else:
+            logger.info("Optimized Frames (1 FPS) already exist, skipping extraction.")
     else:
         if not extract_frames(video_path, frames_dir, fps=1.0):
             logger.error("Frame extraction failed. Aborting.")
             return
-
 
     video_meta = get_video_metadata(video_path)
     duration = video_meta['duration']
@@ -216,7 +229,9 @@ def process_video(video_path: str, output_dir: str):
         f.write((f"# Rapport SpeechCoach : {video_name}\n\n"))
         f.write((f"**Langue détectée** : {language.upper()}\n"))
         f.write((f"**Durée** : {duration:.2f} secondes\n"))
-        f.write((f"**Résolution** : {resolution[0]}x{resolution[1]} @ {fps:.2f} fps\n"))
+        f.write((f"**Vidéo Originale** : {resolution[0]}x{resolution[1]} @ {fps:.2f} fps\n"))
+        f.write((f"**Traitement Audio** : Whisper Small (INT8) @ 16kHz Mono\n"))
+        f.write((f"**Traitement Vision** : 640x360 @ 1.00 fps\n"))
         
         # Calculate Execution Time & RTF
         total_time = time.time() - start_time

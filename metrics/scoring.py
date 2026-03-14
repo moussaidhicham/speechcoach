@@ -13,8 +13,8 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     wpm_score = 10.0
     if audio.wpm < 110:
         wpm_score -= (110 - audio.wpm) * 0.15
-    elif audio.wpm > 155:
-        wpm_score -= (audio.wpm - 155) * 0.15
+    elif audio.wpm > 160:
+        wpm_score -= (audio.wpm - 160) * 0.15
     
     # Penalize for fillers (> 2 per minute is bad)
     estimated_mins = audio.wpm / 140.0 if audio.wpm > 0 else 1.0
@@ -66,14 +66,14 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
 
     # 4. Scene Score (Light, Framing) (0-10)
     scene_score = 10.0
-    if vision.avg_brightness < 80 or vision.avg_brightness > 200:
+    if vision.avg_brightness < 70 or vision.avg_brightness > 210:
         scene_score -= 2.0 
     
-    # More realistic on blur for webcams
-    if vision.avg_blur < 25:
-        scene_score -= 1.5 # Really blurry
-    elif vision.avg_blur < 50:
-        scene_score -= 0.5 # Slightly soft
+    # More realistic on blur (Laplacian variance)
+    if vision.avg_blur < 20:
+        scene_score -= 1.5 # Blurry
+    elif vision.avg_blur < 40:
+        scene_score -= 0.5 # Soft focus
         
     scores.scene_score = max(0.0, min(10.0, round(scene_score, 1)))
 
@@ -102,20 +102,24 @@ def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: Visio
     if audio.wpm >= 120 and audio.wpm <= 160:
         strengths.append(f"Excellent rythme vocal ({round(audio.wpm)} mots/minute).")
     elif audio.wpm < 110:
-        weaknesses.append("Rythme d'élocution un peu lent. Essayez de dynamiser votre prise de parole.")
+        weaknesses.append(f"Rythme d'élocution trop lent ({round(audio.wpm)} mots/minute).")
     elif audio.wpm > 160:
-        weaknesses.append(f"Vous parlez trop vite ({round(audio.wpm)} mots/minute). Prenez le temps de respirer.")
+        weaknesses.append(f"Vous parlez trop vite ({round(audio.wpm)} mots/minute).")
 
+    # Fillers feedback (using normalized rate)
+    estimated_mins = audio.wpm / 140.0 if audio.wpm > 0 else 1.0
+    fillers_per_min = audio.filler_count / estimated_mins
+    
     if audio.filler_count == 0:
         strengths.append("Discours clair, sans tics de langage ('euh', 'hum').")
-    elif audio.filler_count > 5:
-        weaknesses.append(f"Attention aux mots parasites ({audio.filler_count} détectés). Laissez des silences à la place.")
+    elif fillers_per_min > 3:
+        weaknesses.append(f"Attention aux mots parasites ({audio.filler_count} détectés).")
 
     # Presence feedback
     if vision.eye_contact_ratio >= 0.7:
-        strengths.append(f"Très bon contact visuel avec l'audience ({round(vision.eye_contact_ratio*100)}% du temps).")
-    elif vision.eye_contact_ratio < 0.4:
-        weaknesses.append("Le regard est fuyant. Regardez la caméra plus souvent pour engager votre public.")
+        strengths.append(f"Très bon contact visuel ({round(vision.eye_contact_ratio*100)}% du temps).")
+    else:
+        weaknesses.append(f"Le regard est parfois fuyant ({round(vision.eye_contact_ratio*100)}%). Regardez plus la caméra.")
 
     if vision.face_presence_ratio < 0.8:
         weaknesses.append("Votre visage disparaît parfois du cadre. Restez bien centré.")
@@ -132,6 +136,11 @@ def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: Visio
     # Scene
     if vision.avg_brightness < 70:
         weaknesses.append("L'éclairage est trop faible (vidéo sombre).")
+    elif vision.avg_brightness > 210:
+        weaknesses.append("L'image est trop exposée (trop de lumière).")
+
+    if vision.avg_blur < 20:
+        weaknesses.append("L'image manque de netteté. Nettoyez l'objectif ou améliorez le focus.")
 
     # Fallbacks in case nothing was triggered
     if not strengths:
