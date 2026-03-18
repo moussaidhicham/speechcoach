@@ -1,42 +1,35 @@
-# === Python ===\n__pycache__/\n*.py[cod]\n*.pyo\n*.egg-info/\ndist/\nbuild/\n*.egg\n.venv/\nvenv/\nenv/\n\n# === Node.js ===\nnode_modules/\n.next/\n.out/\n\n# === Storage ===\nbackend/app/storage/\nbackend/storage/
+# === Python ===
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+backend/venv/
+
+# === Node.js ===
+node_modules/
+**/node_modules/
+.next/
+.out/
+
+# === Storage ===
+backend/app/storage/
+backend/storage/
+app/storage/
 
 # === Outputs (generated data, videos, frames, audio) ===
 outputs/
+**/outputs/
 
-# === Test videos (large files) ===
-*.mp4
-*.avi
-*.mkv
-*.mov
-*.wav
-*.mp3
-
-# === LaTeX build artifacts ===
-*.aux
-*.bbl
-*.blg
-*.log
-*.out
-*.toc
-*.fls
-*.fdb_latexmk
-*.synctex.gz
-*.nav
-*.snm
-*.vrb
-
-# === IDE / Editor ===
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# === OS files ===
-Thumbs.db
-.DS_Store
-desktop.ini
-
-# === Debug scripts (optional, remove if you want to keep them) ===
-# debug_cv.py
-# debug_mp.py
+# === Temporary / Debug ===
+tmp/
+.gemini/
+.agents/
+brain/
+*debug*.py
