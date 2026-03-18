@@ -496,12 +496,15 @@
         destroy/.style={font=\tiny\bfseries, text=danger}
     ]
         \node[phase=primary] (p1) {\textbf{Phase 1}\\Whisper + Librosa\\$\sim$1.5 Go};
-        \node[phase=accent, right=of p1] (p2) {\textbf{Phase 2}\\MediaPipe + OpenCV\\$\sim$0.8 Go};
-        \node[phase=success, right=of p2] (p3) {\textbf{Phase 3}\\Sentence-Transformers\\$\sim$0.5 Go};
-        \node[phase=warning, right=of p3] (p4) {\textbf{Phase 4}\\Ollama (LLM)\\$\sim$2 Go};
+        \node[phase=accent, below=0.2cm of p1] (p2) {\textbf{Phase 2}\\MediaPipe + OpenCV\\$\sim$0.8 Go};
         
-        \draw[arrow] (p1) -- node[above, destroy] {\ding{55} Libéré} (p2);
-        \draw[arrow] (p2) -- node[above, destroy] {\ding{55} Libéré} (p3);
+        % Group Phase 1 & Phase 2
+        \node[draw, dashed, primary, rounded corners, fit=(p1) (p2), inner sep=0.2cm, label=above:\scriptsize\textbf{Parallèle (Pic $\sim$2.3 Go)}] (group) {};
+        
+        \node[phase=success, right=1.5cm of group] (p3) {\textbf{Phase 3}\\Sentence-Transformers\\$\sim$0.5 Go};
+        \node[phase=warning, right=1.5cm of p3] (p4) {\textbf{Phase 4}\\Ollama (LLM)\\$\sim$2 Go};
+        
+        \draw[arrow] (group) -- node[above, destroy] {\ding{55} Libéré} (p3);
         \draw[arrow] (p3) -- node[above, destroy] {\ding{55} Libéré} (p4);
     \end{tikzpicture}
     

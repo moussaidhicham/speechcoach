@@ -1,34 +1,69 @@
 # SpeechCoach (PFE Master SIE)
 
-Systeme de coaching automatique de prise de parole via analyse multimodale (Audio + Vision).
+Système de coaching automatique de prise de parole via analyse multimodale (Audio + Vision).
 
-## Installation
+## 🚀 Quick Start (Full-Stack)
 
-### 1. Pré-requis Système
-Ce projet nécessite **FFmpeg** pour le traitement vidéo.
-*   **Windows** : Télécharger sur [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) (release full), extraire, et ajouter le dossier `bin` au PATH système.
-*   **Linux** : `sudo apt install ffmpeg`
-*   **Mac** : `brew install ffmpeg`
+### Pré-requis
+- **FFmpeg**: [Download](https://www.gyan.dev/ffmpeg/builds/) (Windows full release) → Add `bin/` to PATH
+- **Python 3.10+**
+- **Node.js 18+**
 
-Pour vérifier :
+Vérifiez FFmpeg: `ffmpeg -version`
+
+### Backend (FastAPI)
 ```bash
-ffmpeg -version
-```
-
-### 2. Environnement Python
-Il est recommandé d'utiliser un environnement virtuel.
-```bash
+cd backend
 pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Structure
-*   `ingest/` : Scripts d'extraction (FFmpeg)
-*   `audio/` : Analyse audio (Whisper, Librosa) - *À venir Sprint 1 & 2*
-*   `vision/` : Analyse visuelle (MediaPipe) - *À venir Sprint 3*
-*   `metrics/` : Définitions des données (JSON Schema)
-*   `process_video.py` : Point d'entrée principal
-
-## Utilisation
+### Frontend (Next.js)
 ```bash
-python process_video.py C:\path\to\video.mp4 --output ./outputs
+cd frontend
+npm install
+npm run dev  # http://localhost:3000
 ```
+
+### API Endpoints
+- `POST /video/upload` - Upload & analyze video
+- `/storage/...` - Processed reports/images
+- `/auth/*` - User auth
+
+## 🏗️ Architecture
+
+```
+SpeechCoach/
+├── backend/          # FastAPI + Celery + Alembic (PostgreSQL)
+│   ├── app/
+│   │   ├── analytics/  # Video processing engine
+│   │   ├── auth/
+│   │   ├── users/
+│   │   └── core/
+├── frontend/         # Next.js 16 + shadcn/ui + TypeScript
+│   └── src/app/
+│       ├── studio/     # Video upload & recording
+│       ├── dashboard/
+│       ├── report/[id] # View analysis
+│       └── history/
+└── storage/          # Uploads/processed files (gitignored)
+```
+
+## Features
+- **Multimodal Analysis**: Audio (energy, transcript) + Vision (timeline, frames)
+- **AI Coach**: LLM-powered feedback & recommendations
+- **Real-time Dashboard**: Progress tracking
+- **User Auth**: JWT, profiles
+- **Async Processing**: Celery workers
+
+## Local Development
+```
+Backend: http://localhost:8000/docs (Swagger)
+Frontend: http://localhost:3000
+```
+
+## Deployment
+- Backend: Docker + Railway/Render
+- Frontend: Vercel/Netlify
+
+Enjoy coaching! 🎤✨

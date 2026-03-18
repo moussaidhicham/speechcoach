@@ -1,14 +1,4 @@
-# === Python ===
-__pycache__/
-*.py[cod]
-*.pyo
-*.egg-info/
-dist/
-build/
-*.egg
-.venv/
-venv/
-env/
+# === Python ===\n__pycache__/\n*.py[cod]\n*.pyo\n*.egg-info/\ndist/\nbuild/\n*.egg\n.venv/\nvenv/\nenv/\n\n# === Node.js ===\nnode_modules/\n.next/\n.out/\n\n# === Storage ===\nbackend/app/storage/\nbackend/storage/
 
 # === Outputs (generated data, videos, frames, audio) ===
 outputs/
