@@ -13,29 +13,114 @@ export interface SessionHistory {
   video_url?: string;
 }
 
-export interface AnalysisResult {
+export interface ReportSession {
   id: string;
-  session_id: string;
-  // Metrics
-  wpm: number;
-  filler_words_count: number;
-  articulation_score: number;
-  eye_contact_ratio: number;
-  hand_gestures_count: number;
-  posture_score: number;
-  
-  // Scores
-  overall_score: number;
-  voice_score: number;
-  scene_score: number;
-  body_language_score: number;
-  
-  // AI Feedback
-  coaching_advice: string;
-  recommendations: string[]; // JSON string in backend, parsed in frontend
-  
+  title: string;
   created_at: string;
-  video_url?: string;
+  video_url?: string | null;
+  duration_seconds: number;
+  language: string;
+  fps: number;
+  resolution: [number, number];
+}
+
+export interface ReportSummary {
+  overall_score: number;
+  headline: string;
+  narrative: string;
+  priority_focus: string;
+  encouragement?: string | null;
+}
+
+export interface ReportScores {
+  overall: number;
+  voice: number;
+  body_language: number;
+  scene: number;
+  presence: number;
+  eye_contact: number;
+}
+
+export interface ReportMetrics {
+  wpm: number;
+  pause_count: number;
+  filler_count: number;
+  pause_duration_total: number;
+  face_presence_ratio: number;
+  eye_contact_ratio: number;
+  hands_visibility_ratio: number;
+  hands_activity_score: number;
+  brightness: number;
+  blur: number;
+}
+
+export interface ReportRecommendation {
+  category: string;
+  severity: string;
+  message: string;
+  tip: string;
+}
+
+export interface ReportTrainingDay {
+  title: string;
+  items: string[];
+}
+
+export interface ReportTrainingPlan {
+  focus_primary: string;
+  focus_secondary: string;
+  days: ReportTrainingDay[];
+}
+
+export interface ReportTranscriptSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+export interface ReportResult {
+  session: ReportSession;
+  summary: ReportSummary;
+  scores: ReportScores;
+  metrics: ReportMetrics;
+  strengths: string[];
+  weaknesses: string[];
+  recommendations: ReportRecommendation[];
+  training_plan: ReportTrainingPlan;
+  training_plan_markdown: string;
+  transcript: ReportTranscriptSegment[];
+}
+
+export interface DashboardProgressPoint {
+  created_at: string;
+  score: number;
+  wpm: number;
+}
+
+export interface DashboardCoachingSnapshot {
+  session_id: string;
+  title: string;
+  created_at: string;
+  overall_score: number;
+  priority_focus: string;
+  narrative: string;
+  encouragement?: string | null;
+  primary_focus: string;
+  first_strength?: string | null;
+  next_practice_title?: string | null;
+  next_practice_step?: string | null;
+  recommendations: ReportRecommendation[];
+}
+
+export interface DashboardSummary {
+  total_sessions: number;
+  completed_sessions: number;
+  average_score: number;
+  best_score: number;
+  total_practice_minutes: number;
+  recent_sessions: SessionHistory[];
+  progress_chart: DashboardProgressPoint[];
+  latest_coaching: DashboardCoachingSnapshot | null;
 }
 
 export interface VideoMetadata {

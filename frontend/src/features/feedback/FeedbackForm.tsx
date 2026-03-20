@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Send, RefreshCw, Trash2, Edit3 } from 'lucide-react';
+import { Edit3, RefreshCw, Send, Trash2 } from 'lucide-react';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,82 +13,86 @@ import api from '@/lib/api';
 interface FeedbackFormProps {
   onSubmitted?: () => void;
   existingFeedback?: {
-    id: string;
-    rating: number;
+    id:       string;
+    rating:   number;
     comments: string | null;
   } | null;
 }
 
+const ratingLabel: Record<number, string> = {
+  1: 'Très déçu',
+  2: 'Déçu',
+  3: 'Moyen',
+  4: 'Bien',
+  5: 'Excellent',
+};
+
 export function FeedbackForm({ onSubmitted, existingFeedback }: FeedbackFormProps) {
-  const [rating, setRating] = useState(existingFeedback?.rating || 0);
-  const [comments, setComments] = useState(existingFeedback?.comments || '');
+  const [rating,      setRating]      = useState(existingFeedback?.rating   || 0);
+  const [comments,    setComments]    = useState(existingFeedback?.comments  || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [isDeleting,  setIsDeleting]  = useState(false);
+  const [submitted,   setSubmitted]   = useState(false);
+
+  useEffect(() => {
+    setRating(existingFeedback?.rating   || 0);
+    setComments(existingFeedback?.comments || '');
+    setSubmitted(false);
+  }, [existingFeedback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) {
-      toast.error("Veuillez sélectionner une note.");
-      return;
-    }
-
+    if (rating === 0) { toast.error('Veuillez sélectionner une note.'); return; }
     setIsSubmitting(true);
     try {
       if (existingFeedback) {
         await api.patch(`/feedback/platform/${existingFeedback.id}`, {
-          rating,
-          comments: comments.trim() || null,
+          rating, comments: comments.trim() || null,
         });
-        toast.success("Votre avis a été mis à jour !");
+        toast.success('Votre avis a été mis à jour.');
       } else {
         await api.post('/feedback/platform', {
-          rating,
-          comments: comments.trim() || null,
+          rating, comments: comments.trim() || null,
         });
-        toast.success("Merci pour votre retour !");
+        toast.success('Merci pour votre retour.');
       }
       setSubmitted(true);
-      if (onSubmitted) onSubmitted();
+      onSubmitted?.();
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de l'enregistrement du feedback.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    } finally { setIsSubmitting(false); }
   };
 
   const handleDelete = async () => {
     if (!existingFeedback) return;
-    if (!confirm("Êtes-vous sûr de vouloir supprimer votre avis ?")) return;
-
+    if (!confirm('Êtes-vous sûr de vouloir supprimer votre avis ?')) return;
     setIsDeleting(true);
     try {
       await api.delete(`/feedback/platform/${existingFeedback.id}`);
-      toast.success("Votre avis a été supprimé.");
-      setRating(0);
-      setComments('');
-      setSubmitted(false);
-      if (onSubmitted) onSubmitted();
+      toast.success('Votre avis a été supprimé.');
+      setRating(0); setComments(''); setSubmitted(false);
+      onSubmitted?.();
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la suppression.");
-    } finally {
-      setIsDeleting(false);
-    }
+      toast.error('Erreur lors de la suppression.');
+    } finally { setIsDeleting(false); }
   };
 
+  /* ── Success state ────────────────────────────────────────────── */
   if (submitted && !existingFeedback) {
     return (
-      <Card className="border-none shadow-lg bg-primary/5">
-        <CardContent className="pt-8 pb-8 flex flex-col items-center text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-            <Send className="w-8 h-8 text-primary" />
+      <Card>
+        <CardContent className="flex flex-col items-center gap-5 py-14 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Send className="h-6 w-6" />
           </div>
-          <CardTitle>Merci !</CardTitle>
-          <CardDescription className="max-w-[280px]">
-            Votre avis a bien été enregistré. Il nous aide à améliorer SpeechCoach chaque jour.
-          </CardDescription>
+          <div>
+            <CardTitle className="font-display text-xl font-medium">Merci !</CardTitle>
+            <CardDescription className="mt-2 max-w-xs text-sm leading-relaxed">
+              Votre avis a bien été enregistré. Il nous aide à améliorer SpeechCoach chaque jour.
+            </CardDescription>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setSubmitted(false)}>
             Envoyer un autre avis
           </Button>
@@ -96,73 +101,95 @@ export function FeedbackForm({ onSubmitted, existingFeedback }: FeedbackFormProp
     );
   }
 
+  /* ── Form ─────────────────────────────────────────────────────── */
   return (
-    <Card className="border-none shadow-lg">
+    <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <CardTitle>{existingFeedback ? "Modifier mon avis" : "Votre Avis Compte"}</CardTitle>
-            <CardDescription>
-              {existingFeedback 
-                ? "Vous pouvez mettre à jour votre note et vos commentaires ci-dessous."
-                : "Comment trouvez-vous votre expérience sur SpeechCoach ? Partagez vos idées d'amélioration."
-              }
+            <CardTitle>
+              {existingFeedback ? 'Modifier mon avis' : 'Votre avis compte'}
+            </CardTitle>
+            <CardDescription className="mt-1.5 leading-relaxed">
+              {existingFeedback
+                ? 'Vous pouvez mettre à jour votre note et vos commentaires ci-dessous.'
+                : "Comment trouvez-vous votre expérience sur SpeechCoach ? Partagez vos idées d'amélioration."}
             </CardDescription>
           </div>
           {existingFeedback && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleDelete} 
+            <button
+              type="button"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+              onClick={handleDelete}
               disabled={isDeleting}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              aria-label="Supprimer mon avis"
             >
-              {isDeleting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-            </Button>
+              {isDeleting
+                ? <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                : <Trash2    className="h-3.5 w-3.5" />
+              }
+            </button>
           )}
         </div>
       </CardHeader>
-      <CardContent>
+
+      <CardContent className="px-7 pb-7">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col items-center space-y-3 pb-4 border-b">
-            <Label className="text-base">Note globale</Label>
-            <RatingStars rating={rating} onRatingChange={setRating} />
-            <span className="text-sm font-medium text-muted-foreground">
-              {rating === 1 && "Très déçu 😞"}
-              {rating === 2 && "Déçu 🙁"}
-              {rating === 3 && "Moyen 😐"}
-              {rating === 4 && "Bien 🙂"}
-              {rating === 5 && "Excellent ! 🤩"}
+
+          {/* Rating block */}
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-secondary/30 py-6">
+            <Label className="text-sm text-muted-foreground">Note globale</Label>
+            <RatingStars rating={rating} onRatingChange={setRating} size="lg" />
+            <span className="h-5 text-sm font-medium text-foreground">
+              {ratingLabel[rating] ?? ''}
             </span>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="comments">Commentaires (Optionnel)</Label>
+          {/* Comments */}
+          <div className="space-y-1.5">
+            <Label htmlFor="feedback-comments">Commentaires (optionnel)</Label>
             <textarea
-              id="comments"
+              id="feedback-comments"
               value={comments}
               onChange={(e) => setComments(e.target.value)}
               placeholder="Qu'est-ce qu'on peut améliorer ? Qu'est-ce que vous aimez le plus ?"
-              className="w-full min-h-[100px] p-3 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all text-sm resize-none"
+              rows={4}
+              className={[
+                'w-full resize-none rounded-xl border border-border/70 bg-background px-3.5 py-3 text-sm',
+                'text-foreground placeholder:text-muted-foreground/60',
+                'transition-colors outline-none',
+                'hover:border-border',
+                'focus:border-ring focus:ring-2 focus:ring-ring/25',
+              ].join(' ')}
             />
           </div>
 
+          {/* Actions */}
           <div className="flex gap-3">
-            <Button type="submit" className="flex-1" disabled={isSubmitting || rating === 0}>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={isSubmitting || rating === 0}
+            >
               {isSubmitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                  Enregistrement...
+                  <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Enregistrement…
                 </>
               ) : (
                 <>
-                  {existingFeedback ? <Edit3 className="w-4 h-4 mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                  {existingFeedback ? "Mettre à jour" : "Envoyer mon avis"}
+                  {existingFeedback
+                    ? <Edit3 className="mr-2 h-3.5 w-3.5" />
+                    : <Send  className="mr-2 h-3.5 w-3.5" />
+                  }
+                  {existingFeedback ? 'Mettre à jour' : 'Envoyer mon avis'}
                 </>
               )}
             </Button>
             {existingFeedback && submitted && (
-               <Button variant="outline" onClick={() => setSubmitted(false)}>Retour</Button>
+              <Button variant="outline" onClick={() => setSubmitted(false)}>
+                Retour
+              </Button>
             )}
           </div>
         </form>

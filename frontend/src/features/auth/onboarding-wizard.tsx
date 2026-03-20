@@ -1,200 +1,325 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, RefreshCw, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import { authService } from '@/services/auth.service';
 import { UserProfile } from '@/types/auth';
 
-export function OnboardingWizard({ onComplete }: { onComplete: (profile: UserProfile) => void }) {
-  const [step, setStep] = React.useState(1);
-  const [data, setData] = React.useState({
-    full_name: '',
-    preferred_language: 'fr',
-    experience_level: 'Beginner',
-    current_goal: 'General',
-  });
-  const [isSaving, setIsSaving] = React.useState(false);
+/* ─── Types ──────────────────────────────────────────────────────────── */
 
-  const handleNext = () => setStep(s => s + 1);
-  const handleBack = () => setStep(s => s - 1);
+interface OnboardingWizardProps {
+  onComplete: (profile: UserProfile) => void;
+}
+
+interface OnboardingFormState {
+  full_name:          string;
+  preferred_language: string;
+  experience_level:   string;
+  current_goal:       string;
+}
+
+/* ─── Data ───────────────────────────────────────────────────────────── */
+
+const steps = [
+  {
+    title:       'Commençons par votre profil',
+    description: 'Quelques informations suffisent pour personnaliser les analyses et les recommandations.',
+  },
+  {
+    title:       'Cadre de travail',
+    description: 'Choisissez la langue et le contexte principal de vos prises de parole.',
+  },
+  {
+    title:       'Vous êtes prêt',
+    description: 'Le tableau de bord pourra maintenant proposer des conseils plus utiles dès la première session.',
+  },
+] as const;
+
+const languageLabel: Record<string, string> = {
+  fr: 'Français', en: 'English', ar: 'Arabe',
+};
+
+/* ─── Wizard ─────────────────────────────────────────────────────────── */
+
+export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
+  const [step,      setStep]      = React.useState(0);
+  const [isSaving,  setIsSaving]  = React.useState(false);
+  const [formState, setFormState] = React.useState<OnboardingFormState>({
+    full_name:          '',
+    preferred_language: 'fr',
+    experience_level:   'Beginner',
+    current_goal:       'General',
+  });
+
+  const updateField = <K extends keyof OnboardingFormState>(
+    key: K, value: OnboardingFormState[K]
+  ) => setFormState((s) => ({ ...s, [key]: value }));
+
+  const canContinue = step === 0 ? formState.full_name.trim().length > 1 : true;
+
+  const handleNext = () => {
+    if (!canContinue) { toast.error('Ajoutez votre nom pour continuer.'); return; }
+    setStep((s) => Math.min(s + 1, steps.length - 1));
+  };
+
+  const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async () => {
-    if (!data.full_name) {
-      toast.error("Veuillez entrer votre nom.");
+    if (!formState.full_name.trim()) {
+      toast.error('Ajoutez votre nom pour terminer la configuration.');
       return;
     }
     setIsSaving(true);
     try {
-      const updatedProfile = await authService.updateProfile(data);
-      onComplete(updatedProfile);
+      const profile = await authService.updateProfile(formState);
+      onComplete(profile);
     } catch (err) {
-      console.error(err);
-      toast.error("Erreur lors de la sauvegarde.");
-    } finally {
-      setIsSaving(false);
-    }
+      console.error('Failed to save onboarding profile:', err);
+      toast.error("Impossible d'enregistrer votre profil pour le moment.");
+    } finally { setIsSaving(false); }
   };
 
+  const progressPct = ((step + 1) / steps.length) * 100;
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 p-4 backdrop-blur-sm"
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        className="bg-card w-full max-w-lg rounded-3xl shadow-2xl border overflow-hidden relative"
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1,    y: 0  }}
+        exit={{    opacity: 0, scale: 0.98,  y: 10 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-2xl"
       >
-        <div className="absolute top-0 left-0 w-full h-1 bg-muted">
-           <motion.div 
-             className="h-full bg-primary" 
-             initial={{ width: "0%" }}
-             animate={{ width: `${(step / 3) * 100}%` }}
-           />
-        </div>
+        <Card className="overflow-hidden">
+          {/* Progress track */}
+          <div className="h-1 w-full bg-border/40">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
 
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <div className="flex items-center gap-2">
-              <div className="bg-primary/10 p-2 rounded-xl">
-                 <Sparkles className="w-5 h-5 text-primary" />
+          <CardContent className="grid gap-7 p-6 sm:p-8 lg:grid-cols-[0.9fr_1.1fr]">
+
+            {/* Left: sidebar */}
+            <div className="rounded-2xl border border-border/60 bg-card p-6">
+              <div className="mb-7 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                    Configuration initiale
+                  </div>
+                  <div className="text-sm font-medium text-foreground">
+                    Étape {step + 1} sur {steps.length}
+                  </div>
+                </div>
               </div>
-              <h2 className="text-xl font-bold">Configuration</h2>
+
+              <h2 className="font-display text-2xl font-medium leading-snug">
+                {steps[step].title}
+              </h2>
+              <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                {steps[step].description}
+              </p>
+
+              {/* Step list */}
+              <div className="mt-7 space-y-2">
+                {steps.map((s, i) => (
+                  <div
+                    key={s.title}
+                    className={[
+                      'flex items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors',
+                      i === step
+                        ? 'border-primary/25 bg-primary/8 text-foreground font-medium'
+                        : i < step
+                          ? 'border-border/60 bg-secondary/50 text-muted-foreground'
+                          : 'border-border/50 bg-background/60 text-muted-foreground',
+                    ].join(' ')}
+                  >
+                    {i < step ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground/60">0{i + 1}</span>
+                    )}
+                    {s.title}
+                  </div>
+                ))}
+              </div>
             </div>
-            <span className="text-xs font-mono text-muted-foreground">Étape {step}/3</span>
-          </div>
 
-          <AnimatePresence mode="wait">
-            {step === 1 && (
-              <motion.div 
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Comment vous appelez-vous ?</h3>
-                  <p className="text-sm text-muted-foreground mb-6">Pour que votre coach puisse s'adresser à vous personnellement.</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="wiz-name">Votre Nom Complet</Label>
-                    <Input 
-                      id="wiz-name"
-                      autoFocus
-                      placeholder="Ex: Hicham Moussaid" 
-                      value={data.full_name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setData({...data, full_name: e.target.value})}
-                      className="text-lg py-6 rounded-xl"
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            )}
+            {/* Right: step content */}
+            <div className="flex flex-col">
+              <div className="flex-1">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={step}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0  }}
+                    exit={{    opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                    className="space-y-5"
+                  >
+                    {/* Step 0: name + level */}
+                    {step === 0 && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="wizard-name">Nom complet</Label>
+                          <Input
+                            id="wizard-name"
+                            autoFocus
+                            value={formState.full_name}
+                            onChange={(e) => updateField('full_name', e.target.value)}
+                            placeholder="Ex : Sara El Idrissi"
+                          />
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Ce nom sera utilisé dans votre tableau de bord et dans vos rapports.
+                          </p>
+                        </div>
 
-            {step === 2 && (
-              <motion.div 
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div>
-                  <h3 className="text-2xl font-bold mb-2">Langue & Objectif</h3>
-                  <p className="text-sm text-muted-foreground mb-6">Optimisons l'analyse pour vos besoins spécifiques.</p>
-                  
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Langue de prédilection</Label>
-                      <Select 
-                        value={data.preferred_language} 
-                        onValueChange={v => setData({...data, preferred_language: v})}
-                      >
-                        <SelectTrigger className="w-full py-6 rounded-xl">
-                          <SelectValue placeholder="Choisir" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fr">Français</SelectItem>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="ar">العربية</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="wizard-experience">Niveau actuel</Label>
+                          <Select
+                            value={formState.experience_level}
+                            onValueChange={(v) => updateField('experience_level', v)}
+                          >
+                            <SelectTrigger id="wizard-experience">
+                              <SelectValue placeholder="Choisir un niveau" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Beginner">Débutant</SelectItem>
+                              <SelectItem value="Intermediate">Intermédiaire</SelectItem>
+                              <SelectItem value="Advanced">Avancé</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
 
-                    <div className="space-y-2">
-                      <Label>Votre objectif principal</Label>
-                      <Select 
-                        value={data.current_goal} 
-                        onValueChange={v => setData({...data, current_goal: v})}
-                      >
-                        <SelectTrigger className="w-full py-6 rounded-xl">
-                          <SelectValue placeholder="Choisir" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Interview">Entretien d'embauche</SelectItem>
-                          <SelectItem value="PFE">Soutenance PFE</SelectItem>
-                          <SelectItem value="Pitch">Pitch startup</SelectItem>
-                          <SelectItem value="General">Amélioration générale</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
+                    {/* Step 1: language + goal */}
+                    {step === 1 && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="wizard-language">Langue principale</Label>
+                          <Select
+                            value={formState.preferred_language}
+                            onValueChange={(v) => updateField('preferred_language', v)}
+                          >
+                            <SelectTrigger id="wizard-language">
+                              <SelectValue placeholder="Choisir une langue" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="fr">Français</SelectItem>
+                              <SelectItem value="en">English</SelectItem>
+                              <SelectItem value="ar">Arabe</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-            {step === 3 && (
-              <motion.div 
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
-              >
-                <div className="text-center py-4">
-                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle2 className="w-10 h-10 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2">Prêt à briller ?</h3>
-                  <p className="text-sm text-muted-foreground px-8">
-                    Votre profil est configuré. Vous pouvez maintenant commencer vos analyses personnalisées.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="wizard-goal">Objectif principal</Label>
+                          <Select
+                            value={formState.current_goal}
+                            onValueChange={(v) => updateField('current_goal', v)}
+                          >
+                            <SelectTrigger id="wizard-goal">
+                              <SelectValue placeholder="Choisir un objectif" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Interview">Entretien</SelectItem>
+                              <SelectItem value="PFE">Soutenance PFE</SelectItem>
+                              <SelectItem value="Pitch">Pitch</SelectItem>
+                              <SelectItem value="General">Progression générale</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
 
-          <div className="flex gap-3 mt-10">
-            {step > 1 && (
-              <Button variant="outline" className="flex-1 py-6 rounded-xl" onClick={handleBack}>
-                Retour
-              </Button>
-            )}
-            <Button 
-              className="flex-[2] py-6 rounded-xl font-bold text-lg shadow-lg shadow-primary/20" 
-              onClick={step === 3 ? handleSubmit : handleNext}
-              disabled={isSaving}
-            >
-              {isSaving ? <RefreshCw className="w-5 h-5 animate-spin" /> : (
-                step === 3 ? "C'est parti !" : "Continuer"
-              )}
-            </Button>
-          </div>
-        </div>
+                    {/* Step 2: confirmation */}
+                    {step === 2 && (
+                      <>
+                        <div className="rounded-2xl border border-border/60 bg-card p-6">
+                          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <CheckCircle2 className="h-5 w-5" />
+                          </div>
+                          <h3 className="font-display text-xl font-medium">
+                            Votre espace est configuré.
+                          </h3>
+                          <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                            Ces informations permettront d'ajuster les écrans, les conseils
+                            et vos prochaines analyses.
+                          </p>
+                        </div>
+
+                        <div className="grid gap-2.5 sm:grid-cols-2">
+                          {[
+                            ['Nom',      formState.full_name],
+                            ['Langue',   languageLabel[formState.preferred_language] || formState.preferred_language],
+                            ['Niveau',   formState.experience_level],
+                            ['Objectif', formState.current_goal],
+                          ].map(([label, value]) => (
+                            <div key={label} className="rounded-xl border border-border/60 bg-secondary/40 px-4 py-3.5">
+                              <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                                {label}
+                              </div>
+                              <div className="mt-1.5 text-sm font-medium text-foreground">{value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation */}
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                {step > 0 && (
+                  <Button variant="outline" className="sm:flex-1" onClick={handleBack}>
+                    Retour
+                  </Button>
+                )}
+                <Button
+                  className="sm:flex-1"
+                  onClick={step === steps.length - 1 ? handleSubmit : handleNext}
+                  disabled={isSaving || !canContinue}
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      Enregistrement…
+                    </>
+                  ) : step === steps.length - 1 ? (
+                    'Ouvrir mon dashboard'
+                  ) : (
+                    'Continuer'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
     </motion.div>
   );

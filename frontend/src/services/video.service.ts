@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import { SessionHistory, SessionStatus, AnalysisResult } from '@/types/analytics';
+import { DashboardSummary, ReportResult, SessionHistory, SessionStatus } from '@/types/analytics';
 
 export const videoService = {
   async uploadVideo(file: File, onProgress?: (percent: number) => void): Promise<{ session_id: string }> {
@@ -28,8 +28,34 @@ export const videoService = {
     return data;
   },
 
-  async getResult(sessionId: string): Promise<AnalysisResult> {
-    const { data } = await api.get<AnalysisResult>(`/tracker/result/${sessionId}`);
+  async getDashboardSummary(): Promise<DashboardSummary> {
+    const { data } = await api.get<DashboardSummary>('/tracker/dashboard-summary');
+    return data;
+  },
+
+  async getResult(sessionId: string): Promise<ReportResult> {
+    const { data } = await api.get<ReportResult>(`/tracker/result/${sessionId}`);
+    return data;
+  },
+
+  async getMarkdownExport(sessionId: string): Promise<Blob> {
+    const { data } = await api.get<Blob>(`/tracker/report/${sessionId}/markdown`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async getPdfExport(sessionId: string): Promise<Blob> {
+    const { data } = await api.get<Blob>(`/tracker/report/${sessionId}/pdf`, {
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async getPrintExport(sessionId: string): Promise<string> {
+    const { data } = await api.get<string>(`/tracker/report/${sessionId}/print`, {
+      responseType: 'text',
+    });
     return data;
   },
 

@@ -9,12 +9,12 @@ export interface User {
 export interface UserProfile {
   id: string;
   user_id: string;
-  full_name?: string;
+  full_name?: string | null;
   preferred_language: string;
-  experience_level?: string;
-  current_goal?: string;
-  weak_points?: string;
-  avatar_url?: string;
+  experience_level?: string | null;
+  current_goal?: string | null;
+  weak_points?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface AuthResponse {

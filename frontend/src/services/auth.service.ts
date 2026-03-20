@@ -1,6 +1,17 @@
 import api from '@/lib/api';
 import { AuthResponse, User, UserProfile } from '@/types/auth';
 
+interface RegisterPayload {
+  email: string;
+  password: string;
+}
+
+function notifyAuthChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('speechcoach-auth-change'));
+  }
+}
+
 export const authService = {
   async login(params: URLSearchParams): Promise<AuthResponse> {
     const { data } = await api.post<AuthResponse>('/auth/jwt/login', params, {
@@ -9,13 +20,30 @@ export const authService = {
     return data;
   },
 
-  async register(userData: any): Promise<void> {
+  async register(userData: RegisterPayload): Promise<void> {
     await api.post('/auth/register', userData);
   },
 
   async getCurrentUser(): Promise<User> {
-    const { data } = await api.get<User>('/authenticated-route');
-    return data;
+    try {
+      const { data } = await api.get<User>('/auth/me');
+      return data;
+    } catch (error: unknown) {
+      const status =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { status?: number } }).response?.status === 'number'
+          ? (error as { response?: { status?: number } }).response?.status
+          : null;
+
+      if (status === 404) {
+        const { data } = await api.get<User>('/auth/users/me');
+        return data;
+      }
+
+      throw error;
+    }
   },
 
   async getProfile(): Promise<UserProfile> {
@@ -31,6 +59,7 @@ export const authService = {
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    notifyAuthChanged();
     window.location.href = '/login';
   },
 };

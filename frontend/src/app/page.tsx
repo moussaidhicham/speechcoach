@@ -1,349 +1,590 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { 
-  Mic, Video, BarChart3, ArrowRight, CheckCircle2, 
-  Play, LayoutDashboard, LogOut, Sparkles, Zap, Target
+import {
+  ArrowRight,
+  BarChart3,
+  Camera,
+  CheckCircle2,
+  ClipboardList,
+  LayoutDashboard,
+  LineChart,
+  LogOut,
+  Mic,
+  ShieldCheck,
+  Sparkles,
+  Video,
 } from 'lucide-react';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/auth-context';
+import { cn } from '@/lib/utils';
+
+/* ─── Data ──────────────────────────────────────────────────────────── */
+
+const capabilities = [
+  {
+    title: 'Analyse vocale',
+    description:
+      "Mesurez le rythme, les pauses, la fluidité et la régularité de votre voix avec un feedback facile à exploiter.",
+    icon: Mic,
+    points: ['Débit vocal interprétable', 'Pauses et fillers visibles', 'Lecture claire des priorités'],
+  },
+  {
+    title: 'Analyse visuelle',
+    description:
+      "Suivez le regard, la présence dans le cadre, la posture et la qualité de votre environnement.",
+    icon: Camera,
+    points: ['Contact visuel', 'Présence visage', 'Qualité du cadrage'],
+  },
+  {
+    title: 'Coaching structuré',
+    description:
+      "Chaque session se termine par un rapport partageable avec forces, points à corriger et plan de pratique.",
+    icon: ClipboardList,
+    points: ['Résumé exécutif', 'Recommandations prioritaires', "Plan d'entraînement"],
+  },
+];
+
+const workflow = [
+  {
+    title: 'Enregistrer ou importer',
+    description:
+      'Le studio vous guide avant la capture pour éviter les vidéos mal cadrées ou difficilement exploitables.',
+  },
+  {
+    title: 'Lancer le traitement',
+    description:
+      "Le système analyse la voix, le regard, la présence et les signaux de scène dans un pipeline unique.",
+  },
+  {
+    title: 'Lire puis partager',
+    description:
+      "Le rapport met en avant le score, les preuves utiles et un plan de progression au format web, PDF ou Markdown.",
+  },
+];
+
+const audiences = [
+  'Soutenances et présentations académiques',
+  'Entretiens et oral de concours',
+  'Pitch deck, demo day et présentations produit',
+];
+
+/* ─── Fade-up animation preset ──────────────────────────────────────── */
+
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+const fadeUpInView = (delay = 0) => ({
+  initial: { opacity: 0, y: 16 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true, amount: 0.3 },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1], delay },
+});
+
+/* ─── Product preview ───────────────────────────────────────────────── */
+
+function ProductPreview() {
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      {/* Studio card */}
+      <Card className="overflow-hidden border-border/60">
+        <CardHeader className="border-b border-border/60 bg-background/60 px-7 py-6">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
+                Studio guidé
+              </Badge>
+              <CardTitle className="font-display text-2xl font-medium leading-snug">
+                Une capture pensée pour réussir <em>du premier coup</em>
+              </CardTitle>
+              <CardDescription className="mt-3 max-w-sm text-sm leading-relaxed">
+                Statut clair, préparation rapide et prochaine action toujours visible.
+              </CardDescription>
+            </div>
+            <div className="hidden shrink-0 rounded-2xl border border-primary/15 bg-primary/8 p-3.5 text-primary lg:block">
+              <Video className="h-6 w-6" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-4 p-7 sm:grid-cols-2">
+          {/* Pre-check panel */}
+          <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                Avant la prise
+              </span>
+              <Badge variant="outline" className="text-xs">3 checks</Badge>
+            </div>
+            <div className="space-y-2.5">
+              {['Caméra active', 'Micro détecté', 'Cadrage stable'].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 rounded-xl bg-secondary/60 px-4 py-3 text-sm"
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Live panel */}
+          <div className="rounded-2xl border border-border/60 bg-card p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                Pendant l'analyse
+              </span>
+              <span className="rounded-full bg-accent px-3 py-1 text-[11px] font-medium text-accent-foreground">
+                En cours
+              </span>
+            </div>
+            <div className="studio-stage rounded-xl p-4">
+              <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-white/50">
+                <span>Recording</span>
+                <span>REC 02:14</span>
+              </div>
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+                {[['Audio', 'Niveau stable'], ['Présence', 'Cadre valide']].map(([k, v]) => (
+                  <div key={k} className="rounded-lg bg-white/10 p-3 backdrop-blur">
+                    <div className="text-[10px] uppercase tracking-widest text-white/50">{k}</div>
+                    <div className="mt-1.5 text-base font-medium text-white">{v}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Report card */}
+      <Card className="overflow-hidden border-border/60">
+        <CardHeader className="border-b border-border/60 bg-background/60 px-7 py-6">
+          <Badge variant="secondary" className="mb-4 w-fit bg-accent text-accent-foreground">
+            Rapport professionnel
+          </Badge>
+          <CardTitle className="font-display text-2xl font-medium leading-snug">
+            Un rendu clair pour relire, partager et <em>progresser</em>
+          </CardTitle>
+          <CardDescription className="mt-3 text-sm leading-relaxed">
+            Score, preuves utiles et actions à appliquer dès la prochaine répétition.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 p-7">
+          {/* Score block */}
+          <div className="data-ribbon rounded-2xl p-6">
+            <div className="text-[11px] font-medium uppercase tracking-widest text-primary-foreground/60">
+              Score global
+            </div>
+            <div className="mt-3 flex items-end justify-between gap-4">
+              <div>
+                <div className="font-display text-6xl font-medium leading-none text-primary-foreground">
+                  84
+                </div>
+                <p className="mt-2.5 max-w-[14rem] text-sm leading-relaxed text-primary-foreground/75">
+                  Présentation convaincante — axe prioritaire sur le regard.
+                </p>
+              </div>
+              <LineChart className="h-9 w-9 shrink-0 text-primary-foreground/60" />
+            </div>
+          </div>
+          {/* Feedback rows */}
+          <div className="space-y-2.5">
+            {[
+              ['Force', 'Structure orale claire et rythme stable.'],
+              ['À corriger', 'Regarder la caméra dans les transitions.'],
+              ['Prochaine action', '2 répétitions de 90 secondes sans notes.'],
+            ].map(([label, value]) => (
+              <div key={label} className="rounded-xl border border-border/60 bg-background/70 px-4 py-4">
+                <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  {label}
+                </div>
+                <div className="mt-1.5 text-sm leading-relaxed text-foreground">{value}</div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ─── Page ──────────────────────────────────────────────────────────── */
 
 export default function LandingPage() {
-  const { user, logout, token } = useAuth();
-  const [mounted, setMounted] = useState(false);
-
-  // Use mounted state to handle hydration-sensitive logic
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // For parts that depend on auth/token, we use the mounted check 
-  // to ensure server-client consistency on the first pass
-  const isAuthenticated = mounted && !!token;
+  const { token, user, logout } = useAuth();
+  const isAuthenticated = Boolean(token);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background" suppressHydrationWarning>
-      {/* Navigation */}
-      <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b" suppressHydrationWarning>
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between" suppressHydrationWarning>
-          <div className="flex items-center gap-2">
-            <div className="bg-primary p-1.5 rounded-lg shadow-lg shadow-primary/20">
-              <Mic className="w-5 h-5 text-primary-foreground" />
+    <div className="min-h-screen bg-background text-foreground">
+
+      {/* ── Header ────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Mic className="h-4 w-4" />
             </div>
-            <span className="text-xl font-bold tracking-tight">SpeechCoach</span>
-          </div>
-          
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link href="#features" className="hover:text-primary transition-colors">Fonctionnalités</Link>
-            <Link href="#how-it-works" className="hover:text-primary transition-colors">Comment ça marche</Link>
-            {!isAuthenticated ? (
-              <Link href="/login" className="hover:text-primary transition-colors">Connexion</Link>
-            ) : (
-              <Link href="/dashboard" className="hover:text-primary transition-colors font-bold text-primary">Dashboard</Link>
+            <span className="font-display text-lg font-medium">SpeechCoach</span>
+          </Link>
+
+          <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
+            {[['#produit', 'Produit'], ['#process', 'Parcours'], ['/public-feedback', 'Avis']].map(
+              ([href, label]) => (
+                <Link key={label} href={href} className="transition-colors hover:text-foreground">
+                  {label}
+                </Link>
+              )
             )}
           </nav>
 
-          <div className="flex items-center gap-4">
-            {!isAuthenticated ? (
+          <div className="flex items-center gap-2.5">
+            {isAuthenticated ? (
               <>
-                <Link 
-                  href="/login" 
-                  className={cn(buttonVariants({ variant: "outline", size: "sm" }), "hidden sm:flex")}
+                <span className="hidden max-w-[160px] truncate text-sm text-muted-foreground lg:block">
+                  {user?.email}
+                </span>
+                <Link
+                  href="/dashboard"
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'hidden sm:inline-flex')}
+                >
+                  <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                  Dashboard
+                </Link>
+                <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Se déconnecter">
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden sm:inline-flex')}
                 >
                   Connexion
                 </Link>
-                <Link 
-                  href="/register" 
-                  className={buttonVariants({ size: "sm" })}
-                >
-                  S'inscrire
+                <Link href="/register" className={buttonVariants({ size: 'sm' })}>
+                  Créer un compte
                 </Link>
               </>
-            ) : (
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground hidden lg:inline-block max-w-[150px] truncate">{user?.email}</span>
-                <Link 
-                  href="/dashboard" 
-                  className={buttonVariants({ size: "sm" })}
-                >
-                  <LayoutDashboard className="w-4 h-4 mr-2" /> Mon Dashboard
-                </Link>
-                <Button variant="ghost" size="sm" onClick={logout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
-          <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] rounded-full bg-blue-400/10 blur-[100px]" />
-        </div>
+      <main>
 
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Badge variant="secondary" className="mb-6 py-1 px-4 text-xs tracking-wider uppercase font-semibold border-primary/20 bg-primary/5 text-primary">
-                <Zap className="w-3 h-3 mr-2" /> Propulsé par l'IA de pointe
+        {/* ── Hero ──────────────────────────────────────────────────────── */}
+        <section className="mx-auto grid w-full max-w-7xl items-center gap-16 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-28">
+
+          {/* Left: copy */}
+          <motion.div {...fadeUp(0)} className="max-w-xl">
+            <Badge variant="secondary" className="mb-7 gap-1.5 bg-primary/10 px-3.5 py-1.5 text-primary">
+              <Sparkles className="h-3 w-3" />
+              Studio de coaching oral
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
-              Maîtrisez votre <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-600">Expression Orale</span>
+
+            <h1 className="font-display text-5xl font-medium leading-[1.05] sm:text-6xl lg:text-[4.25rem]">
+              Transformez une prise de parole brute en{' '}
+              <em className="not-italic text-primary">lecture de performance</em> vraiment utile.
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-              Obtenez un retour pédagogique instantané sur votre posture, votre regard et votre débit vocal grâce à notre coach intelligent.
+
+            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+              SpeechCoach mélange studio de répétition, lecture analytique et rendu éditorial
+              pour que chaque session ressemble à un vrai travail de coaching.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link 
-                href={isAuthenticated ? "/dashboard" : "/register"} 
-                className={cn(buttonVariants({ size: "lg" }), "h-12 px-8 text-md font-semibold group shadow-lg shadow-primary/20")}
+
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link
+                href={isAuthenticated ? '/studio' : '/register'}
+                className={cn(buttonVariants({ size: 'lg' }), 'px-6')}
               >
-                {isAuthenticated ? "Retour au Dashboard" : "Commencer l'analyse"} <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {isAuthenticated ? 'Nouvelle analyse' : 'Commencer'}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-              <Link 
-                href="#how-it-works" 
-                className={cn(buttonVariants({ size: "lg", variant: "outline" }), "h-12 px-8 text-md font-semibold")}
+              <Link
+                href="#produit"
+                className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'px-6')}
               >
-                Comment ça marche ?
+                Voir le produit
               </Link>
             </div>
-            
-            <div className="mt-16 relative mx-auto max-w-5xl rounded-3xl border bg-card/50 backdrop-blur-sm p-4 shadow-2xl shadow-primary/10 group">
-                <div className="aspect-video rounded-2xl bg-muted overflow-hidden relative border shadow-inner flex items-center justify-center">
-                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1475721027187-402ad2989a3b?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-40 group-hover:scale-105 transition-transform duration-1000" />
-                    <div className="relative z-10 flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 rounded-full bg-primary shadow-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 cursor-pointer">
-                            <Play className="w-8 h-8 text-white fill-current translate-x-1" />
-                        </div>
-                        <p className="text-sm font-bold text-primary uppercase tracking-widest bg-white/80 backdrop-blur px-4 py-1 rounded-full">Voir la démo</p>
-                    </div>
+
+            <div className="mt-10 grid gap-3 sm:grid-cols-3">
+              {[
+                ['Vue éditoriale', 'Résumé, preuves, plan'],
+                ['Studio vivant', 'Capture, traitement, export'],
+                ['Fait pour partager', 'PDF, Markdown, historique'],
+              ].map(([title, sub]) => (
+                <div key={title} className="rounded-2xl border border-border/60 bg-card/70 px-4 py-4">
+                  <div className="text-sm font-medium">{title}</div>
+                  <div className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{sub}</div>
                 </div>
+              ))}
             </div>
           </motion.div>
-        </div>
-      </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-muted/30 relative">
-        <div className="container mx-auto px-4" suppressHydrationWarning>
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-              Analyse Multi-Dimensionnelle
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Notre moteur IA traite simultanément la vidéo et l'audio pour un diagnostic à 360°.
+          {/* Right: preview card */}
+          <motion.div {...fadeUp(0.1)} className="relative">
+            {/* Soft ambient glows */}
+            <div className="pointer-events-none absolute -left-12 -top-8 h-40 w-40 rounded-full bg-accent/40 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-8 -right-12 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+
+            <Card className="editorial-hero relative overflow-hidden rounded-3xl border-border/60">
+              <CardHeader className="border-b border-border/60 bg-background/50 px-7 py-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <Badge variant="secondary" className="mb-4 bg-accent text-accent-foreground">
+                      Editorial studio
+                    </Badge>
+                    <CardTitle className="font-display max-w-xs text-2xl font-medium leading-snug">
+                      Une salle de répétition, pas un dashboard générique.
+                    </CardTitle>
+                  </div>
+                  <ShieldCheck className="hidden h-7 w-7 shrink-0 text-primary sm:block" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-5 p-7">
+                <div className="studio-stage relative overflow-hidden rounded-2xl p-6">
+                  <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-widest text-white/45">
+                    <span>Session prête</span>
+                    <span>Lecture premium</span>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {[
+                      ['Vue studio', 'Capture guidée', "Preflight, permissions, retour d'état."],
+                      ['Vue rapport', 'Lecture rapide', 'Résumé exécutif, export Markdown & PDF.'],
+                    ].map(([label, title, desc]) => (
+                      <div key={label} className="rounded-xl bg-white/10 p-4 backdrop-blur">
+                        <div className="text-[10px] font-medium uppercase tracking-widest text-white/45">
+                          {label}
+                        </div>
+                        <div className="mt-2 text-lg font-medium text-white">{title}</div>
+                        <p className="mt-1.5 text-sm leading-relaxed text-white/65">{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[['84', 'Score global'], ['145', 'Mots / min'], ['3', 'Actions']].map(([value, label]) => (
+                    <div key={label} className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                      <div className="font-mono text-2xl font-medium text-foreground">{value}</div>
+                      <div className="mt-1.5 text-xs text-muted-foreground">{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </section>
+
+        {/* ── Product preview ────────────────────────────────────────────── */}
+        <section id="produit" className="border-y border-border/60 bg-card/20 py-24">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div {...fadeUpInView(0)} className="max-w-xl">
+              <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
+                Produit
+              </Badge>
+              <h2 className="font-display text-4xl font-medium leading-snug">
+                Un socle de design unique pour{' '}
+                <em className="not-italic text-primary">toute l'application.</em>
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                Les écrans partagent la même logique visuelle : lisibilité, hiérarchie claire,
+                actions visibles et feedback de progression.
+              </p>
+            </motion.div>
+
+            <div className="mt-14">
+              <ProductPreview />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Capabilities ───────────────────────────────────────────────── */}
+        <section className="py-24">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div {...fadeUpInView(0)} className="mb-14 max-w-xl">
+              <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
+                Fonctionnalités
+              </Badge>
+              <h2 className="font-display text-4xl font-medium leading-snug">
+                Trois axes d'analyse,{' '}
+                <em className="not-italic text-primary">un seul rapport.</em>
+              </h2>
+            </motion.div>
+
+            <div className="grid gap-5 lg:grid-cols-3">
+              {capabilities.map((item, i) => (
+                <motion.div key={item.title} {...fadeUpInView(i * 0.07)}>
+                  <Card className="h-full rounded-2xl border-border/60 bg-card/70">
+                    <CardHeader className="px-7 pt-7">
+                      <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <CardTitle className="font-display text-2xl font-medium">{item.title}</CardTitle>
+                      <CardDescription className="mt-2 text-sm leading-relaxed">
+                        {item.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-2.5 px-7 pb-7">
+                      {item.points.map((point) => (
+                        <div
+                          key={point}
+                          className="flex items-center gap-3 rounded-xl bg-secondary/50 px-4 py-3 text-sm"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                          {point}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Workflow ────────────────────────────────────────────────────── */}
+        <section id="process" className="border-y border-border/60 bg-card/20 py-24">
+          <div className="mx-auto grid w-full max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:px-8">
+
+            {/* Left */}
+            <motion.div {...fadeUpInView(0)}>
+              <Badge variant="secondary" className="mb-4 bg-accent text-accent-foreground">
+                Parcours
+              </Badge>
+              <h2 className="font-display text-4xl font-medium leading-snug">
+                Chaque étape prépare <em className="not-italic text-primary">la suivante.</em>
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+                Nous avons retiré les zones grises du produit : permissions, progression,
+                résultat et export sont toujours explicites.
+              </p>
+
+              <div className="mt-9 rounded-2xl border border-border/60 bg-card/70 p-6">
+                <div className="mb-4 text-sm font-medium">Conçu pour</div>
+                <div className="space-y-2.5">
+                  {audiences.map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-3 rounded-xl bg-secondary/50 px-4 py-3 text-sm"
+                    >
+                      <BarChart3 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Right: steps */}
+            <div className="space-y-4">
+              {workflow.map((step, i) => (
+                <motion.div key={step.title} {...fadeUpInView(i * 0.08)}>
+                  <Card className="rounded-2xl border-border/60 bg-card/70">
+                    <CardContent className="flex gap-5 p-6">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-mono text-base font-medium text-primary">
+                        0{i + 1}
+                      </div>
+                      <div>
+                        <div className="font-display text-xl font-medium">{step.title}</div>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                          {step.description}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA ─────────────────────────────────────────────────────────── */}
+        <section className="py-24">
+          <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+            <motion.div {...fadeUpInView(0)}>
+              <Card className="data-ribbon overflow-hidden rounded-3xl border-0">
+                <CardContent className="grid gap-10 p-10 lg:grid-cols-[1fr_auto] lg:p-14">
+                  <div>
+                    <Badge
+                      variant="secondary"
+                      className="mb-5 bg-white/15 text-primary-foreground hover:bg-white/20"
+                    >
+                      Prêt à tester
+                    </Badge>
+                    <h2 className="font-display max-w-xl text-4xl font-medium leading-snug text-primary-foreground lg:text-5xl">
+                      D'une vidéo brute à un plan de progression <em>exploitable.</em>
+                    </h2>
+                    <p className="mt-5 max-w-lg text-base leading-relaxed text-primary-foreground/75">
+                      Ouvrez le studio, chargez une vidéo ou enregistrez-vous, puis retrouvez
+                      un rapport clair avec score, preuves et prochaines actions.
+                    </p>
+                  </div>
+                  <div className="flex flex-col justify-center gap-3">
+                    <Link
+                      href={isAuthenticated ? '/studio' : '/register'}
+                      className={cn(
+                        buttonVariants({ size: 'lg' }),
+                        'bg-white px-7 text-primary hover:bg-white/90'
+                      )}
+                    >
+                      {isAuthenticated ? 'Aller au studio' : 'Créer un compte'}
+                    </Link>
+                    <Link
+                      href="/public-feedback"
+                      className={cn(
+                        buttonVariants({ variant: 'ghost', size: 'lg' }),
+                        'border border-white/20 px-7 text-primary-foreground hover:bg-white/10 hover:text-primary-foreground'
+                      )}
+                    >
+                      Lire les avis
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </section>
+      </main>
+
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer className="border-t border-border/60 bg-card/30">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-12 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+          <div>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Mic className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="font-display text-lg font-medium">SpeechCoach</div>
+                <div className="text-xs text-muted-foreground">Professional speech feedback</div>
+              </div>
+            </Link>
+            <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Une application de coaching oral qui privilégie la clarté, la cohérence
+              et des livrables partageables.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8" suppressHydrationWarning>
-            {[
-              {
-                title: "Analyse Vocale",
-                desc: "Mesure du débit (WPM), des pauses silencieuses, des hésitations et de l'énergie de projection.",
-                icon: <Mic className="w-6 h-6" />,
-                color: "bg-blue-500",
-                features: ["Rythme de parole", "Clarté sonore", "Mots de remplissage"]
-              },
-              {
-                title: "Intelligence Visuelle",
-                desc: "Analyse du contact visuel, de la symétrie de la posture et de l'amplitude des gestes.",
-                icon: <Video className="w-6 h-6" />,
-                color: "bg-purple-500",
-                features: ["Eye-tracking", "Posture de confiance", "Langage corporel"]
-              },
-              {
-                title: "Feedback Actionnable",
-                desc: "Conseils personnalisés générés par LLM pour corriger vos points faibles spécifiques.",
-                icon: <Target className="w-6 h-6" />,
-                color: "bg-amber-500",
-                features: ["Objectifs sur mesure", "Exercices recommandés", "Suivi de progression"]
-              }
-            ].map((feature, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-              >
-                <Card className="border-none shadow-xl hover:shadow-2xl transition-all duration-300 bg-card h-full group overflow-hidden">
-                  <div className={`h-1 w-full ${feature.color}`} />
-                  <CardContent className="pt-8 pb-8">
-                    <div className={`${feature.color} w-12 h-12 rounded-2xl flex items-center justify-center text-white mb-6 shadow-lg shadow-${feature.color.split('-')[1]}/20 group-hover:scale-110 transition-transform`}>
-                      {feature.icon}
-                    </div>
-                    <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-                      {feature.desc}
-                    </p>
-                    <ul className="space-y-2">
-                       {feature.features.map((f, j) => (
-                         <li key={j} className="flex items-center text-xs font-semibold text-foreground/70">
-                           <CheckCircle2 className="w-3 h-3 mr-2 text-primary" /> {f}
-                         </li>
-                       ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="py-24 bg-background overflow-hidden" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center gap-16">
-            <div className="flex-1 space-y-8">
-              <h2 className="text-4xl font-extrabold tracking-tight">Devenez un orateur <br/><span className="text-primary italic underline decoration-primary/20">Inspirant</span></h2>
-              
-              <div className="space-y-8" suppressHydrationWarning>
-                {[
-                  { step: "01", title: "Enregistrement ou Upload", desc: "Utilisez notre studio HD intégré ou importez une vidéo existante (MP4, MKV)." },
-                  { step: "02", title: "Traitement Hybride IA", desc: "Nos modèles Vision (MediaPipe) et Audio (Whisper) extraient chaque micro-signal." },
-                  { step: "03", title: "Rapport de Coaching", desc: "Obtenez un score global, des graphiques temporels et un plan d'amélioration." }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex gap-6 group">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full border-2 border-primary/20 flex items-center justify-center text-lg font-black text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                      {item.step}
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-bold mb-1">{item.title}</h4>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="pt-4">
-                <Link 
-                  href={isAuthenticated ? "/dashboard" : "/register"}
-                  className={cn(buttonVariants({ size: "lg" }), "rounded-full px-10 shadow-2xl shadow-primary/20 font-bold")}
-                >
-                  Démarrer l'expérience <ArrowRight className="ml-2 w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="flex-1 relative">
-                <div className="absolute -top-10 -right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl shadow-primary/20" />
-                <div className="bg-muted aspect-square rounded-[2rem] border shadow-2xl relative overflow-hidden group p-1">
-                   <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent" />
-                    <div className="bg-card h-full rounded-[1.8rem] flex flex-col justify-center p-12 space-y-6">
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Neural Analysis</span>
-                                <span className="text-[10px] font-mono text-primary animate-pulse">LIVE_FEED...</span>
-                            </div>
-                            <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
-                                <motion.div 
-                                    className="h-full bg-primary" 
-                                    initial={{ width: "0%" }}
-                                    whileInView={{ width: "85%" }}
-                                    transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }}
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 rounded-2xl bg-muted/50 border space-y-1">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Posture</p>
-                                <p className="text-lg font-black text-primary">Stable</p>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-muted/50 border space-y-1">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Débit</p>
-                                <p className="text-lg font-black text-emerald-500">145<span className="text-[10px] font-normal ml-1">wpm</span></p>
-                            </div>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
-                                <span className="text-xs font-bold">Feedback IA Génératif...</span>
-                            </div>
-                            <Sparkles className="w-4 h-4 text-primary" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="py-20 border-y bg-muted/20 relative" suppressHydrationWarning>
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center" suppressHydrationWarning>
-            <div suppressHydrationWarning>
-              <div className="text-4xl font-black text-primary mb-2">95%</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Apprentissage Accéléré</p>
-            </div>
-            <div suppressHydrationWarning>
-              <div className="text-4xl font-black text-primary mb-2">8ms</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Latence Analyse</p>
-            </div>
-            <div suppressHydrationWarning>
-              <div className="text-4xl font-black text-primary mb-2">3k+</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Utilisateurs</p>
-            </div>
-            <div suppressHydrationWarning>
-              <div className="text-4xl font-black text-primary mb-2">100%</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Confidentialité</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-16 bg-muted/10 border-t" suppressHydrationWarning>
-        <div className="container mx-auto px-4" suppressHydrationWarning>
-          <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-12">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-primary p-1 rounded-lg">
-                  <Mic className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <span className="text-xl font-bold">SpeechCoach</span>
-              </div>
-              <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-                Le compagnon ultime pour perfectionner vos prises de parole en public grâce à l'intelligence artificielle.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-16">
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold uppercase tracking-widest">Produit</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="#features" className="hover:text-primary transition-colors">Fonctionnalités</Link></li>
-                  <li><Link href="#how-it-works" className="hover:text-primary transition-colors">Méthodologie</Link></li>
-                  <li><Link href="/studio" className="hover:text-primary transition-colors">Studio</Link></li>
-                </ul>
-              </div>
-              <div className="space-y-4">
-                <h4 className="text-sm font-bold uppercase tracking-widest">Légal</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="#" className="hover:text-primary transition-colors">Confidentialité</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Conditions</Link></li>
-                  <li><Link href="#" className="hover:text-primary transition-colors">Support</Link></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground font-medium">
-            <p>© 2026 SpeechCoach. Projet de Fin d'Études Master ENS Meknès.</p>
-            <div className="flex gap-4">
-                <span>Made with ❤️ for Speakers</span>
-            </div>
+          <div className="flex flex-col gap-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-6">
+            <Link href="/public-feedback" className="transition-colors hover:text-foreground">
+              Avis utilisateurs
+            </Link>
+            <Link
+              href={isAuthenticated ? '/dashboard' : '/login'}
+              className="transition-colors hover:text-foreground"
+            >
+              {isAuthenticated ? 'Dashboard' : 'Connexion'}
+            </Link>
+            <span className="text-muted-foreground/60">SpeechCoach 2026</span>
           </div>
         </div>
       </footer>

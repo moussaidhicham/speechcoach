@@ -1,279 +1,661 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Upload, Camera, RefreshCw, X, Check, Loader2, Play, 
-  Video, StopCircle, Mic, ArrowLeft, ArrowRight
+import React from 'react';
+import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ArrowRight,
+  Camera,
+  Check,
+  RefreshCw,
+  StopCircle,
+  Upload,
+  Video,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { AppShell } from '@/components/layout/app-shell';
 import { Badge } from '@/components/ui/badge';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
-import { Header } from '@/components/layout/header';
+import { Skeleton } from '@/components/ui/skeleton';
 import { videoService } from '@/services/video.service';
 import { SessionStatus } from '@/types/analytics';
+import { cn } from '@/lib/utils';
+
+/* ─── Types ──────────────────────────────────────────────────────────── */
+
+type StudioMode     = 'selection' | 'upload' | 'record' | 'processing';
+type RecordingState = 'idle' | 'capturing' | 'review';
+
+interface SessionInfo {
+  id:     string;
+  status: SessionStatus;
+}
+
+interface SelectionModeProps {
+  onUpload:     () => void;
+  onRecord:     () => void;
+  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+interface UploadModeProps {
+  file:        File;
+  isUploading: boolean;
+  progress:    number;
+  onCancel:    () => void;
+  onStart:     () => Promise<void>;
+}
+
+interface RecordModeProps {
+  recordingState: RecordingState;
+  videoRef:       React.RefObject<HTMLVideoElement | null>;
+  timer:          number;
+  formatTime:     (seconds: number) => string;
+  previewUrl:     string | null;
+  onStart:        () => Promise<void>;
+  onStop:         () => void;
+  onReview:       () => void;
+  onRetry:        () => void;
+  onCancel:       () => void;
+}
+
+interface ProcessingModeProps {
+  sessionInfo:   SessionInfo;
+  statusMessage: string;
+  onRetry:       () => void;
+}
+
+/* ─── Animation preset ───────────────────────────────────────────────── */
+
+const panelAnim = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit:    { opacity: 0, y: -12 },
+  transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+};
+
+/* ─── Page ───────────────────────────────────────────────────────────── */
 
 export default function StudioPage() {
-  const [mode, setMode] = useState<'selection' | 'upload' | 'record' | 'processing'>('selection');
-  const [file, setFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [sessionInfo, setSessionInfo] = useState<{id: string, status: SessionStatus} | null>(null);
-  const [progress, setProgress] = useState(0);
-  
-  // Recording State
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
-  const [recordingState, setRecordingState] = useState<'idle' | 'capturing' | 'review'>('idle');
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [timer, setTimer] = useState(0);
+  const [mode, setMode] = React.useState<StudioMode>('selection');
+  const [file, setFile] = React.useState<File | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [sessionInfo, setSessionInfo] = React.useState<SessionInfo | null>(null);
+  const [statusMessage, setStatusMessage] = React.useState('Téléversement préparé');
+  const [progress, setProgress] = React.useState(0);
+  const [recordingState, setRecordingState] = React.useState<RecordingState>('idle');
+  const [recordedChunks, setRecordedChunks] = React.useState<Blob[]>([]);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [timer, setTimer] = React.useState(0);
 
-  // File selection
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selected = e.target.files[0];
-      const allowedTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
-      if (!allowedTypes.includes(selected.type) && !selected.name.endsWith('.webm')) {
-        toast.error("Format non supporté. Utilisez MP4, WebM ou MOV.");
-        return;
-      }
-      setFile(selected);
-      setMode('upload');
+  const videoRef           = React.useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef   = React.useRef<MediaRecorder | null>(null);
+  const streamRef          = React.useRef<MediaStream | null>(null);
+  const pollingRef         = React.useRef<number | null>(null);
+  const shouldOpenReviewRef = React.useRef(true);
+
+  const clearPolling = React.useCallback(() => {
+    if (pollingRef.current !== null) {
+      window.clearInterval(pollingRef.current);
+      pollingRef.current = null;
     }
+  }, []);
+
+  const stopLiveStream = React.useCallback(() => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
+  const revokePreview = React.useCallback(() => {
+    if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(null); }
+  }, [previewUrl]);
+
+  const resetRecording = React.useCallback(() => {
+    shouldOpenReviewRef.current = true;
+    setRecordingState('idle');
+    setRecordedChunks([]);
+    setTimer(0);
+    revokePreview();
+  }, [revokePreview]);
+
+  React.useEffect(() => {
+    if (recordingState !== 'capturing') return;
+    const id = window.setInterval(() => setTimer((v) => v + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [recordingState]);
+
+  React.useEffect(() => {
+    return () => {
+      clearPolling();
+      shouldOpenReviewRef.current = false;
+      const rec = mediaRecorderRef.current;
+      if (rec && rec.state !== 'inactive') rec.stop();
+      stopLiveStream();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [clearPolling, previewUrl, stopLiveStream]);
+
+  React.useEffect(() => {
+    if (recordingState === 'review' && recordedChunks.length > 0) {
+      setPreviewUrl(URL.createObjectURL(new Blob(recordedChunks, { type: 'video/webm' })));
+    }
+  }, [recordedChunks, recordingState]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    const allowed = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska'];
+    if (!allowed.includes(selected.type) && !selected.name.endsWith('.webm')) {
+      toast.error('Format non supporté. Utilisez MP4, WebM, MOV ou MKV.');
+      e.target.value = '';
+      return;
+    }
+    setProgress(0);
+    setStatusMessage('Téléversement préparé');
+    setFile(selected);
+    setMode('upload');
   };
 
-  // Upload Logic
+  const startPolling = React.useCallback((sessionId: string) => {
+    clearPolling();
+    pollingRef.current = window.setInterval(async () => {
+      try {
+        const { status } = await videoService.getStatus(sessionId);
+        setSessionInfo({ id: sessionId, status });
+        setStatusMessage(
+          status === 'pending'    ? "Fichier reçu. Mise en file d'attente de l'analyse." :
+          status === 'processing' ? 'Analyse audio, vidéo et recommandations en cours.' :
+          status === 'completed'  ? 'Rapport finalisé et prêt à être consulté.' :
+                                    'Le traitement a rencontré une erreur.'
+        );
+        if (status === 'completed' || status === 'failed') {
+          clearPolling();
+          if (status === 'completed') toast.success('Analyse terminée.');
+          else toast.error("L'analyse a échoué.");
+        }
+      } catch (err) { console.error('Polling failed:', err); }
+    }, 2000);
+  }, [clearPolling]);
+
   const handleUpload = async () => {
     if (!file) return;
     setIsUploading(true);
+    setStatusMessage('Envoi du fichier en cours');
     try {
-      const { session_id } = await videoService.uploadVideo(file, (p) => setProgress(p));
+      const { session_id } = await videoService.uploadVideo(file, (v) => setProgress(v));
       setSessionInfo({ id: session_id, status: 'pending' });
+      setStatusMessage('Fichier reçu. Analyse lancée.');
       setMode('processing');
-      toast.success("Vidéo envoyée !");
+      toast.success('Vidéo envoyée, analyse lancée.');
       startPolling(session_id);
-    } catch (error: any) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       toast.error("Échec de l'envoi.");
-    } finally {
-      setIsUploading(false);
-    }
+      setStatusMessage('Le téléversement a échoué.');
+    } finally { setIsUploading(false); }
   };
 
-  // Polling logic
-  const startPolling = (sessionId: string) => {
-    const interval = setInterval(async () => {
-      try {
-        const { status } = await videoService.getStatus(sessionId);
-        if (status === 'completed' || status === 'failed') {
-          clearInterval(interval);
-          setSessionInfo({ id: sessionId, status });
-          if (status === 'completed') toast.success("Analyse terminée !");
-          else toast.error("L'analyse a échoué.");
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }, 2000);
-  };
-
-  // Camera Logic
   const startRecording = async () => {
     try {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
+      revokePreview();
       setRecordedChunks([]);
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 1280, height: 720 }, 
-        audio: true 
-      });
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-      
-      const mimeType = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
-      mediaRecorderRef.current = mediaRecorder;
-      
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) setRecordedChunks((prev) => [...prev, e.data]);
-      };
-
-      mediaRecorder.onstop = () => {
-        setRecordingState('review');
-        stream.getTracks().forEach(track => track.stop());
-      };
-
-      mediaRecorder.start(1000);
-      setRecordingState('capturing');
       setTimer(0);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 }, audio: true,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+      const mimeType = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+        .find((v) => MediaRecorder.isTypeSupported(v)) || '';
+      const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      mediaRecorderRef.current = rec;
+      rec.ondataavailable = (e) => { if (e.data?.size > 0) setRecordedChunks((p) => [...p, e.data]); };
+      rec.onstop = () => {
+        stopLiveStream();
+        if (shouldOpenReviewRef.current) setRecordingState('review');
+        shouldOpenReviewRef.current = true;
+      };
+      rec.start(1000);
+      setRecordingState('capturing');
     } catch (err) {
-      toast.error("Caméra non accessible.");
+      console.error('Camera access failed:', err);
+      toast.error('Caméra ou micro non accessibles.');
       setMode('selection');
+      stopLiveStream();
     }
   };
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop();
+    if (mediaRecorderRef.current?.state === 'recording') {
+      shouldOpenReviewRef.current = true;
+      mediaRecorderRef.current.stop();
+    }
   };
 
-  useEffect(() => {
-    if (recordingState === 'review' && recordedChunks.length > 0) {
-      const url = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/webm' }));
-      setPreviewUrl(url);
-    }
-  }, [recordingState, recordedChunks]);
+  const cancelRecording = () => {
+    shouldOpenReviewRef.current = false;
+    if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+    else stopLiveStream();
+    resetRecording();
+    setMode('selection');
+  };
+
+  const retryRecording = () => { shouldOpenReviewRef.current = false; resetRecording(); };
 
   const saveRecording = () => {
-    if (recordedChunks.length === 0) return;
+    if (!recordedChunks.length) return;
     const blob = new Blob(recordedChunks, { type: 'video/webm' });
     setFile(new File([blob], `speechcoach_${Date.now()}.webm`, { type: 'video/webm' }));
+    resetRecording();
     setMode('upload');
-    setRecordingState('idle');
-    setRecordedChunks([]);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
   };
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  useEffect(() => {
-    let interval: any;
-    if (recordingState === 'capturing') interval = setInterval(() => setTimer(t => t + 1), 1000);
-    return () => clearInterval(interval);
-  }, [recordingState]);
+  const formatTime = (s: number) =>
+    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div className="min-h-screen bg-muted/20 flex flex-col">
-      <Header title="Studio d'Enregistrement">
-        <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "sm" })}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Retour
-        </Link>
-        <Badge variant="secondary" className="bg-primary/5 text-primary">IA Coach</Badge>
-      </Header>
+    <AppShell
+      title="Studio"
+      subtitle="Capturez ou importez votre prise de parole avant analyse."
+      actions={
+        <Badge variant="secondary" className="bg-accent text-accent-foreground">
+          Capture room
+        </Badge>
+      }
+      maxWidth="5xl"
+    >
+      <div className="space-y-6">
 
-      <main className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-4xl">
-          <AnimatePresence mode="wait">
-            {mode === 'selection' && <SelectionMode onUpload={() => document.getElementById('file-upload')?.click()} onRecord={() => setMode('record')} onFileChange={handleFileChange} />}
-            {mode === 'upload' && file && <UploadMode file={file} isUploading={isUploading} progress={progress} onCancel={() => {setFile(null); setMode('selection');}} onStart={handleUpload} />}
-            {mode === 'record' && <RecordMode recordingState={recordingState} videoRef={videoRef} timer={timer} formatTime={formatTime} previewUrl={previewUrl} onStart={startRecording} onStop={stopRecording} onReview={saveRecording} onRetry={() => {setRecordingState('idle'); setRecordedChunks([]); if (previewUrl) URL.revokeObjectURL(previewUrl); setPreviewUrl(null);}} onCancel={() => setMode('selection')} />}
-            {mode === 'processing' && sessionInfo && <ProcessingMode status={sessionInfo.status} id={sessionInfo.id} onRetry={() => setMode('selection')} />}
-          </AnimatePresence>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-// Sub-components for cleaner structure
-function SelectionMode({ onUpload, onRecord, onFileChange }: any) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <Card className="border-2 border-dashed border-primary/20 hover:border-primary/50 cursor-pointer group" onClick={onUpload}>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-all"><Upload /></div>
-          <h3 className="text-xl font-bold mb-2">Uploader une vidéo</h3>
-          <p className="text-muted-foreground text-sm">MP4, WebM ou MOV.</p>
-          <input id="file-upload" type="file" accept="video/mp4,video/webm" className="hidden" onChange={onFileChange} />
-        </CardContent>
-      </Card>
-      <Card className="border-2 border-dashed border-primary/20 hover:border-primary/50 cursor-pointer group" onClick={onRecord}>
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-all"><Camera /></div>
-          <h3 className="text-xl font-bold mb-2">Enregistrer en direct</h3>
-          <p className="text-muted-foreground text-sm">Utilisez votre webcam.</p>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-function UploadMode({ file, isUploading, progress, onCancel, onStart }: any) {
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-2xl mx-auto">
-      <Card className="border-none shadow-2xl overflow-hidden">
-        <div className="aspect-video bg-muted flex flex-col items-center justify-center p-8">
-           <Video className="w-16 h-16 text-primary mb-4 opacity-20" />
-           <div className="text-lg font-bold truncate max-w-md">{file.name}</div>
-        </div>
-        <CardContent className="p-8">
-          {!isUploading ? (
-             <div className="flex gap-4">
-                <Button variant="outline" className="flex-1" onClick={onCancel}>Annuler</Button>
-                <Button className="flex-1" onClick={onStart}>Démarrer l'Analyse</Button>
-             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm font-medium"><span>Uploading...</span><span>{progress}%</span></div>
-              <Progress value={progress} className="h-2" />
+        {/* ── Studio banner ─────────────────────────────────────────── */}
+        <section className="studio-stage relative overflow-hidden rounded-3xl p-7 text-white lg:p-9">
+          <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+            <div className="space-y-3">
+              <Badge className="w-fit bg-white/12 text-white hover:bg-white/12">
+                Capture room
+              </Badge>
+              <h2 className="font-display max-w-md text-3xl font-medium leading-snug">
+                Le studio qui donne envie de s'enregistrer,{' '}
+                <em className="not-italic text-white/70">pas juste d'uploader.</em>
+              </h2>
+              <p className="max-w-md text-sm leading-relaxed text-white/65">
+                Préparation, capture et traitement pensés comme un parcours unique —
+                plus immersif, plus rassurant.
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
 
-function RecordMode({ recordingState, videoRef, timer, formatTime, previewUrl, onStart, onStop, onReview, onRetry, onCancel }: any) {
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-4">
-       <Card className="bg-black relative aspect-video overflow-hidden shadow-2xl">
-          {recordingState !== 'review' ? (
-            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-contain transform -scale-x-100" />
-          ) : (
-             previewUrl && <video src={previewUrl} autoPlay controls className="w-full h-full object-contain" />
-          )}
-          {recordingState === 'capturing' && (
-            <div className="absolute top-6 left-6 flex items-center gap-3 px-5 py-2 bg-destructive/90 rounded-full text-white text-sm font-bold animate-pulse z-20">
-               <div className="w-3 h-3 rounded-full bg-white shadow-[0_0_10px_white]" /> 
-               <span className="font-mono">{formatTime(timer)}</span> 
-            </div>
-          )}
-       </Card>
-       <Card className="bg-card shadow-xl">
-          <CardContent className="p-4 flex items-center justify-center relative min-h-[100px]">
-              {recordingState === 'idle' && <Button size="lg" className="rounded-full w-20 h-20 bg-destructive border-4 border-white" onClick={onStart} />}
-              {recordingState === 'capturing' && <Button size="lg" className="rounded-full w-20 h-20 bg-white border-4 border-destructive" onClick={onStop}><StopCircle className="w-10 h-10 text-destructive" /></Button>}
-              {recordingState === 'review' && (
-                <div className="flex gap-6 w-full max-w-md">
-                   <Button variant="outline" className="flex-1 h-14 rounded-2xl" onClick={onRetry}><RefreshCw className="mr-2" /> Retry</Button>
-                   <Button className="flex-1 h-14 rounded-2xl" onClick={onReview}>Analyze <ArrowRight className="ml-2" /></Button>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ['Préparation', 'Cadre, lumière, micro'],
+                ['Capture',     'Import ou webcam'],
+                ['Lecture',     'Traitement puis rapport'],
+              ].map(([title, text]) => (
+                <div key={title} className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
+                  <div className="text-sm font-medium text-white">{title}</div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-white/60">{text}</p>
                 </div>
-              )}
-              <Button variant="ghost" size="icon" className="absolute right-6 rounded-full" onClick={onCancel}><X /></Button>
-          </CardContent>
-       </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Step guide ────────────────────────────────────────────── */}
+        <section className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {[
+            ['1. Préparation',     'Vérifiez votre cadre, votre lumière et votre micro avant de commencer.'],
+            ['2. Capture ou import', 'Importez un fichier ou utilisez la webcam pour produire une session nette.'],
+            ['3. Analyse',         'Patientez pendant le traitement et ouvrez ensuite votre rapport structuré.'],
+          ].map(([title, text]) => (
+            <div key={title} className="rounded-2xl border border-border/60 bg-card/70 px-5 py-4">
+              <div className="text-sm font-medium text-foreground">{title}</div>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{text}</p>
+            </div>
+          ))}
+        </section>
+
+        {/* ── Mode panel ────────────────────────────────────────────── */}
+        <main className="min-h-[460px]">
+          <AnimatePresence mode="wait">
+            {mode === 'selection' && (
+              <SelectionMode
+                onUpload={() => document.getElementById('file-upload')?.click()}
+                onRecord={() => setMode('record')}
+                onFileChange={handleFileChange}
+              />
+            )}
+            {mode === 'upload' && file && (
+              <UploadMode
+                file={file}
+                isUploading={isUploading}
+                progress={progress}
+                onCancel={() => {
+                  setFile(null);
+                  setProgress(0);
+                  setStatusMessage('Téléversement préparé');
+                  setMode('selection');
+                }}
+                onStart={handleUpload}
+              />
+            )}
+            {mode === 'record' && (
+              <RecordMode
+                recordingState={recordingState}
+                videoRef={videoRef}
+                timer={timer}
+                formatTime={formatTime}
+                previewUrl={previewUrl}
+                onStart={startRecording}
+                onStop={stopRecording}
+                onReview={saveRecording}
+                onRetry={retryRecording}
+                onCancel={cancelRecording}
+              />
+            )}
+            {mode === 'processing' && sessionInfo && (
+              <ProcessingMode
+                sessionInfo={sessionInfo}
+                statusMessage={statusMessage}
+                onRetry={() => {
+                  clearPolling();
+                  setSessionInfo(null);
+                  setFile(null);
+                  setProgress(0);
+                  setStatusMessage('Téléversement préparé');
+                  setMode('selection');
+                }}
+              />
+            )}
+          </AnimatePresence>
+        </main>
+      </div>
+    </AppShell>
+  );
+}
+
+/* ─── SelectionMode ──────────────────────────────────────────────────── */
+
+function SelectionMode({ onUpload, onRecord, onFileChange }: SelectionModeProps) {
+  return (
+    <motion.div
+      key="selection"
+      {...panelAnim}
+      className="grid grid-cols-1 gap-5 md:grid-cols-2"
+    >
+      {[
+        {
+          id:          'upload',
+          icon:        Upload,
+          title:       'Importer une vidéo',
+          description: 'Formats acceptés : MP4, WebM, MOV ou MKV.',
+          helpId:      'studio-upload-help',
+          onClick:     onUpload,
+        },
+        {
+          id:          'record',
+          icon:        Camera,
+          title:       'Enregistrer en direct',
+          description: 'Lancez la webcam, vérifiez votre cadre puis enregistrez.',
+          helpId:      'studio-record-help',
+          onClick:     onRecord,
+        },
+      ].map(({ id, icon: Icon, title, description, helpId, onClick }) => (
+        <button
+          key={id}
+          type="button"
+          className="group text-left"
+          onClick={onClick}
+          aria-describedby={helpId}
+        >
+          <Card className="h-full cursor-pointer border-dashed transition-colors hover:border-primary/40 hover:bg-secondary/40">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+                <Icon className="h-6 w-6" />
+              </div>
+              <h3 className="font-display text-2xl font-medium">{title}</h3>
+              <p id={helpId} className="mt-2.5 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
+            </CardContent>
+          </Card>
+        </button>
+      ))}
+
+      <input
+        id="file-upload"
+        type="file"
+        accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+        className="hidden"
+        onChange={onFileChange}
+      />
     </motion.div>
   );
 }
 
-function ProcessingMode({ status, id, onRetry }: any) {
-  const isDone = status === 'completed';
-  const isFailed = status === 'failed';
+/* ─── UploadMode ─────────────────────────────────────────────────────── */
+
+function UploadMode({ file, isUploading, progress, onCancel, onStart }: UploadModeProps) {
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-        <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
-          {isDone ? <Check className="text-emerald-500 w-12 h-12" /> : isFailed ? <X className="text-destructive w-12 h-12" /> : <RefreshCw className="text-primary w-12 h-12 animate-spin" />}
-        </div>
-        <h2 className="text-3xl font-extrabold mb-4">{isDone ? "Terminé !" : isFailed ? "Erreur" : "Analyse en cours..."}</h2>
-        {isDone ? (
-           <Link href={`/report/${id}`} className={cn(buttonVariants({ size: "lg" }), "h-14 px-10")}>Voir le rapport <ArrowRight className="ml-2" /></Link>
-        ) : isFailed ? (
-           <Button variant="outline" size="lg" onClick={onRetry}>Réessayer</Button>
-        ) : <p className="text-muted-foreground">Votre coach IA écoute attentivement...</p>}
+    <motion.div
+      key="upload"
+      {...panelAnim}
+      className="mx-auto w-full max-w-2xl"
+    >
+      <Card>
+        <CardHeader>
+          <CardTitle>Vérification avant envoi</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5 px-7 pb-7">
+          {/* File info */}
+          <div className="rounded-2xl border border-border/60 bg-secondary/30 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Video className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-medium">{file.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {(file.size / (1024 * 1024)).toFixed(1)} MB
+                </div>
+              </div>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Assurez-vous que la vidéo montre clairement votre visage, vos épaules et votre voix.
+            </p>
+          </div>
+
+          {!isUploading ? (
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="outline" className="flex-1" onClick={onCancel}>
+                Annuler
+              </Button>
+              <Button className="flex-1" onClick={onStart}>
+                Démarrer l'analyse
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-border/60 bg-background/70 p-5">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Envoi de la vidéo</span>
+                <span className="font-mono font-medium">{progress}%</span>
+              </div>
+              <Progress value={progress} className="w-full" />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+/* ─── RecordMode ─────────────────────────────────────────────────────── */
+
+function RecordMode({
+  recordingState,
+  videoRef,
+  timer,
+  formatTime,
+  previewUrl,
+  onStart,
+  onStop,
+  onReview,
+  onRetry,
+  onCancel,
+}: RecordModeProps) {
+  return (
+    <motion.div
+      key="record"
+      {...panelAnim}
+      className="space-y-4"
+    >
+      {/* Video viewport */}
+      <Card className="overflow-hidden border-border/60 bg-transparent">
+        <CardContent className="relative aspect-video p-0">
+          {recordingState !== 'review' ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="h-full w-full object-contain"
+              aria-label="Aperçu caméra en direct"
+            />
+          ) : previewUrl ? (
+            <video
+              src={previewUrl}
+              autoPlay
+              controls
+              className="h-full w-full object-contain"
+              aria-label="Aperçu de la vidéo enregistrée"
+            />
+          ) : null}
+
+          {/* REC indicator */}
+          {recordingState === 'capturing' && (
+            <div className="absolute left-4 top-4 flex items-center gap-2.5 rounded-full bg-destructive px-3.5 py-1.5 text-xs font-medium text-destructive-foreground">
+              <span className="h-2 w-2 rounded-full bg-white" />
+              {formatTime(timer)}
+            </div>
+          )}
+
+          {/* Quit button */}
+          <div className="absolute right-4 top-4">
+            <Button variant="secondary" size="sm" onClick={onCancel}>
+              <X className="mr-1.5 h-3.5 w-3.5" />
+              Quitter
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Controls */}
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-medium">État de capture</div>
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
+              {recordingState === 'idle'      && 'Lancez la webcam pour commencer.'}
+              {recordingState === 'capturing' && 'Enregistrement en cours. Gardez le regard vers la caméra.'}
+              {recordingState === 'review'    && 'Relisez la capture ou sauvegardez-la pour analyse.'}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 gap-3">
+            {recordingState === 'idle' && (
+              <Button size="default" onClick={onStart}>
+                <Camera className="mr-1.5 h-4 w-4" />
+                Démarrer
+              </Button>
+            )}
+            {recordingState === 'capturing' && (
+              <Button size="default" variant="destructive" onClick={onStop}>
+                <StopCircle className="mr-1.5 h-4 w-4" />
+                Arrêter
+              </Button>
+            )}
+            {recordingState === 'review' && (
+              <>
+                <Button variant="outline" onClick={onRetry}>
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  Refaire
+                </Button>
+                <Button onClick={onReview}>
+                  Analyser
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                </Button>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+/* ─── ProcessingMode ─────────────────────────────────────────────────── */
+
+function ProcessingMode({ sessionInfo, statusMessage, onRetry }: ProcessingModeProps) {
+  const isDone    = sessionInfo.status === 'completed';
+  const isFailed  = sessionInfo.status === 'failed';
+  const isPending = sessionInfo.status === 'pending';
+
+  return (
+    <motion.div
+      key="processing"
+      {...panelAnim}
+      className="mx-auto max-w-xl"
+    >
+      <Card>
+        <CardContent className="space-y-7 py-14 text-center" aria-live="polite">
+          {/* Status icon */}
+          <div className={cn(
+            'mx-auto flex h-20 w-20 items-center justify-center rounded-3xl',
+            isDone   ? 'bg-primary/10 text-primary'     :
+            isFailed ? 'bg-destructive/10 text-destructive' :
+                       'bg-primary/10 text-primary'
+          )}>
+            {isDone   && <Check      className="h-9 w-9" />}
+            {isFailed && <X          className="h-9 w-9" />}
+            {!isDone && !isFailed && <RefreshCw className="h-9 w-9 animate-spin" />}
+          </div>
+
+          {/* Title + description */}
+          <div className="space-y-2">
+            <h2 className="font-display text-2xl font-medium">
+              {isDone   ? 'Rapport prêt'          :
+               isFailed ? 'Analyse interrompue'   :
+                          'Analyse en cours'}
+            </h2>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {isDone   ? 'Votre session a été analysée. Vous pouvez ouvrir le rapport.'             :
+               isFailed ? "Une erreur est survenue. Vous pouvez relancer l'opération."               :
+               isPending ? 'Le fichier a été reçu. Le traitement va commencer.'                      :
+                           'Audio, vision et synthèse de coaching sont en cours.'}
+            </p>
+            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
+              {statusMessage}
+            </p>
+          </div>
+
+          {/* Actions */}
+          {isDone && (
+            <Link
+              href={`/report/${sessionInfo.id}`}
+              className={cn(buttonVariants({ size: 'default' }), 'mx-auto')}
+            >
+              Voir le rapport
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          )}
+          {isFailed && (
+            <Button variant="outline" onClick={onRetry}>
+              Réessayer
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }

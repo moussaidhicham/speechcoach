@@ -45,5 +45,6 @@ class PlatformFeedback(SQLModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.id")
     rating: int = Field(ge=1, le=5)
     comments: Optional[str] = None
+    created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
     
     user: Optional["User"] = Relationship(back_populates="platform_feedback")

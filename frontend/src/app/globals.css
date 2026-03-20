@@ -4,11 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─── Design tokens ──────────────────────────────────────────────── */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -38,90 +41,294 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
 }
+
+/* ─── Light mode ─────────────────────────────────────────────────── */
+/*
+  Philosophy: warm white base, soft sage-teal primary, dusty rose accent.
+  Low saturation throughout — nothing shouts. Contrast is achieved through
+  lightness, not color intensity.
+*/
 
 :root {
-  --background: 210 40% 98%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.75rem;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 271 76% 66%;
+  /* Surfaces */
+  --background:         45 28% 96%;   /* warm off-white, like uncoated paper  */
+  --card:               0  0% 100%;
+  --popover:            0  0% 100%;
+
+  /* Text */
+  --foreground:         220 18% 18%;  /* soft near-black, easier than #000    */
+  --card-foreground:    220 18% 18%;
+  --popover-foreground: 220 18% 18%;
+
+  /* Primary — sage teal, desaturated and calm */
+  --primary:            172 38% 34%;
+  --primary-foreground: 172  18% 97%;
+
+  /* Secondary — warm sand */
+  --secondary:          40  22% 92%;
+  --secondary-foreground: 220 16% 22%;
+
+  /* Muted — barely-there warm grey */
+  --muted:              40  14% 90%;
+  --muted-foreground:   220  8% 48%;
+
+  /* Accent — dusty warm sand, used sparingly */
+  --accent:             30  35% 86%;
+  --accent-foreground:  220 16% 22%;
+
+  /* Destructive */
+  --destructive:        5  45% 48%;
+  --destructive-foreground: 40 30% 97%;
+
+  /* Borders & inputs — very subtle */
+  --border:             40  14% 84%;
+  --input:              40  14% 84%;
+  --ring:               172 38% 54%;
+  --radius:             0.875rem;
+
+  /* Sidebar — slightly warmer than page */
+  --sidebar:            42  22% 98%;
+  --sidebar-foreground: 220 18% 18%;
+  --sidebar-primary:    172 38% 34%;
+  --sidebar-primary-foreground: 172 18% 97%;
+  --sidebar-accent:     40  22% 92%;
+  --sidebar-accent-foreground:  220 16% 22%;
+  --sidebar-border:     40  14% 84%;
+  --sidebar-ring:       172 38% 54%;
+
+  /* Charts — muted, harmonious */
+  --chart-1: 172 38% 38%;  /* sage teal    */
+  --chart-2: 30  40% 62%;  /* warm sand    */
+  --chart-3: 210 22% 42%;  /* slate blue   */
+  --chart-4: 148 28% 44%;  /* muted green  */
+  --chart-5: 5   40% 50%;  /* dusty red    */
 }
 
+/* ─── Dark mode ──────────────────────────────────────────────────── */
+/*
+  Deep blue-grey base — warmer than pure black, easier to read for hours.
+  Primary becomes a lighter sage so it has enough contrast without being harsh.
+*/
+
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  --background:         218 24% 11%;
+  --card:               218 20% 14%;
+  --popover:            218 20% 14%;
+
+  --foreground:         44  28% 92%;
+  --card-foreground:    44  28% 92%;
+  --popover-foreground: 44  28% 92%;
+
+  --primary:            172 44% 52%;
+  --primary-foreground: 218 24% 10%;
+
+  --secondary:          218 16% 20%;
+  --secondary-foreground: 44  28% 92%;
+
+  --muted:              218 16% 20%;
+  --muted-foreground:   210 10% 62%;
+
+  --accent:             34  30% 26%;
+  --accent-foreground:  44  28% 92%;
+
+  --destructive:        5   52% 54%;
+  --destructive-foreground: 44 28% 92%;
+
+  --border:             218 14% 22%;
+  --input:              218 14% 22%;
+  --ring:               172 44% 52%;
+
+  --sidebar:            218 22% 12%;
+  --sidebar-foreground: 44  28% 92%;
+  --sidebar-primary:    172 44% 52%;
+  --sidebar-primary-foreground: 218 24% 10%;
+  --sidebar-accent:     218 16% 20%;
+  --sidebar-accent-foreground:  44  28% 92%;
+  --sidebar-border:     218 14% 22%;
+  --sidebar-ring:       172 44% 52%;
+
+  --chart-1: 172 44% 52%;
+  --chart-2: 34  44% 58%;
+  --chart-3: 44  28% 88%;
+  --chart-4: 148 36% 50%;
+  --chart-5: 5   50% 56%;
 }
+
+/* ─── Base layer ─────────────────────────────────────────────────── */
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    /* Improve text rendering across platforms */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground;
+    /*
+      Calm, near-flat background.
+      A single gentle radial wash top-left adds depth without visual noise.
+      No grid lines — they create unnecessary busyness.
+    */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 0% 0%, hsl(var(--accent) / 0.18), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.06), transparent);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  /* Softer focus ring — visible but not jarring */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.7);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.15);
+    color: hsl(var(--foreground));
+  }
+
+  /* Smooth transitions when switching themes */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.15s;
+    transition-timing-function: ease;
   }
 }
 
+/* ─── Layout shells ───────────────────────────────────────────────── */
+
+/*
+  editorial-shell: main page container.
+  Barely-there top glow — gives the page a light source without distraction.
+*/
+.editorial-shell {
+  background-image:
+    radial-gradient(ellipse 70% 35% at 50% -8%, hsl(var(--primary) / 0.09), transparent);
+}
+
+/*
+  editorial-hero: prominent feature card / hero section.
+  Elevated white surface, soft shadow, subtle warm tint in corner.
+*/
+.editorial-hero {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow:
+    0 1px 2px hsl(220 18% 10% / 0.04),
+    0 8px 32px hsl(220 18% 10% / 0.06),
+    0 32px 64px hsl(220 18% 10% / 0.04);
+}
+
+/* Gentle warm blush in top-left corner of hero */
+.editorial-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 45% at 0% 0%, hsl(var(--accent) / 0.18), transparent);
+  pointer-events: none;
+}
+
+/*
+  paper-panel: secondary content surfaces (sidebars, info boxes).
+  Slightly off-white, quieter than the hero.
+*/
+.paper-panel {
+  background: hsl(var(--card) / 0.92);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 1px 2px hsl(220 18% 10% / 0.03),
+    0 4px 16px hsl(220 18% 10% / 0.05);
+}
+
+/*
+  data-ribbon: banners, callouts, stat bars.
+  Solid primary — used sparingly so it stays meaningful.
+*/
+.data-ribbon {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: var(--radius-sm);
+}
+
+/*
+  studio-stage: dark presentation areas (charts on dark bg, demo areas).
+  Deep and calm, not harsh black.
+*/
+.studio-stage {
+  position: relative;
+  overflow: hidden;
+  background: hsl(218 24% 10%);
+  border-radius: var(--radius-lg);
+}
+
+/* Very subtle dot grid — atmospheric, not distracting */
+.studio-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+/* ─── Accessibility ───────────────────────────────────────────────── */
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: var(--radius-sm);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: transform 0.15s ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+/* ─── Reduced motion ──────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Print ───────────────────────────────────────────────────────── */
+
 @media print {
-  .no-print {
-    display: none !important;
-  }
-  
-  .print-only {
-    display: block !important;
-  }
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
 
   body {
     background: white !important;
@@ -138,7 +345,7 @@
   }
 
   .print-card {
-    border: 1px solid #e2e8f0 !important;
+    border: 1px solid #d1d5db !important;
     box-shadow: none !important;
     break-inside: avoid;
     margin-bottom: 2rem;
@@ -146,31 +353,16 @@
     color: black !important;
   }
 
-  .print-break-before {
-    break-before: page;
-  }
+  .print-break-before { break-before: page; }
 
-  /* Force chart visibility */
-  canvas, svg {
-    max-width: 100% !important;
-    height: auto !important;
-  }
+  canvas, svg { max-width: 100% !important; height: auto !important; }
 
-  header, footer, nav, aside, .fixed, .sticky {
-    display: none !important;
-  }
+  header, footer, nav, aside, .fixed, .sticky { display: none !important; }
 
-  main {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-
-  .bg-muted\/20 {
-    background-color: white !important;
-  }
+  main { padding-top: 0 !important; margin-top: 0 !important; }
 
   .bg-primary {
-    background-color: #3b82f6 !important; /* Blue-500 equivalent */
+    background-color: #2a7d6e !important;
     color: white !important;
     -webkit-print-color-adjust: exact;
   }

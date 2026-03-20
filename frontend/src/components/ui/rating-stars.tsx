@@ -13,6 +13,24 @@ interface RatingStarsProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+const sizeClasses = {
+  sm: 'h-3.5 w-3.5',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+} as const;
+
+/*
+  Star colours use inline HSL values from the design system palette
+  instead of Tailwind's amber-400. The amber stop is pulled from the
+  --chart-2 family (warm sand) so stars feel at home on the warm background
+  rather than importing an unrelated colour.
+
+  Inactive stars use a warm grey tint rather than bg-muted which can look
+  muddy next to the filled stars.
+*/
+const ACTIVE_COLOR   = 'hsl(30 40% 58%)'   // warm amber-sand, matches --chart-2
+const INACTIVE_COLOR = 'hsl(40 12% 78%)'   // quiet warm grey
+
 export function RatingStars({
   rating,
   onRatingChange,
@@ -23,36 +41,42 @@ export function RatingStars({
 }: RatingStarsProps) {
   const [hoverRating, setHoverRating] = useState(0);
 
-  const starSizeClass = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8'
-  }[size];
-
   return (
-    <div className={cn("flex gap-1", className)}>
-      {[...Array(maxRating)].map((_, i) => {
-        const starValue = i + 1;
-        const isActive = starValue <= (hoverRating || rating);
+    <div
+      className={cn('flex items-center gap-0.5', className)}
+      role={editable ? 'radiogroup' : 'img'}
+      aria-label={`Note : ${rating} sur ${maxRating}`}
+    >
+      {Array.from({ length: maxRating }, (_, i) => {
+        const value   = i + 1;
+        const isActive = value <= (hoverRating || rating);
 
         return (
           <button
-            key={i}
+            key={value}
             type="button"
+            role={editable ? 'radio' : undefined}
+            aria-checked={editable ? value === rating : undefined}
+            aria-label={editable ? `${value} étoile${value > 1 ? 's' : ''}` : undefined}
+            disabled={!editable}
             className={cn(
-              "transition-all",
-              editable ? "cursor-pointer active:scale-90" : "cursor-default",
-              isActive ? "text-amber-400" : "text-muted"
+              'rounded transition-transform outline-none',
+              'focus-visible:ring-2 focus-visible:ring-ring/40',
+              editable
+                ? 'cursor-pointer active:scale-90 hover:scale-110'
+                : 'cursor-default disabled:pointer-events-none'
             )}
-            onMouseEnter={() => editable && setHoverRating(starValue)}
+            onMouseEnter={() => editable && setHoverRating(value)}
             onMouseLeave={() => editable && setHoverRating(0)}
-            onClick={() => editable && onRatingChange?.(starValue)}
+            onClick={() => editable && onRatingChange?.(value)}
           >
             <Star
-              className={cn(
-                starSizeClass,
-                isActive ? "fill-current" : "fill-none"
-              )}
+              className={sizeClasses[size]}
+              style={{
+                color: isActive ? ACTIVE_COLOR : INACTIVE_COLOR,
+                fill:  isActive ? ACTIVE_COLOR : 'none',
+                transition: 'color 0.1s, fill 0.1s',
+              }}
             />
           </button>
         );

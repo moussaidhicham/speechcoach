@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlmodel import SQLModel
@@ -33,6 +33,22 @@ async def init_db():
     async with engine.begin() as conn:
         # Create all tables. Do not use in production with Alembic!
         await conn.run_sync(SQLModel.metadata.create_all)
+
+        def ensure_feedback_created_at(sync_conn):
+            inspector = inspect(sync_conn)
+            if "platformfeedback" not in inspector.get_table_names():
+                return
+
+            columns = {column["name"] for column in inspector.get_columns("platformfeedback")}
+            if "created_at" not in columns:
+                sync_conn.execute(
+                    text(
+                        "ALTER TABLE platformfeedback "
+                        "ADD COLUMN created_at DATETIME NULL DEFAULT CURRENT_TIMESTAMP"
+                    )
+                )
+
+        await conn.run_sync(ensure_feedback_created_at)
 
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:

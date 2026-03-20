@@ -2,9 +2,40 @@ import ffmpeg
 import os
 import sys
 import logging
+from typing import Any, Optional
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+
+def _safe_int(value: Any) -> Optional[int]:
+    try:
+        parsed = int(value)
+        return parsed if parsed > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_float(value: Any) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _parse_frame_rate(value: Any) -> float:
+    if value in (None, '', '0/0'):
+        return 0.0
+    if isinstance(value, str) and '/' in value:
+        try:
+            numerator, denominator = value.split('/', 1)
+            denominator_value = float(denominator)
+            if denominator_value == 0:
+                return 0.0
+            return float(numerator) / denominator_value
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 0.0
+    return _safe_float(value)
 
 def extract_audio(video_path: str, output_wav_path: str) -> bool:
     """
@@ -74,28 +105,29 @@ def get_video_metadata(video_path: str) -> dict:
     """
     try:
         probe = ffmpeg.probe(video_path)
-        video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+        video_streams = [stream for stream in probe.get('streams', []) if stream.get('codec_type') == 'video']
+        video_stream = next(
+            (
+                stream for stream in video_streams
+                if _safe_int(stream.get('width')) and _safe_int(stream.get('height'))
+            ),
+            video_streams[0] if video_streams else None,
+        )
         
         if not video_stream:
             return {"duration": 0.0, "fps": 0.0, "resolution": (0, 0)}
 
-        width = int(video_stream['width'])
-        height = int(video_stream['height'])
+        width = _safe_int(video_stream.get('width')) or 0
+        height = _safe_int(video_stream.get('height')) or 0
         
-        # FPS can be "30/1" string
-        r_frame_rate = video_stream.get('r_frame_rate', '0/0')
-        if '/' in r_frame_rate:
-            num, den = map(int, r_frame_rate.split('/'))
-            fps = num / den if den > 0 else 0.0
-        else:
-            fps = float(r_frame_rate)
+        fps = _parse_frame_rate(video_stream.get('avg_frame_rate')) or _parse_frame_rate(video_stream.get('r_frame_rate'))
             
         # Duration fallback: check stream if format['duration'] is missing
         duration = 0.0
-        if 'duration' in probe['format']:
-            duration = float(probe['format']['duration'])
+        if 'duration' in probe.get('format', {}):
+            duration = _safe_float(probe['format']['duration'])
         elif 'duration' in video_stream:
-            duration = float(video_stream['duration'])
+            duration = _safe_float(video_stream['duration'])
         elif 'tags' in video_stream and 'DURATION' in video_stream['tags']:
             # Some FFmpeg probes return DURATION as a string tag
             dur_str = video_stream['tags']['DURATION']
@@ -103,7 +135,14 @@ def get_video_metadata(video_path: str) -> dict:
                 parts = dur_str.split(':')
                 duration = float(parts[0])*3600 + float(parts[1])*60 + float(parts[2])
             else:
-                duration = float(dur_str)
+                duration = _safe_float(dur_str)
+
+        if fps <= 1.0 and duration > 0:
+            nb_frames = _safe_float(video_stream.get('nb_frames'))
+            if nb_frames > 0:
+                derived_fps = nb_frames / duration
+                if derived_fps > 1.0:
+                    fps = derived_fps
 
         return {
             "duration": duration,

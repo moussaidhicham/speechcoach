@@ -1,5 +1,6 @@
 import uuid
 import logging
+import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -12,6 +13,23 @@ from app.analytics.schemas import PlatformFeedbackCreate, PlatformFeedbackRead, 
 from app.db.database import get_session
 
 feedback_router = APIRouter()
+
+
+def normalize_feedback_created_at(value):
+    if value in (None, "", "0000-00-00 00:00:00", "0000-00-00"):
+        return None
+
+    if isinstance(value, datetime.datetime):
+        return value
+
+    if isinstance(value, str):
+        try:
+            return datetime.datetime.fromisoformat(value.replace(" ", "T"))
+        except ValueError:
+            logger.warning("Unsupported legacy feedback created_at value: %s", value)
+            return None
+
+    return None
 
 @feedback_router.post("/platform", response_model=PlatformFeedbackRead, status_code=201)
 async def create_platform_feedback(
@@ -132,42 +150,62 @@ async def get_all_feedback(
     from sqlalchemy import text
     from app.analytics.schemas import UserProfileRead
 
-    # Use raw SQL to fully bypass any ORM relationship/UUID issues.
-    # We join directly on user_id. MySQL handles BINARY(16) equality correctly.
-    feedback_rows = await db.execute(text("""
-        SELECT pf.id, pf.user_id, pf.rating, pf.comments, pf.created_at,
+    created_at_exists = False
+    try:
+        created_at_check = await db.execute(
+            text(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'platformfeedback'
+                  AND COLUMN_NAME = 'created_at'
+                """
+            )
+        )
+        created_at_exists = bool(created_at_check.scalar())
+    except Exception as exc:
+        logger.warning("Could not inspect platformfeedback.created_at column: %s", exc)
+
+    feedback_query = """
+        SELECT pf.id, pf.user_id, pf.rating, pf.comments,
+               {created_at_select}
                p.full_name, p.avatar_url
         FROM platformfeedback pf
         LEFT JOIN profile p ON p.user_id = pf.user_id
         ORDER BY pf.id DESC
-    """))
+    """.format(
+        created_at_select="pf.created_at," if created_at_exists else "NULL AS created_at,"
+    )
+
+    feedback_rows = await db.execute(text(feedback_query))
     rows = feedback_rows.fetchall()
 
-    response = []
+    response: list[PlatformFeedbackRead] = []
     for row in rows:
-        user_prof = None
-        if row.full_name or row.avatar_url:
-            user_prof = UserProfileRead(
-                full_name=row.full_name,
-                avatar_url=row.avatar_url
-            )
-        
-        # Convert user_id to string if it's binary
-        u_id = row.user_id
-        if isinstance(u_id, bytes):
-            import uuid
-            u_id = uuid.UUID(bytes=u_id)
+        feedback_id = row.id
+        user_id = row.user_id
+        if isinstance(feedback_id, bytes):
+            feedback_id = uuid.UUID(bytes=feedback_id)
+        if isinstance(user_id, bytes):
+            user_id = uuid.UUID(bytes=user_id)
 
-        response.append(PlatformFeedbackRead(
-            id=row.id,
-            user_id=u_id,
-            rating=row.rating,
-            comments=row.comments,
-            created_at=row.created_at,
-            user_profile=user_prof
-        ))
+        user_profile = None
+        if row.full_name or row.avatar_url:
+            user_profile = UserProfileRead(
+                full_name=row.full_name,
+                avatar_url=row.avatar_url,
+            )
+
+        response.append(
+            PlatformFeedbackRead(
+                id=feedback_id,
+                user_id=user_id,
+                rating=row.rating,
+                comments=row.comments,
+                created_at=normalize_feedback_created_at(row.created_at),
+                user_profile=user_profile,
+            )
+        )
 
     return response
-
-
-

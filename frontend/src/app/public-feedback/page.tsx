@@ -1,174 +1,217 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, MessageCircle, Users, ArrowLeft, Quote } from 'lucide-react';
+import { MessageCircle, Quote, Star, Users } from 'lucide-react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
+import { AppShell } from '@/components/layout/app-shell';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RatingStars } from '@/components/ui/rating-stars';
-import api from '@/lib/api';
-import { Sidebar } from '@/components/layout/sidebar';
-import { Header } from '@/components/layout/header';
 import { AvatarCustom } from '@/components/ui/avatar-custom';
+import api from '@/lib/api';
+
+interface FeedbackStatResponse {
+  average_rating: number;
+  total_reviews: number;
+}
+
+interface FeedbackItem {
+  id: string;
+  rating: number;
+  comments: string | null;
+  created_at: string;
+  user_profile?: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+}
 
 export default function PublicFeedbackPage() {
-  const [stats, setStats] = useState({ average_rating: 0, total_reviews: 0 });
-  const [feedbacks, setFeedbacks] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = React.useState<FeedbackStatResponse>({ average_rating: 0, total_reviews: 0 });
+  const [feedbacks, setFeedbacks] = React.useState<FeedbackItem[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isError, setIsError] = React.useState(false);
 
-  useEffect(() => {
-    // Fetch stats independently so network errors don't zero them out
-    const fetchStats = async () => {
-      try {
-        const res = await api.get('/feedback/platform/stats');
-        setStats(res.data);
-      } catch (err) {
-        console.error("Failed to fetch stats:", err);
-      }
-    };
+  const fetchData = React.useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+    try {
+      const [statsRes, feedbacksRes] = await Promise.all([
+        api.get('/feedback/platform/stats'),
+        api.get('/feedback/platform/all'),
+      ]);
 
-    // Fetch feedbacks independently
-    const fetchFeedbacks = async () => {
-      try {
-        const res = await api.get('/feedback/platform/all');
-        setFeedbacks(res.data);
-      } catch (err) {
-        console.error("Failed to fetch feedbacks:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStats();
-    fetchFeedbacks();
+      setStats(statsRes.data);
+      setFeedbacks(feedbacksRes.data);
+    } catch (error) {
+      console.error('Failed to fetch public feedback:', error);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
+  React.useEffect(() => {
+    fetchData().catch(() => undefined);
+  }, [fetchData]);
+
+  const satisfaction =
+    stats.total_reviews > 0 ? `${Math.round((stats.average_rating / 5) * 100)}%` : 'N/A';
+
   return (
-    <div className="flex min-h-screen bg-muted/20">
-      <Sidebar />
+    <AppShell
+      title="Avis utilisateurs"
+      subtitle="Retour d experience public sur SpeechCoach."
+      requireAuth={false}
+      maxWidth="6xl"
+      actions={
+        <Link href="/settings">
+          <Button variant="outline" size="sm">
+            Donner mon avis
+          </Button>
+        </Link>
+      }
+    >
+      <div className="space-y-10">
+        <section className="space-y-5 text-center">
+          <p className="mx-auto inline-flex rounded-full border border-primary/15 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            Feedback public
+          </p>
+          <h1 className="text-4xl font-semibold md:text-5xl">Ce que les utilisateurs retiennent du produit</h1>
+          <p className="mx-auto max-w-3xl text-lg leading-8 text-muted-foreground">
+            Une vue simple des notes et commentaires laisses par les utilisateurs. Ici, pas de chiffre invente:
+            uniquement les retours disponibles dans la base.
+          </p>
 
-      <main className="flex-1 flex flex-col">
-        <Header title="Mur de l'Amour" />
+          <div className="grid grid-cols-1 gap-6 pt-4 md:grid-cols-3">
+            <StatCard
+              label="Note moyenne"
+              value={`${stats.average_rating.toFixed(1)}/5`}
+              icon={<Star className="h-6 w-6 fill-current text-amber-500" />}
+            />
+            <StatCard
+              label="Avis publies"
+              value={stats.total_reviews}
+              icon={<MessageCircle className="h-6 w-6 text-primary" />}
+            />
+            <StatCard
+              label="Satisfaction calculee"
+              value={satisfaction}
+              icon={<Users className="h-6 w-6 text-emerald-600" />}
+            />
+          </div>
+        </section>
 
-        <div className="flex-1 p-8 overflow-y-auto max-w-6xl w-full mx-auto space-y-12">
-          {/* Hero Stats */}
-          <section className="text-center space-y-6 pt-8">
-            <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-bold text-sm"
-            >
-              <Star className="w-4 h-4 fill-current" /> La communauté SpeechCoach
-            </motion.div>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight">Ce que vous dites de nous</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-              Vos retours sont notre moteur. Découvrez les expériences des coachs qui utilisent SpeechCoach pour transformer leur expression orale.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-8">
-              <StatCard 
-                label="Note Globale" 
-                value={`${stats.average_rating}/5`} 
-                icon={<Star className="w-6 h-6 text-yellow-500 fill-current" />}
-              />
-              <StatCard 
-                label="Avis récoltés" 
-                value={stats.total_reviews} 
-                icon={<MessageCircle className="w-6 h-6 text-primary" />}
-              />
-              <StatCard 
-                label="Utilisateurs actifs" 
-                value="98%" 
-                icon={<Users className="w-6 h-6 text-blue-500" />}
-                sublabel="de satisfaction"
-              />
+        <section className="space-y-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Commentaires recents</h2>
+              <p className="text-sm text-muted-foreground">Un mur d avis plus utile et plus professionnel.</p>
             </div>
-          </section>
+          </div>
 
-          {/* Feedback Masonry-like Grid */}
-          <section className="space-y-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Avis récents</h2>
-              <Link href="/settings">
-                <Button variant="outline" size="sm">Donner mon avis</Button>
-              </Link>
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="h-48 animate-pulse rounded-[1.5rem] border border-border/70 bg-card/70" />
+              ))}
             </div>
-
-            {isLoading ? (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {[1,2,3,4,5,6].map(i => <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />)}
-               </div>
-            ) : feedbacks.length > 0 ? (
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {feedbacks.map((f, i) => (
-                   <FeedbackCard key={f.id} feedback={f} index={i} />
-                 ))}
-               </div>
-            ) : (
-               <div className="text-center py-20 bg-background rounded-3xl border border-dashed">
-                 <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                 <p className="text-muted-foreground">Aucun avis pour le moment. Soyez le premier !</p>
-               </div>
-            )}
-          </section>
-        </div>
-      </main>
-    </div>
+          ) : isError ? (
+            <div className="rounded-[1.5rem] border border-dashed border-border bg-card/70 px-6 py-12 text-center" role="alert">
+              <MessageCircle className="mx-auto mb-4 h-12 w-12 text-primary/35" />
+              <p className="text-sm text-muted-foreground">
+                Les avis publics n ont pas pu etre charges pour le moment.
+              </p>
+              <div className="mt-4">
+                <Button variant="outline" onClick={() => fetchData()}>
+                  Recharger
+                </Button>
+              </div>
+            </div>
+          ) : feedbacks.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {feedbacks.map((feedback, index) => (
+                <FeedbackCard key={feedback.id} feedback={feedback} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[1.5rem] border border-dashed border-border bg-card/70 px-6 py-20 text-center">
+              <MessageCircle className="mx-auto mb-4 h-12 w-12 text-primary/35" />
+              <p className="text-sm text-muted-foreground">Aucun avis public pour le moment.</p>
+            </div>
+          )}
+        </section>
+      </div>
+    </AppShell>
   );
 }
 
-function StatCard({ label, value, icon, sublabel }: any) {
+function StatCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+}) {
   return (
-    <Card className="border-none shadow-xl bg-background/50 backdrop-blur-sm">
-      <CardContent className="pt-6 pb-6 flex flex-col items-center">
-        <div className="p-3 rounded-2xl bg-muted mb-4">{icon}</div>
-        <div className="text-3xl font-black">{value}</div>
-        <div className="text-sm font-medium text-muted-foreground">{label}</div>
-        {sublabel && <div className="text-[10px] text-primary font-bold mt-1 uppercase tracking-tighter">{sublabel}</div>}
+    <Card>
+      <CardContent className="flex flex-col items-center gap-3 pt-6 text-center">
+        <div className="rounded-2xl bg-secondary/70 p-3">{icon}</div>
+        <div className="text-3xl font-semibold">{value}</div>
+        <div className="text-sm text-muted-foreground">{label}</div>
       </CardContent>
     </Card>
   );
 }
 
-function FeedbackCard({ feedback, index }: { feedback: any, index: number }) {
+function FeedbackCard({ feedback, index }: { feedback: FeedbackItem; index: number }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
+    <motion.article
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index * 0.04 }}
+      aria-label={`Avis de ${feedback.user_profile?.full_name || 'Utilisateur'}`}
     >
-      <Card className="h-full border-none shadow-lg hover:shadow-2xl transition-all duration-300 group">
-        <CardContent className="pt-6 pb-6 space-y-4">
-          <div className="flex justify-between items-start">
+      <Card className="h-full">
+        <CardContent className="space-y-4 pt-6">
+          <div className="flex items-center justify-between gap-3">
             <RatingStars rating={feedback.rating} editable={false} size="sm" />
-            <span className="text-[10px] text-muted-foreground font-mono">
-                {new Date(feedback.created_at).toLocaleDateString('fr-FR')}
+            <span className="text-xs text-muted-foreground">
+              {feedback.created_at ? new Date(feedback.created_at).toLocaleDateString('fr-FR') : 'Avis recent'}
             </span>
           </div>
-          
-          <div className="relative">
-            <Quote className="absolute -left-2 -top-2 w-8 h-8 text-primary/5 -z-10 group-hover:text-primary/10 transition-colors" />
-            <p className="text-sm leading-relaxed italic text-foreground/80">
-              "{feedback.comments || "L'utilisateur n'a pas laissé de commentaire, mais la note parle d'elle-même !"}"
-            </p>
-          </div>
 
-          <div className="pt-4 border-t flex items-center gap-3">
-            <AvatarCustom 
-              src={feedback.user_profile?.avatar_url} 
-              name={feedback.user_profile?.full_name} 
-              size="sm" 
+          <blockquote className="rounded-[1rem] border border-border/60 bg-secondary/30 p-4">
+            <div className="mb-3 flex items-center gap-2 text-primary/55">
+              <Quote aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <span className="text-[11px] font-medium uppercase tracking-[0.18em]">
+                Commentaire
+              </span>
+            </div>
+            <p className="text-sm leading-7 text-foreground/80">
+              {feedback.comments || 'Pas de commentaire textuel, seulement une evaluation numerique.'}
+            </p>
+          </blockquote>
+
+          <div className="flex items-center gap-3 border-t border-border/70 pt-4">
+            <AvatarCustom
+              src={feedback.user_profile?.avatar_url}
+              name={feedback.user_profile?.full_name}
+              size="sm"
             />
-            <div className="text-xs">
-              <div className="font-bold truncate max-w-[120px]">
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">
                 {feedback.user_profile?.full_name || 'Utilisateur'}
               </div>
-              <div className="text-muted-foreground opacity-60">Session Verifiée</div>
+              <div className="text-xs text-muted-foreground">Avis enregistre</div>
             </div>
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </motion.article>
   );
 }

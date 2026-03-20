@@ -151,8 +151,8 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     metadata = VideoMetadata(
         filename=video_name,
         duration_seconds=duration,
-        fps=1.0, 
-        resolution=(0,0),
+        fps=fps,
+        resolution=resolution,
         detected_language=language
     )
     

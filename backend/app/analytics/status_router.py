@@ -1,264 +1,372 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel.ext.asyncio.session import AsyncSession
+import os
+import shutil
 import uuid as uuid_lib
+from datetime import datetime
+from typing import Any, Dict, List
 
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import HTMLResponse, Response
+from pydantic import BaseModel
+from sqlmodel import delete, select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+from app.analytics.models import AnalysisResult, CoachingFeedback, VideoSession
+from app.analytics.report_pdf import build_report_pdf
+from app.analytics.report_formatter import (
+    build_report_markdown,
+    build_report_print_html,
+    build_report_response,
+)
 from app.auth.router import current_active_user
-from app.users.models import User
-from app.analytics.models import VideoSession, AnalysisResult
 from app.db.database import get_session
+from app.users.models import User
 
 status_router = APIRouter()
 
-@status_router.get("/status/{session_id}")
-async def get_session_status(
+
+async def _get_authorized_session(
     session_id: str,
-    user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_session)
-):
+    user: User,
+    db: AsyncSession,
+) -> VideoSession:
     try:
         session_uuid = uuid_lib.UUID(session_id)
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid session ID format")
-    
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail='Invalid session ID format') from error
+
     session = await db.get(VideoSession, session_uuid)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-        
+        raise HTTPException(status_code=404, detail='Session not found')
+
     if session.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to view this session")
-        
-    return {
-        "session_id": str(session.id),
-        "status": session.status,
-    }
+        raise HTTPException(status_code=403, detail='Not authorized to view this session')
 
-@status_router.get("/result/{session_id}")
-async def get_session_result(
+    return session
+
+
+async def _get_authorized_session_and_analysis(
     session_id: str,
-    user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_session)
-):
-    try:
-        session_uuid = uuid_lib.UUID(session_id)
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid session ID format")
-
-    session = await db.get(VideoSession, session_uuid)
-    if not session or session.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Session not found")
-        
-    from sqlmodel import select
+    user: User,
+    db: AsyncSession,
+) -> tuple[VideoSession, AnalysisResult]:
+    session = await _get_authorized_session(session_id, user, db)
     statement = select(AnalysisResult).where(AnalysisResult.video_session_id == session.id)
     result = await db.execute(statement)
     analysis = result.scalars().first()
-    
+
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis result not ready yet")
-    
-    # Unpack the nested metrics_json (which is a full SpeechCoachReport dict)
-    m = analysis.metrics_json or {}
-    scores = m.get('scores', {})
-    audio = m.get('audio_metrics', {})
-    vision = m.get('vision_metrics', {})
-    llm_coaching = m.get('llm_coaching') or {}
-    strengths = m.get('strengths', [])
-    weaknesses = m.get('weaknesses', [])
-    recommendations = m.get('recommendations', [])
-    
-    # Build feedback text from LLM coaching or fallback to strengths/weaknesses
-    feedback_parts = []
-    if llm_coaching.get('bilan_global'):
-        feedback_parts.append(llm_coaching['bilan_global'])
-    if llm_coaching.get('point_prioritaire'):
-        feedback_parts.append(f"Point prioritaire : {llm_coaching['point_prioritaire']}")
-    if llm_coaching.get('encouragement'):
-        feedback_parts.append(f"💡 {llm_coaching['encouragement']}")
-    if not feedback_parts and strengths:
-        feedback_parts = [f"✅ {s}" for s in strengths[:3]]
-        feedback_parts += [f"📈 {w}" for w in weaknesses[:3]]
-    feedback_text = "\n\n".join(feedback_parts) if feedback_parts else "Analyse complète. Consultez vos métriques ci-dessous."
+        raise HTTPException(status_code=404, detail='Analysis result not ready yet')
 
-    return {
-        "id": str(session.id),
-        "title": session.title or f"Analyse #{str(session.id)[:8]}",
-        "video_url": session.video_url, # Pass the URL to the frontend player
-        "overall_score": int(analysis.overall_score),
-        "voice_score": round(scores.get('voice_score', 0) * 10),       # /10 → /100
-        "body_language_score": round(scores.get('body_language_score', 0) * 10),
-        "scene_score": round(scores.get('scene_score', 0) * 10),
-        "presence_score": round(scores.get('presence_score', 0) * 10),
-        "wpm": round(audio.get('wpm', 0)),
-        "pause_count": audio.get('pause_count', 0),
-        "filler_count": audio.get('filler_count', 0),
-        "face_presence_ratio": round(vision.get('face_presence_ratio', 0) * 100),
-        "eye_contact_ratio": round(vision.get('eye_contact_ratio', 0) * 100),
-        "feedback_text": feedback_text,
-        "strengths": strengths,
-        "weaknesses": weaknesses,
-        "recommendations": [
-            {
-                "category": r.get('category', ''),
-                "severity": r.get('severity', ''),
-                "message": r.get('message', ''),
-                "tip": r.get('actionable_tip', '')
-            }
-            for r in recommendations[:5]
-        ],
-    }
+    return session, analysis
 
-@status_router.get("/history")
-async def get_session_history(
-    user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_session)
-):
-    from sqlmodel import select
-    # Fetch all video sessions for the user, ordered by creation date descending
-    statement = select(VideoSession).where(VideoSession.user_id == user.id).order_by(VideoSession.id.desc())
+
+async def _load_user_sessions_and_analyses(
+    user_id: Any,
+    db: AsyncSession,
+) -> tuple[List[VideoSession], Dict[Any, AnalysisResult]]:
+    statement = select(VideoSession).where(VideoSession.user_id == user_id).order_by(VideoSession.created_at.desc())
     result = await db.execute(statement)
     sessions = result.scalars().all()
-    
-    if not sessions:
-        return []
-        
-    history = []
-    for session in sessions:
-        # Fetch associated analysis result if completed
-        analysis = None
-        if session.status == "completed":
-            analysis_stmt = select(AnalysisResult).where(AnalysisResult.video_session_id == session.id)
-            analysis_res = await db.execute(analysis_stmt)
-            analysis = analysis_res.scalars().first()
-            
-        import datetime
-        # Fallback date if created_at is missing (common in some migration states)
-        created_val = None
-        if hasattr(session, 'created_at') and session.created_at:
-            created_val = session.created_at.isoformat()
-        else:
-            created_val = datetime.datetime.now().isoformat()
 
-        session_data = {
-            "session_id": str(session.id),
-            "title": session.title or f"Analyse #{str(session.id)[:8]}",
-            "created_at": created_val,
-            "status": session.status,
-            "duration": session.duration_seconds,
-            "video_url": session.video_url
+    completed_session_ids = [session.id for session in sessions if session.status == 'completed']
+    analyses_by_session_id: Dict[Any, AnalysisResult] = {}
+
+    if completed_session_ids:
+        analysis_stmt = select(AnalysisResult).where(AnalysisResult.video_session_id.in_(completed_session_ids))
+        analysis_res = await db.execute(analysis_stmt)
+        analyses = analysis_res.scalars().all()
+        analyses_by_session_id = {analysis.video_session_id: analysis for analysis in analyses}
+
+    return sessions, analyses_by_session_id
+
+
+def _serialize_session_history_item(
+    session: VideoSession,
+    analysis: AnalysisResult | None,
+) -> Dict[str, Any]:
+    created_val = session.created_at.isoformat() if getattr(session, 'created_at', None) else datetime.now().isoformat()
+
+    session_data: Dict[str, Any] = {
+        'session_id': str(session.id),
+        'title': session.title or f'Analyse #{str(session.id)[:8]}',
+        'created_at': created_val,
+        'status': session.status,
+        'duration': session.duration_seconds,
+        'video_url': session.video_url,
+    }
+
+    if analysis and analysis.metrics_json:
+        metrics = analysis.metrics_json
+        session_data['overall_score'] = int(analysis.overall_score)
+        session_data['wpm'] = round(metrics.get('audio_metrics', {}).get('wpm', 0))
+        session_data['voice_score'] = round(metrics.get('scores', {}).get('voice_score', 0) * 10)
+        session_data['body_language_score'] = round(metrics.get('scores', {}).get('body_language_score', 0) * 10)
+
+        if not session_data['duration'] or session_data['duration'] == 0:
+            session_data['duration'] = (
+                metrics.get('metadata', {}).get('duration_seconds', 0)
+                or metrics.get('audio_metrics', {}).get('total_duration', 0)
+                or metrics.get('audio_metrics', {}).get('duration', 0)
+            )
+
+        if session_data['duration']:
+            session_data['duration'] = round(session_data['duration'])
+
+    return session_data
+
+
+def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]:
+    strengths = report.get('strengths') or []
+    recommendations = report.get('recommendations') or []
+    training_plan = report.get('training_plan') or {}
+    first_day = (training_plan.get('days') or [None])[0] or {}
+
+    return {
+        'session_id': report.get('session', {}).get('id', ''),
+        'title': report.get('session', {}).get('title', 'Rapport'),
+        'created_at': report.get('session', {}).get('created_at', ''),
+        'overall_score': report.get('summary', {}).get('overall_score', 0),
+        'priority_focus': report.get('summary', {}).get('priority_focus', 'Progression generale'),
+        'narrative': report.get('summary', {}).get('narrative', ''),
+        'encouragement': report.get('summary', {}).get('encouragement'),
+        'primary_focus': training_plan.get('focus_primary') or report.get('summary', {}).get('priority_focus', 'Progression generale'),
+        'first_strength': strengths[0] if strengths else None,
+        'next_practice_title': first_day.get('title'),
+        'next_practice_step': (first_day.get('items') or [None])[0],
+        'recommendations': recommendations[:2],
+    }
+
+
+def _build_dashboard_summary_payload(
+    sessions: List[VideoSession],
+    analyses_by_session_id: Dict[Any, AnalysisResult],
+) -> Dict[str, Any]:
+    history_entries = [
+        _serialize_session_history_item(session, analyses_by_session_id.get(session.id))
+        for session in sessions
+    ]
+
+    completed_entries = [
+        item for item in history_entries if item.get('status') == 'completed' and item.get('overall_score') is not None
+    ]
+
+    average_score = (
+        round(sum(item.get('overall_score', 0) for item in completed_entries) / len(completed_entries))
+        if completed_entries
+        else 0
+    )
+    best_score = max((item.get('overall_score', 0) for item in completed_entries), default=0)
+    total_practice_minutes = round(sum(item.get('duration', 0) or 0 for item in history_entries) / 60)
+    progress_chart = [
+        {
+            'created_at': item.get('created_at', ''),
+            'score': item.get('overall_score', 0),
+            'wpm': item.get('wpm', 0),
         }
-        
-        if analysis and analysis.metrics_json:
-            m = analysis.metrics_json
-            session_data["overall_score"] = int(analysis.overall_score)
-            session_data["wpm"] = round(m.get('audio_metrics', {}).get('wpm', 0))
-            session_data["voice_score"] = round(m.get('scores', {}).get('voice_score', 0) * 10)
-            session_data["body_language_score"] = round(m.get('scores', {}).get('body_language_score', 0) * 10)
-            
-            # Fallback for duration if session record lacks it
-            if not session_data["duration"] or session_data["duration"] == 0:
-                # Try metadata first, then audio_metrics if available
-                session_data["duration"] = m.get('metadata', {}).get('duration_seconds', 0) or \
-                                          m.get('audio_metrics', {}).get('total_duration', 0) or \
-                                          m.get('audio_metrics', {}).get('duration', 0)
-            
-            # Ensure duration is rounded for clean UI display
-            if session_data["duration"]:
-                session_data["duration"] = round(session_data["duration"])
-        
-        history.append(session_data)
-        
-    return history
+        for item in sorted(completed_entries, key=lambda current: current.get('created_at', ''))
+    ]
+
+    latest_coaching = None
+    for session in sessions:
+        if session.status != 'completed':
+            continue
+        analysis = analyses_by_session_id.get(session.id)
+        if analysis is None:
+            continue
+        report = build_report_response(session, analysis)
+        latest_coaching = _build_dashboard_coaching_snapshot(report)
+        break
+
+    return {
+        'total_sessions': len(history_entries),
+        'completed_sessions': len(completed_entries),
+        'average_score': average_score,
+        'best_score': best_score,
+        'total_practice_minutes': total_practice_minutes,
+        'recent_sessions': history_entries[:5],
+        'progress_chart': progress_chart,
+        'latest_coaching': latest_coaching,
+    }
 
 
-@status_router.delete("/session/{session_id}")
+@status_router.get('/status/{session_id}')
+async def get_session_status(
+    session_id: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    session = await _get_authorized_session(session_id, user, db)
+    return {
+        'session_id': str(session.id),
+        'status': session.status,
+    }
+
+
+@status_router.get('/dashboard-summary')
+async def get_dashboard_summary(
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    sessions, analyses_by_session_id = await _load_user_sessions_and_analyses(user.id, db)
+    return _build_dashboard_summary_payload(sessions, analyses_by_session_id)
+
+
+@status_router.get('/result/{session_id}')
+async def get_session_result(
+    session_id: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    session, analysis = await _get_authorized_session_and_analysis(session_id, user, db)
+    return build_report_response(session, analysis)
+
+
+@status_router.get('/report/{session_id}/markdown')
+async def export_report_markdown(
+    session_id: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    session, analysis = await _get_authorized_session_and_analysis(session_id, user, db)
+    report = build_report_response(session, analysis)
+    markdown = build_report_markdown(report)
+    filename = report.get('session', {}).get('title', f'report-{session_id}')
+    safe_filename = ''.join(char if char.isalnum() or char in ('-', '_') else '-' for char in filename.lower()).strip('-') or f'report-{session_id}'
+
+    return Response(
+        content=markdown,
+        media_type='text/markdown; charset=utf-8',
+        headers={
+            'Content-Disposition': f'attachment; filename="{safe_filename}.md"',
+        },
+    )
+
+
+@status_router.get('/report/{session_id}/print', response_class=HTMLResponse)
+async def export_report_print_html(
+    session_id: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    session, analysis = await _get_authorized_session_and_analysis(session_id, user, db)
+    report = build_report_response(session, analysis)
+    html = build_report_print_html(report)
+    return HTMLResponse(content=html)
+
+
+@status_router.get('/report/{session_id}/pdf')
+async def export_report_pdf(
+    session_id: str,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    session, analysis = await _get_authorized_session_and_analysis(session_id, user, db)
+    report = build_report_response(session, analysis)
+    filename = report.get('session', {}).get('title', f'report-{session_id}')
+    safe_filename = ''.join(char if char.isalnum() or char in ('-', '_') else '-' for char in filename.lower()).strip('-') or f'report-{session_id}'
+
+    try:
+        pdf_bytes = build_report_pdf(report)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    return Response(
+        content=pdf_bytes,
+        media_type='application/pdf',
+        headers={
+            'Content-Disposition': f'attachment; filename="{safe_filename}.pdf"',
+        },
+    )
+
+
+@status_router.get('/history')
+async def get_session_history(
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_session),
+):
+    sessions, analyses_by_session_id = await _load_user_sessions_and_analyses(user.id, db)
+    return [
+        _serialize_session_history_item(session, analyses_by_session_id.get(session.id))
+        for session in sessions
+    ]
+
+
+@status_router.delete('/session/{session_id}')
 async def delete_session(
     session_id: str,
     user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     try:
         session_uuid = uuid_lib.UUID(session_id)
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid session ID format")
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail='Invalid session ID format') from error
 
     session = await db.get(VideoSession, session_uuid)
     if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-        
+        raise HTTPException(status_code=404, detail='Session not found')
+
     if session.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this session")
-        
-    # --- Physical File Cleanup ---
-    import os
-    BASE_STORAGE = os.path.abspath(os.path.join(os.path.dirname(__file__), "../storage"))
-    
-    # 1. Delete Video File
-    if session.video_url and session.video_url.startswith("/storage/"):
-        # Convert /storage/uploads/file.mp4 to absolute path
-        rel_path = session.video_url.replace("/storage/", "")
-        abs_path = os.path.join(BASE_STORAGE, rel_path)
+        raise HTTPException(status_code=403, detail='Not authorized to delete this session')
+
+    base_storage = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage'))
+
+    if session.video_url and session.video_url.startswith('/storage/'):
+        rel_path = session.video_url.replace('/storage/', '')
+        abs_path = os.path.join(base_storage, rel_path)
         if os.path.exists(abs_path):
             try:
                 os.remove(abs_path)
-            except Exception as e:
-                print(f"Failed to delete video file: {e}")
+            except Exception as error:
+                print(f'Failed to delete video file: {error}')
 
-    # 2. Delete Processing Output (JSON/WAV etc) if session.id is known
-    processing_dir = os.path.join(BASE_STORAGE, "processing", str(session.id))
+    processing_dir = os.path.join(base_storage, 'processing', str(session.id))
     if os.path.exists(processing_dir):
-        import shutil
         try:
             shutil.rmtree(processing_dir)
-        except Exception as e:
-            print(f"Failed to delete processing dir: {e}")
+        except Exception as error:
+            print(f'Failed to delete processing dir: {error}')
 
-    # --- Database Cleanup ---
-    from sqlmodel import delete, select
-    from app.analytics.models import CoachingFeedback
-    
-    # 1. Delete CoachingFeedback
     analysis_ids_stmt = select(AnalysisResult.id).where(AnalysisResult.video_session_id == session.id)
     analysis_ids_res = await db.execute(analysis_ids_stmt)
     analysis_ids = analysis_ids_res.scalars().all()
-    
+
     if analysis_ids:
         feedback_stmt = delete(CoachingFeedback).where(CoachingFeedback.analysis_result_id.in_(analysis_ids))
         await db.execute(feedback_stmt)
-    
-    # 2. Delete AnalysisResults
+
     result_stmt = delete(AnalysisResult).where(AnalysisResult.video_session_id == session.id)
     await db.execute(result_stmt)
-    
-    # 3. Delete the session
+
     await db.delete(session)
     await db.commit()
-    
-    return {"status": "deleted", "session_id": session_id}
+
+    return {'status': 'deleted', 'session_id': session_id}
 
 
-
-from pydantic import BaseModel
 class SessionUpdate(BaseModel):
     title: str
 
-@status_router.patch("/session/{session_id}")
+
+@status_router.patch('/session/{session_id}')
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
     user: User = Depends(current_active_user),
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
 ):
     try:
         session_uuid = uuid_lib.UUID(session_id)
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Invalid session ID format")
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail='Invalid session ID format') from error
 
     session = await db.get(VideoSession, session_uuid)
     if not session or session.user_id != user.id:
-        raise HTTPException(status_code=404, detail="Session not found")
-        
+        raise HTTPException(status_code=404, detail='Session not found')
+
     session.title = update_data.title
     db.add(session)
     await db.commit()
     await db.refresh(session)
-    
-    return {"status": "updated", "session_id": session_id, "title": session.title}
+
+    return {'status': 'updated', 'session_id': session_id, 'title': session.title}
