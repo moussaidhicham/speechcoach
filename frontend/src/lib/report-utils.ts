@@ -51,6 +51,60 @@ export function getScoreVerdict(score: number): string {
   return 'A retravailler';
 }
 
+function formatSharpnessLabel(blur: number): string {
+  if (blur < 20) {
+    return 'Floue';
+  }
+  if (blur < 40) {
+    return 'Correcte';
+  }
+  return 'Nette';
+}
+
+function formatLightingLabel(brightness: number): string {
+  if (brightness < 70) {
+    return 'Trop sombre';
+  }
+  if (brightness > 210) {
+    return 'Trop fort';
+  }
+  return 'Correct';
+}
+
+function formatAxisScore(value: number): string {
+  return `${(value / 10).toFixed(1)}/10`;
+}
+
+function formatPaceLabel(wpm: number): string {
+  if (wpm > 160) {
+    return 'Rapide';
+  }
+  if (wpm >= 120) {
+    return 'Correct';
+  }
+  return 'Lent';
+}
+
+function formatEyeContactLabel(value: number): string {
+  if (value >= 70) {
+    return 'Bon';
+  }
+  if (value >= 40) {
+    return 'Moyen';
+  }
+  return 'Faible';
+}
+
+function formatHandsLabel(value: number): string {
+  if (value >= 60) {
+    return 'Visibles';
+  }
+  if (value >= 30) {
+    return 'Parfois visibles';
+  }
+  return 'Peu visibles';
+}
+
 export function buildMarkdownReport(report: ReportResult): string {
   const lines: string[] = [
     '# Rapport SpeechCoach',
@@ -74,14 +128,14 @@ export function buildMarkdownReport(report: ReportResult): string {
     lines.push(`> ${report.summary.encouragement}`, '');
   }
 
-  lines.push('## Scores', '');
-  lines.push(`- Voix : ${report.scores.voice}/100`);
-  lines.push(`- Langage corporel : ${report.scores.body_language}/100`);
-  lines.push(`- Presence : ${report.scores.presence}/100`);
-  lines.push(`- Scene : ${report.scores.scene}/100`);
-  lines.push(`- Regard : ${report.scores.eye_contact}/100`, '');
+  lines.push('## Scores & bilan', '');
+  lines.push(`**Evaluation generale : ${report.summary.overall_score}/100**`);
+  lines.push(`- Voix et rythme : ${formatAxisScore(report.scores.voice)}`);
+  lines.push(`- Gestes et posture : ${formatAxisScore(report.scores.body_language)}`);
+  lines.push(`- Regard camera et stabilite : ${formatAxisScore(report.scores.presence)}`);
+  lines.push(`- Qualite video : ${formatAxisScore(report.scores.scene)}`, '');
 
-  lines.push('## Points forts', '');
+  lines.push('## Ce qui fonctionne deja bien', '');
   if (report.strengths.length > 0) {
     report.strengths.forEach((item) => lines.push(`- ${item}`));
   } else {
@@ -89,7 +143,7 @@ export function buildMarkdownReport(report: ReportResult): string {
   }
   lines.push('');
 
-  lines.push('## Axes de progression', '');
+  lines.push('## Ce que je vous conseille de corriger ensuite', '');
   if (report.weaknesses.length > 0) {
     report.weaknesses.forEach((item) => lines.push(`- ${item}`));
   } else {
@@ -97,18 +151,12 @@ export function buildMarkdownReport(report: ReportResult): string {
   }
   lines.push('');
 
-  lines.push('## Recommandations', '');
-  if (report.recommendations.length > 0) {
-    report.recommendations.forEach((item) => {
-      lines.push(`### ${item.category}`);
-      lines.push(`- Severite : ${item.severity}`);
-      lines.push(`- Diagnostic : ${item.message}`);
-      lines.push(`- Action : ${item.tip}`);
-      lines.push('');
-    });
-  } else {
-    lines.push('- Continuez vos repetitions avec le meme niveau d exigence.', '');
+  lines.push('## Votre priorite pour la prochaine repetition', '');
+  lines.push(`- Focus principal : ${report.summary.priority_focus || report.training_plan.focus_primary || 'Progression generale'}`);
+  if (report.summary.encouragement) {
+    lines.push(`- Encouragement : ${report.summary.encouragement}`);
   }
+  lines.push('');
 
   lines.push('## Plan de pratique', '');
   lines.push(`- Focus principal : ${report.training_plan.focus_primary || 'Progression generale'}`);
@@ -125,15 +173,21 @@ export function buildMarkdownReport(report: ReportResult): string {
     });
   }
 
-  lines.push('## Metriques', '');
-  lines.push(`- Debit vocal : ${report.metrics.wpm} WPM`);
-  lines.push(`- Pauses : ${report.metrics.pause_count}`);
-  lines.push(`- Fillers : ${report.metrics.filler_count}`);
-  lines.push(`- Presence visage : ${report.metrics.face_presence_ratio}%`);
-  lines.push(`- Regard camera : ${report.metrics.eye_contact_ratio}%`);
-  lines.push(`- Visibilite des mains : ${report.metrics.hands_visibility_ratio}%`, '');
+  lines.push('## Details des mesures', '');
+  lines.push('### Voix');
+  lines.push(`- Rythme de parole : ${report.metrics.wpm} mots/min (${formatPaceLabel(report.metrics.wpm)})`);
+  lines.push(`- Pauses marquees (>0.5s) : ${report.metrics.pause_count}`);
+  lines.push(`- Hesitations detectees : ${report.metrics.filler_count}`, '');
+  lines.push('### Qualite video');
+  lines.push(`- Eclairage : ${formatLightingLabel(report.metrics.brightness)}`);
+  lines.push(`- Nettete de l image : ${formatSharpnessLabel(report.metrics.blur)}`, '');
+  lines.push('### Presence a l ecran');
+  lines.push(`- Visage visible dans le cadre : ${report.metrics.face_presence_ratio}%`);
+  lines.push(`- Regard vers la camera : ${report.metrics.eye_contact_ratio}% (${formatEyeContactLabel(report.metrics.eye_contact_ratio)})`);
+  lines.push(`- Mains visibles : ${report.metrics.hands_visibility_ratio}% (${formatHandsLabel(report.metrics.hands_visibility_ratio)})`);
+  lines.push(`- Energie gestuelle : ${report.metrics.hands_activity_score}/10`, '');
 
-  lines.push('## Transcription', '');
+  lines.push('## Transcription automatique', '');
   if (report.transcript.length > 0) {
     report.transcript.forEach((segment) => {
       lines.push(`- [${segment.start.toFixed(1)}s - ${segment.end.toFixed(1)}s] ${segment.text}`);

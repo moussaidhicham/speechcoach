@@ -108,7 +108,6 @@ export default function PublicFeedbackPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold">Commentaires recents</h2>
-              <p className="text-sm text-muted-foreground">Un mur d avis plus utile et plus professionnel.</p>
             </div>
           </div>
 

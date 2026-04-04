@@ -29,23 +29,23 @@ const capabilities = [
   {
     title: 'Analyse vocale',
     description:
-      "Mesurez le rythme, les pauses, la fluidité et la régularité de votre voix avec un feedback facile à exploiter.",
+      "Mesurez le rythme, les pauses, la fluidite et la regularite de votre voix avec un feedback facile a exploiter.",
     icon: Mic,
-    points: ['Débit vocal interprétable', 'Pauses et fillers visibles', 'Lecture claire des priorités'],
+    points: ['Debit vocal interpretable', 'Pauses et fillers visibles', 'Lecture claire des priorites'],
   },
   {
     title: 'Analyse visuelle',
     description:
-      "Suivez le regard, la présence dans le cadre, la posture et la qualité de votre environnement.",
+      "Suivez le regard, la presence dans le cadre, la posture et la qualite de votre environnement.",
     icon: Camera,
-    points: ['Contact visuel', 'Présence visage', 'Qualité du cadrage'],
+    points: ['Contact visuel', 'Presence visage', 'Qualite du cadrage'],
   },
   {
-    title: 'Coaching structuré',
+    title: 'Coaching structure',
     description:
-      "Chaque session se termine par un rapport partageable avec forces, points à corriger et plan de pratique.",
+      "Chaque session se termine par un rapport partageable avec forces, points a corriger et plan de pratique.",
     icon: ClipboardList,
-    points: ['Résumé exécutif', 'Recommandations prioritaires', "Plan d'entraînement"],
+    points: ['Resume executif', 'Recommandations prioritaires', "Plan d'entrainement"],
   },
 ];
 
@@ -53,12 +53,12 @@ const workflow = [
   {
     title: 'Enregistrer ou importer',
     description:
-      'Le studio vous guide avant la capture pour éviter les vidéos mal cadrées ou difficilement exploitables.',
+      'Le studio vous guide avant la capture pour eviter les videos mal cadrees ou difficilement exploitables.',
   },
   {
     title: 'Lancer le traitement',
     description:
-      "Le système analyse la voix, le regard, la présence et les signaux de scène dans un pipeline unique.",
+      "Le systeme analyse la voix, le regard, la presence et les signaux de scene dans un pipeline unique.",
   },
   {
     title: 'Lire puis partager',
@@ -68,9 +68,9 @@ const workflow = [
 ];
 
 const audiences = [
-  'Soutenances et présentations académiques',
+  'Soutenances et presentations academiques',
   'Entretiens et oral de concours',
-  'Pitch deck, demo day et présentations produit',
+  'Pitch deck, demo day et presentations produit',
 ];
 
 /* ─── Fade-up animation preset ──────────────────────────────────────── */
@@ -99,13 +99,13 @@ function ProductPreview() {
           <div className="flex items-start justify-between gap-6">
             <div>
               <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
-                Studio guidé
+                Studio guide
               </Badge>
               <CardTitle className="font-display text-2xl font-medium leading-snug">
-                Une capture pensée pour réussir <em>du premier coup</em>
+                Une capture pensee pour reussir <em>du premier coup</em>
               </CardTitle>
               <CardDescription className="mt-3 max-w-sm text-sm leading-relaxed">
-                Statut clair, préparation rapide et prochaine action toujours visible.
+                Statut clair, preparation rapide et prochaine action toujours visible.
               </CardDescription>
             </div>
             <div className="hidden shrink-0 rounded-2xl border border-primary/15 bg-primary/8 p-3.5 text-primary lg:block">
@@ -123,7 +123,7 @@ function ProductPreview() {
               <Badge variant="outline" className="text-xs">3 checks</Badge>
             </div>
             <div className="space-y-2.5">
-              {['Caméra active', 'Micro détecté', 'Cadrage stable'].map((item) => (
+              {['Camera active', 'Micro detecte', 'Cadrage stable'].map((item) => (
                 <div
                   key={item}
                   className="flex items-center gap-3 rounded-xl bg-secondary/60 px-4 py-3 text-sm"
@@ -150,7 +150,7 @@ function ProductPreview() {
                 <span>REC 02:14</span>
               </div>
               <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-                {[['Audio', 'Niveau stable'], ['Présence', 'Cadre valide']].map(([k, v]) => (
+                {[['Audio', 'Niveau stable'], ['Presence', 'Cadre valide']].map(([k, v]) => (
                   <div key={k} className="rounded-lg bg-white/10 p-3 backdrop-blur">
                     <div className="text-[10px] uppercase tracking-widest text-white/50">{k}</div>
                     <div className="mt-1.5 text-base font-medium text-white">{v}</div>
@@ -172,7 +172,7 @@ function ProductPreview() {
             Un rendu clair pour relire, partager et <em>progresser</em>
           </CardTitle>
           <CardDescription className="mt-3 text-sm leading-relaxed">
-            Score, preuves utiles et actions à appliquer dès la prochaine répétition.
+            Score, preuves utiles et actions a appliquer des la prochaine repetition.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 p-7">
@@ -187,7 +187,7 @@ function ProductPreview() {
                   84
                 </div>
                 <p className="mt-2.5 max-w-[14rem] text-sm leading-relaxed text-primary-foreground/75">
-                  Présentation convaincante — axe prioritaire sur le regard.
+                  Presentation convaincante - axe prioritaire sur le regard.
                 </p>
               </div>
               <LineChart className="h-9 w-9 shrink-0 text-primary-foreground/60" />
@@ -197,8 +197,8 @@ function ProductPreview() {
           <div className="space-y-2.5">
             {[
               ['Force', 'Structure orale claire et rythme stable.'],
-              ['À corriger', 'Regarder la caméra dans les transitions.'],
-              ['Prochaine action', '2 répétitions de 90 secondes sans notes.'],
+              ['A corriger', 'Regarder la camera dans les transitions.'],
+              ['Prochaine action', '2 repetitions de 90 secondes sans notes.'],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl border border-border/60 bg-background/70 px-4 py-4">
                 <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -234,7 +234,7 @@ export default function LandingPage() {
           </Link>
 
           <nav className="hidden items-center gap-7 text-sm text-muted-foreground md:flex">
-            {[['#produit', 'Produit'], ['#process', 'Parcours'], ['/public-feedback', 'Avis']].map(
+            {[['#produit', 'Ce que vous obtenez'], ['#process', 'Comment ca marche'], ['/public-feedback', 'Avis']].map(
               ([href, label]) => (
                 <Link key={label} href={href} className="transition-colors hover:text-foreground">
                   {label}
@@ -256,7 +256,7 @@ export default function LandingPage() {
                   <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
                   Dashboard
                 </Link>
-                <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Se déconnecter">
+                <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Se deconnecter">
                   <LogOut className="h-4 w-4" />
                 </Button>
               </>
@@ -269,7 +269,7 @@ export default function LandingPage() {
                   Connexion
                 </Link>
                 <Link href="/register" className={buttonVariants({ size: 'sm' })}>
-                  Créer un compte
+                  Creer un compte
                 </Link>
               </>
             )}
@@ -295,8 +295,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-              SpeechCoach mélange studio de répétition, lecture analytique et rendu éditorial
-              pour que chaque session ressemble à un vrai travail de coaching.
+              SpeechCoach transforme une video de prise de parole en retour clair,
+              priorites de travail et plan de progression partageable.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
@@ -311,14 +311,14 @@ export default function LandingPage() {
                 href="#produit"
                 className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'px-6')}
               >
-                Voir le produit
+                Voir le resultat
               </Link>
             </div>
 
             <div className="mt-10 grid gap-3 sm:grid-cols-3">
               {[
-                ['Vue éditoriale', 'Résumé, preuves, plan'],
-                ['Studio vivant', 'Capture, traitement, export'],
+                ['Retour clair', 'Resume, preuves, plan'],
+                ['Studio guide', 'Capture, traitement, export'],
                 ['Fait pour partager', 'PDF, Markdown, historique'],
               ].map(([title, sub]) => (
                 <div key={title} className="rounded-2xl border border-border/60 bg-card/70 px-4 py-4">
@@ -340,10 +340,10 @@ export default function LandingPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <Badge variant="secondary" className="mb-4 bg-accent text-accent-foreground">
-                      Editorial studio
+                      Apercu
                     </Badge>
                     <CardTitle className="font-display max-w-xs text-2xl font-medium leading-snug">
-                      Une salle de répétition, pas un dashboard générique.
+                      Une prise de parole, un rapport clair, une prochaine action.
                     </CardTitle>
                   </div>
                   <ShieldCheck className="hidden h-7 w-7 shrink-0 text-primary sm:block" />
@@ -352,13 +352,13 @@ export default function LandingPage() {
               <CardContent className="space-y-5 p-7">
                 <div className="studio-stage relative overflow-hidden rounded-2xl p-6">
                   <div className="flex items-center justify-between text-[10px] font-medium uppercase tracking-widest text-white/45">
-                    <span>Session prête</span>
-                    <span>Lecture premium</span>
+                    <span>Session prete</span>
+                    <span>Vue synthese</span>
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     {[
-                      ['Vue studio', 'Capture guidée', "Preflight, permissions, retour d'état."],
-                      ['Vue rapport', 'Lecture rapide', 'Résumé exécutif, export Markdown & PDF.'],
+                      ['Vue studio', 'Capture guidee', "Verification, permissions, retour d'etat."],
+                      ['Vue rapport', 'Lecture rapide', 'Resume executif, export Markdown et PDF.'],
                     ].map(([label, title, desc]) => (
                       <div key={label} className="rounded-xl bg-white/10 p-4 backdrop-blur">
                         <div className="text-[10px] font-medium uppercase tracking-widest text-white/45">
@@ -389,15 +389,14 @@ export default function LandingPage() {
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div {...fadeUpInView(0)} className="max-w-xl">
               <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
-                Produit
+                Ce que vous obtenez
               </Badge>
               <h2 className="font-display text-4xl font-medium leading-snug">
-                Un socle de design unique pour{' '}
-                <em className="not-italic text-primary">toute l'application.</em>
+                Une experience coherente du studio jusqu'au rapport.
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Les écrans partagent la même logique visuelle : lisibilité, hiérarchie claire,
-                actions visibles et feedback de progression.
+                Le produit garde la meme logique de lecture partout : comprendre vite,
+                voir les preuves utiles, puis savoir quoi faire ensuite.
               </p>
             </motion.div>
 
@@ -412,7 +411,7 @@ export default function LandingPage() {
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div {...fadeUpInView(0)} className="mb-14 max-w-xl">
               <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
-                Fonctionnalités
+                Ce que le systeme analyse
               </Badge>
               <h2 className="font-display text-4xl font-medium leading-snug">
                 Trois axes d'analyse,{' '}
@@ -458,18 +457,18 @@ export default function LandingPage() {
             {/* Left */}
             <motion.div {...fadeUpInView(0)}>
               <Badge variant="secondary" className="mb-4 bg-accent text-accent-foreground">
-                Parcours
+                Comment ca marche
               </Badge>
               <h2 className="font-display text-4xl font-medium leading-snug">
-                Chaque étape prépare <em className="not-italic text-primary">la suivante.</em>
+                Chaque etape prepare <em className="not-italic text-primary">la suivante.</em>
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-                Nous avons retiré les zones grises du produit : permissions, progression,
-                résultat et export sont toujours explicites.
+                De la capture au rapport, le parcours reste lisible : on sait quoi faire,
+                ce qui est en cours et ce qu'il faut corriger ensuite.
               </p>
 
               <div className="mt-9 rounded-2xl border border-border/60 bg-card/70 p-6">
-                <div className="mb-4 text-sm font-medium">Conçu pour</div>
+                <div className="mb-4 text-sm font-medium">Concu pour</div>
                 <div className="space-y-2.5">
                   {audiences.map((item) => (
                     <div
@@ -518,13 +517,13 @@ export default function LandingPage() {
                       variant="secondary"
                       className="mb-5 bg-white/15 text-primary-foreground hover:bg-white/20"
                     >
-                      Prêt à tester
+                      Pret a tester
                     </Badge>
                     <h2 className="font-display max-w-xl text-4xl font-medium leading-snug text-primary-foreground lg:text-5xl">
-                      D'une vidéo brute à un plan de progression <em>exploitable.</em>
+                      D'une video brute a un plan de progression <em>exploitable.</em>
                     </h2>
                     <p className="mt-5 max-w-lg text-base leading-relaxed text-primary-foreground/75">
-                      Ouvrez le studio, chargez une vidéo ou enregistrez-vous, puis retrouvez
+                      Ouvrez le studio, chargez une video ou enregistrez-vous, puis retrouvez
                       un rapport clair avec score, preuves et prochaines actions.
                     </p>
                   </div>
@@ -533,10 +532,10 @@ export default function LandingPage() {
                       href={isAuthenticated ? '/studio' : '/register'}
                       className={cn(
                         buttonVariants({ size: 'lg' }),
-                        'bg-white px-7 text-primary hover:bg-white/90'
+                        'bg-background px-7 text-foreground hover:bg-background/90'
                       )}
                     >
-                      {isAuthenticated ? 'Aller au studio' : 'Créer un compte'}
+                      {isAuthenticated ? 'Aller au studio' : 'Creer un compte'}
                     </Link>
                     <Link
                       href="/public-feedback"
@@ -569,7 +568,7 @@ export default function LandingPage() {
               </div>
             </Link>
             <p className="mt-5 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Une application de coaching oral qui privilégie la clarté, la cohérence
+              Une application de coaching oral qui privilegie la clarte, la coherence
               et des livrables partageables.
             </p>
           </div>

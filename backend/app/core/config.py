@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     def SYNC_DATABASE_URL(self) -> str:
         return f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    SPEECHCOACH_COACHING_BACKEND: str = "ollama"
+    SPEECHCOACH_LLM_MODEL: str = "speechcoach"
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = Settings()

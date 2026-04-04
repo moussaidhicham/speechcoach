@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Camera,
   CheckCircle2,
-  ClipboardList,
   Copy,
   Download,
   Eye,
@@ -18,16 +17,8 @@ import {
   Sparkles,
   User,
   Video,
-  WandSparkles,
   type LucideIcon,
 } from 'lucide-react';
-import {
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadarChart,
-  ResponsiveContainer,
-} from 'recharts';
 import { toast } from 'sonner';
 
 import { AppShell } from '@/components/layout/app-shell';
@@ -47,10 +38,10 @@ import {
 } from '@/lib/report-utils';
 import { cn } from '@/lib/utils';
 import { videoService } from '@/services/video.service';
-import { ReportRecommendation, ReportResult, ReportTrainingDay } from '@/types/analytics';
+import { ReportResult } from '@/types/analytics';
 import { useAuth } from '@/context/auth-context';
 
-/* ─── Types ──────────────────────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Types Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 interface ScoreCardProps {
   label:  string;
@@ -72,17 +63,91 @@ function formatResolutionValue(resolution: [number, number]) {
   if (!resolution || resolution[0] <= 0 || resolution[1] <= 0) {
     return 'Non renseignee';
   }
-  return `${resolution[0]}×${resolution[1]}`;
+  return `${resolution[0]}x${resolution[1]}`;
 }
 
 function formatFpsValue(fps: number) {
-  if (!Number.isFinite(fps) || fps <= 1) {
+  if (!Number.isFinite(fps) || fps <= 1 || fps > 240) {
     return 'Non renseigne';
   }
   return `${Number(fps.toFixed(2)).toString()}`;
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────── */
+function formatLightingLabel(brightness: number) {
+  if (brightness < 70) return 'Trop sombre';
+  if (brightness > 210) return 'Trop fort';
+  return 'Correct';
+}
+
+function formatSharpnessLabel(blur: number) {
+  if (blur < 20) return 'Floue';
+  if (blur < 40) return 'Correcte';
+  return 'Nette';
+}
+
+function formatAxisScore(value: number) {
+  return `${(value / 10).toFixed(1)}/10`;
+}
+
+function formatPaceLabel(wpm: number) {
+  if (wpm > 160) return 'Rapide';
+  if (wpm >= 120) return 'Correct';
+  return 'Lent';
+}
+
+function formatEyeContactLabel(value: number) {
+  if (value >= 70) return 'Bon';
+  if (value >= 40) return 'Moyen';
+  return 'Faible';
+}
+
+function formatHandsLabel(value: number) {
+  if (value >= 60) return 'Visibles';
+  if (value >= 30) return 'Parfois visibles';
+  return 'Peu visibles';
+}
+
+function getMeaningfulTokens(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((token) => token.length > 3);
+}
+
+function hasStrongOverlap(source: string, comparison: string) {
+  const sourceTokens = new Set(getMeaningfulTokens(source));
+  const comparisonTokens = new Set(getMeaningfulTokens(comparison));
+
+  if (sourceTokens.size === 0 || comparisonTokens.size === 0) {
+    return false;
+  }
+
+  let sharedCount = 0;
+  sourceTokens.forEach((token) => {
+    if (comparisonTokens.has(token)) {
+      sharedCount += 1;
+    }
+  });
+
+  return sharedCount / sourceTokens.size >= 0.55;
+}
+
+function shouldDisplayEncouragement(
+  encouragement: string | null | undefined,
+  narrative: string,
+  priority: string
+) {
+  if (!encouragement) return false;
+  if (encouragement.length > 220) return false;
+  if (hasStrongOverlap(encouragement, narrative)) return false;
+  if (hasStrongOverlap(encouragement, priority)) return false;
+  return true;
+}
+
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Page Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 export default function ReportPage() {
   const params = useParams();
@@ -95,6 +160,7 @@ export default function ReportPage() {
   const [isExportingPdf,      setIsExportingPdf]      = React.useState(false);
   const [isExportingMarkdown, setIsExportingMarkdown] = React.useState(false);
   const [showFeedback,        setShowFeedback]        = React.useState(false);
+  const [enrichmentMonitorStatus, setEnrichmentMonitorStatus] = React.useState<'idle' | 'running' | 'ready' | 'failed'>('idle');
 
   const fetchReport = React.useCallback(async () => {
     if (!sessionId) return;
@@ -119,17 +185,81 @@ export default function ReportPage() {
     if (token && sessionId) fetchReport().catch(() => undefined);
   }, [fetchReport, sessionId, token]);
 
+  React.useEffect(() => {
+    if (!report || report.enrichment_status !== 'pending') {
+      if (report?.enrichment_status === 'completed') {
+        setEnrichmentMonitorStatus('idle');
+      }
+      return;
+    }
+
+    if (enrichmentMonitorStatus === 'idle') {
+      setEnrichmentMonitorStatus('running');
+      toast.message("L'enrichissement IA est en cours. Vous pouvez continuer votre lecture, on vous avertira lorsqu'il sera terminÃ©.");
+    }
+
+    const timer = window.setInterval(async () => {
+      if (!sessionId) return;
+      try {
+        const latestReport = await videoService.getResult(sessionId);
+
+        if (latestReport.enrichment_status === 'completed') {
+          window.clearInterval(timer);
+          setEnrichmentMonitorStatus('ready');
+          toast.success("L'enrichissement IA est terminÃ©. Veuillez actualiser la page pour afficher la version enrichie.");
+          return;
+        }
+
+        if (latestReport.enrichment_status === 'failed') {
+          window.clearInterval(timer);
+          setEnrichmentMonitorStatus('failed');
+          toast.error("L'enrichissement IA n'a pas pu aboutir cette fois-ci.");
+        }
+      } catch {
+        // Keep the current report visible; the next interval can retry quietly.
+      }
+    }, 8000);
+
+    return () => window.clearInterval(timer);
+  }, [enrichmentMonitorStatus, report, sessionId]);
+
+  const isEnrichmentRunning = report?.enrichment_status === 'pending' && enrichmentMonitorStatus !== 'ready' && enrichmentMonitorStatus !== 'failed';
+  const isEnrichmentReadyForRefresh = enrichmentMonitorStatus === 'ready';
+  const hasEnrichmentFailed = report?.enrichment_status === 'failed' || enrichmentMonitorStatus === 'failed';
+  const coachingHeadline = isEnrichmentRunning
+    ? 'Analyse avancee en preparation.'
+    : isEnrichmentReadyForRefresh
+      ? 'Analyse avancee prete.'
+      : report?.summary.headline || 'Synthese du coach';
+  const coachingNarrative = isEnrichmentRunning
+    ? "Le rapport principal est disponible. Le coach IA reformule encore les priorites pour vous livrer une synthese plus claire."
+    : isEnrichmentReadyForRefresh
+      ? "L'enrichissement IA est termine. Actualisez la page pour remplacer la version provisoire par la synthese finale."
+      : report?.summary.narrative || '';
+  const coachingPriority = isEnrichmentRunning
+    ? 'Analyse avancee en cours'
+    : isEnrichmentReadyForRefresh
+      ? 'Version enrichie prete'
+      : report?.summary.priority_focus || 'Progression generale';
+  const coachingEncouragement = isEnrichmentRunning || isEnrichmentReadyForRefresh ? null : report?.summary.encouragement;
+  const displayEncouragement = shouldDisplayEncouragement(coachingEncouragement, coachingNarrative, coachingPriority)
+    ? coachingEncouragement
+    : null;
+  const focusPrimary = report?.training_plan.focus_primary || 'Progression generale';
+  const focusSecondary = report?.training_plan.focus_secondary || null;
+  const practiceDays = report?.training_plan.days ?? [];
+
   const handleExportMarkdown = React.useCallback(async () => {
     if (!report || !sessionId) return;
     setIsExportingMarkdown(true);
     try {
       const blob = await videoService.getMarkdownExport(sessionId);
       downloadBlob(blob, `speechcoach-report-${sessionId}.md`);
-      toast.success('Export Markdown prêt.');
+      toast.success('Export Markdown pret.');
     } catch {
       const content = buildMarkdownReport(report);
       downloadBlob(new Blob([content], { type: 'text/markdown;charset=utf-8' }), `speechcoach-report-${sessionId}.md`);
-      toast.success('Export Markdown généré localement.');
+      toast.success('Export Markdown genere localement.');
     } finally {
       setIsExportingMarkdown(false);
     }
@@ -141,7 +271,7 @@ export default function ReportPage() {
     try {
       const blob = await videoService.getPdfExport(sessionId);
       downloadBlob(blob, `speechcoach-report-${sessionId}.pdf`);
-      toast.success('Export PDF prêt.');
+      toast.success('Export PDF pret.');
     } catch {
       toast.error('Export PDF indisponible pour le moment.');
     } finally {
@@ -152,7 +282,7 @@ export default function ReportPage() {
   const handleCopyLink = React.useCallback(async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      toast.success('Lien du rapport copié.');
+      toast.success('Lien du rapport copie.');
     } catch {
       toast.error('Impossible de copier le lien automatiquement.');
     }
@@ -166,11 +296,11 @@ export default function ReportPage() {
       </Button>
       <Button variant="outline" size="sm" onClick={handleExportMarkdown} disabled={isExportingMarkdown}>
         <FileText className="mr-1.5 h-3.5 w-3.5" />
-        {isExportingMarkdown ? 'Génération…' : 'Markdown'}
+        {isExportingMarkdown ? 'Generation...' : 'Markdown'}
       </Button>
       <Button size="sm" onClick={handleExportPdf} disabled={isExportingPdf}>
         <Download className="mr-1.5 h-3.5 w-3.5" />
-        {isExportingPdf ? 'Préparation…' : 'Export PDF'}
+        {isExportingPdf ? 'Preparation...' : 'Export PDF'}
       </Button>
     </div>
   ) : null;
@@ -181,7 +311,7 @@ export default function ReportPage() {
       subtitle={
         report
           ? `Session du ${formatReportDate(report.session.created_at)}`
-          : 'Lecture détaillée de votre analyse'
+          : 'Lecture detaillee de votre analyse'
       }
       actions={actions}
       maxWidth="7xl"
@@ -191,7 +321,7 @@ export default function ReportPage() {
       {!isLoading && report && (
         <article className="space-y-7 print-container" aria-label="Rapport d'analyse SpeechCoach">
 
-          {/* ── Hero: summary + video ──────────────────────────────── */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Hero: summary + video Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
 
             {/* Summary card */}
@@ -200,19 +330,29 @@ export default function ReportPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary">
-                      Résumé exécutif
+                      Resume executif
                     </Badge>
-                    <CardTitle>{report.summary.headline}</CardTitle>
+                    {isEnrichmentRunning && (
+                      <Badge variant="outline" className="mb-4 ml-2">
+                        Enrichissement IA en cours
+                      </Badge>
+                    )}
+                    {isEnrichmentReadyForRefresh && (
+                      <Badge variant="outline" className="mb-4 ml-2 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        Enrichissement termine
+                      </Badge>
+                    )}
+                    <CardTitle>{coachingHeadline}</CardTitle>
                     <CardDescription className="mt-2.5 max-w-2xl text-sm leading-relaxed">
-                      {report.summary.narrative}
+                      {coachingNarrative}
                     </CardDescription>
                   </div>
                   <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5 text-right">
                     <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
-                      Priorité
+                      Priorite
                     </div>
                     <div className="mt-2 text-sm font-medium text-foreground">
-                      {report.summary.priority_focus}
+                      {coachingPriority}
                     </div>
                   </div>
                 </div>
@@ -223,23 +363,27 @@ export default function ReportPage() {
                 <div className="space-y-4">
                   <div className="grid gap-3 sm:grid-cols-3">
                     <SessionMetaCard label="Date"   value={formatReportDate(report.session.created_at)} />
-                    <SessionMetaCard label="Durée"  value={formatDuration(report.session.duration_seconds)} />
+                    <SessionMetaCard label="Duree"  value={formatDuration(report.session.duration_seconds)} />
                     <SessionMetaCard label="Langue" value={formatLanguage(report.session.language)} />
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
-                    <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      Ce que le rapport veut vous faire travailler en premier
+                  {(displayEncouragement || isEnrichmentReadyForRefresh) && (
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+                      <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        Encouragement du coach
+                      </div>
+                      {displayEncouragement ? (
+                        <p className="mt-2.5 rounded-xl bg-primary/8 px-4 py-3 text-sm leading-relaxed text-foreground">
+                          {displayEncouragement}
+                        </p>
+                      ) : null}
+                      {isEnrichmentReadyForRefresh && (
+                        <div className="mt-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-foreground">
+                          La synthese enrichie est prete. Cliquez sur <span className="font-medium">Recharger</span> pour afficher la version finale.
+                        </div>
+                      )}
                     </div>
-                    <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
-                      {report.summary.priority_focus}
-                    </p>
-                    {report.summary.encouragement && (
-                      <p className="mt-3.5 rounded-xl bg-primary/8 px-4 py-3 text-sm leading-relaxed text-foreground">
-                        {report.summary.encouragement}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 {/* Right: score block */}
@@ -261,7 +405,7 @@ export default function ReportPage() {
                   <div className="mt-7 space-y-4">
                     <div>
                       <div className="mb-2 flex items-center justify-between text-xs text-primary-foreground/60">
-                        <span>Préparation globale</span>
+                        <span>Evaluation generale</span>
                         <span>{report.summary.overall_score}%</span>
                       </div>
                       <Progress
@@ -272,7 +416,7 @@ export default function ReportPage() {
                       />
                     </div>
                     <div className="grid gap-2.5 sm:grid-cols-2">
-                      <MiniMetricCard label="Résolution" value={formatResolutionValue(report.session.resolution)} />
+                      <MiniMetricCard label="Resolution" value={formatResolutionValue(report.session.resolution)} />
                       <MiniMetricCard label="FPS" value={formatFpsValue(report.session.fps)} />
                     </div>
                   </div>
@@ -285,8 +429,8 @@ export default function ReportPage() {
               {report.session.video_url && (
                 <Card className="no-print overflow-hidden print-card">
                   <CardHeader>
-                    <CardTitle>Vidéo analysée</CardTitle>
-                    <CardDescription>Relisez la session en parallèle du rapport.</CardDescription>
+                  <CardTitle>Video analysee</CardTitle>
+                  <CardDescription>Relisez la session en parallele du rapport.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="overflow-hidden rounded-2xl border border-border/60 bg-black">
@@ -294,7 +438,7 @@ export default function ReportPage() {
                         src={`${apiBaseUrl}${report.session.video_url}`}
                         controls
                         className="aspect-video w-full object-contain"
-                        aria-label="Vidéo analysée"
+                        aria-label="Video analysee"
                       />
                     </div>
                   </CardContent>
@@ -302,201 +446,189 @@ export default function ReportPage() {
               )}
               <Card className="print-card flex-1">
                 <CardHeader>
-                  <CardTitle>Scores détaillés</CardTitle>
-                  <CardDescription>Les blocs qui composent la note globale.</CardDescription>
+                  <CardTitle>Scores &amp; bilan</CardTitle>
+                  <CardDescription>Lecture rapide des axes principaux avant d'ouvrir le detail des mesures.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2">
-                  <ScoreCard label="Voix"     value={report.scores.voice}          icon={Mic}  helper="Rythme, fluidité et projection" />
-                  <ScoreCard label="Corps"    value={report.scores.body_language}   icon={User} helper="Posture et gestuelle" />
-                  <ScoreCard label="Présence" value={report.scores.presence}        icon={Video} helper="Occupation du cadre" />
-                  <ScoreCard label="Regard"   value={report.scores.eye_contact}     icon={Eye}  helper="Connexion caméra" />
+                <CardContent className="space-y-3">
+                  <CompactScoreRow label="Voix / Debit" value={formatAxisScore(report.scores.voice)} helper="Rythme, pauses et fluidite" />
+                  <CompactScoreRow label="Posture / Gestes" value={formatAxisScore(report.scores.body_language)} helper="Visibilite des mains et aisance corporelle" />
+                  <CompactScoreRow label="Regard / Presence" value={formatAxisScore(report.scores.presence)} helper="Contact visuel et stabilite dans le cadre" />
+                  <CompactScoreRow label="Qualite / Cadrage" value={formatAxisScore(report.scores.scene)} helper="Lisibilite generale de l'image" />
                 </CardContent>
               </Card>
             </div>
           </section>
 
-          {/* ── Strengths + Weaknesses ─────────────────────────────── */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Strengths + Weaknesses Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <section className="grid gap-6 lg:grid-cols-2">
             <ListSectionCard
               title="Points forts"
-              description="Ce qui donne déjà de la crédibilité à votre prise de parole."
+              description="Ce qui donne deja de la credibilite a votre prise de parole."
               icon={CheckCircle2}
               items={report.strengths}
               tone="success"
             />
             <ListSectionCard
               title="Axes de progression"
-              description="Les éléments à corriger en priorité pour la prochaine répétition."
+              description="Les elements a corriger en priorite pour la prochaine repetition."
               icon={ArrowRight}
               items={report.weaknesses}
               tone="warning"
             />
           </section>
 
-          {/* ── Metrics + Recommendations ──────────────────────────── */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Metrics + Recommendations Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
 
             {/* Metrics card */}
             <Card className="print-card">
               <CardHeader>
-                <CardTitle>Indicateurs et preuves</CardTitle>
+                <CardTitle>Details des mesures</CardTitle>
                 <CardDescription>
-                  Les mesures qui soutiennent les recommandations.
+                  Le rapport montre d'abord l'essentiel. Ouvrez ce bloc seulement si vous voulez voir les details techniques.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
-                {/* Radar */}
-                <div
-                  className="h-60 w-full"
-                  role="img"
-                  aria-label="Radar des scores voix, corps, présence, scène et regard"
-                >
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart
-                      cx="50%" cy="50%" outerRadius="72%"
-                      data={[
-                        { subject: 'Voix',     value: report.scores.voice },
-                        { subject: 'Corps',    value: report.scores.body_language },
-                        { subject: 'Présence', value: report.scores.presence },
-                        { subject: 'Scène',    value: report.scores.scene },
-                        { subject: 'Regard',   value: report.scores.eye_contact },
-                      ]}
-                    >
-                      <PolarGrid opacity={0.14} />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                      <Radar
-                        name="Performance"
-                        dataKey="value"
-                        stroke="hsl(var(--primary))"
-                        fill="hsl(var(--primary))"
-                        fillOpacity={0.2}
-                        strokeWidth={2}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
+              <CardContent>
+                <details className="group rounded-2xl border border-border/60 bg-secondary/30 p-5 open:bg-background/70">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
+                    Voir les details audio, visuels et environnementaux
+                  </summary>
+                  <div className="mt-4 space-y-4">
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4">
+                      <div className="text-sm font-medium text-foreground">Metriques vocales</div>
+                      <div className="mt-3 grid gap-2.5">
+                        <ContextRow label="Debit (WPM)" value={`${report.metrics.wpm} mots/min (${formatPaceLabel(report.metrics.wpm)})`} />
+                        <ContextRow label="Pauses (>0.5s)" value={`${report.metrics.pause_count}`} />
+                        <ContextRow label="Hesitations" value={`${report.metrics.filler_count} detectees`} />
+                      </div>
+                    </div>
 
-                {/* Ratio bars */}
-                <div className="grid gap-3">
-                  <MetricProgressCard
-                    label="Contact visuel"
-                    value={report.metrics.eye_contact_ratio}
-                    description="Temps passé à regarder la caméra"
-                    icon={Eye}
-                  />
-                  <MetricProgressCard
-                    label="Présence visage"
-                    value={report.metrics.face_presence_ratio}
-                    description="Stabilité du cadrage"
-                    icon={Camera}
-                  />
-                  <MetricProgressCard
-                    label="Visibilité mains"
-                    value={report.metrics.hands_visibility_ratio}
-                    description="Mesure de la gestuelle"
-                    icon={User}
-                  />
-                </div>
-              </CardContent>
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4">
+                      <div className="text-sm font-medium text-foreground">Qualite visuelle</div>
+                      <div className="mt-3 grid gap-2.5">
+                        <ContextRow label="Luminosite" value={formatLightingLabel(report.metrics.brightness)} />
+                        <ContextRow label="Nettete" value={formatSharpnessLabel(report.metrics.blur)} />
+                      </div>
+                    </div>
 
-              {/* Stat row */}
-              <CardContent className="grid gap-3 border-t border-border/60 p-6 sm:grid-cols-2 xl:grid-cols-4">
-                <MetricStatCard icon={Mic}          label="Débit vocal"     value={`${report.metrics.wpm} WPM`} />
-                <MetricStatCard icon={PauseCircle}  label="Pauses"          value={`${report.metrics.pause_count}`} />
-                <MetricStatCard icon={ClipboardList} label="Fillers"        value={`${report.metrics.filler_count}`} />
-                <MetricStatCard icon={WandSparkles}  label="Mains actives"  value={`${report.metrics.hands_activity_score}`} />
+                    <div className="rounded-xl border border-border/60 bg-background/80 p-4">
+                      <div className="text-sm font-medium text-foreground">Metriques visuelles</div>
+                      <div className="mt-3 grid gap-2.5">
+                        <ContextRow label="Presence visage" value={`${report.metrics.face_presence_ratio}%`} />
+                        <ContextRow label="Contact visuel" value={`${report.metrics.eye_contact_ratio}% (${formatEyeContactLabel(report.metrics.eye_contact_ratio)})`} />
+                        <ContextRow label="Mains visibles" value={`${report.metrics.hands_visibility_ratio}% (${formatHandsLabel(report.metrics.hands_visibility_ratio)})`} />
+                        <ContextRow label="Intensite gestuelle" value={`${report.metrics.hands_activity_score}/10`} />
+                      </div>
+                    </div>
+                  </div>
+                </details>
               </CardContent>
             </Card>
 
-            {/* Recommendations card */}
+            {/* Practice card */}
             <Card className="print-card">
               <CardHeader>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <CardTitle>Recommandations prioritaires</CardTitle>
+                    <CardTitle>Prochain exercice</CardTitle>
                     <CardDescription>
-                      Des actions concrètes à tester dès la prochaine répétition.
+                      Une action concrete a tester des la prochaine repetition.
                     </CardDescription>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      Focus : {report.training_plan.focus_primary || 'Général'}
-                    </Badge>
-                    {report.training_plan.focus_secondary && (
-                      <Badge variant="outline">
-                        Secondaire : {report.training_plan.focus_secondary}
-                      </Badge>
-                    )}
-                  </div>
+                  <Button variant="outline" size="sm" onClick={() => fetchReport().catch(() => undefined)}>
+                    Recharger
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                {report.recommendations.length > 0 ? (
-                  report.recommendations.map((item) => (
-                    <RecommendationCard
-                      key={`${item.category}-${item.message}`}
-                      recommendation={item}
-                    />
-                  ))
-                ) : (
-                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm text-muted-foreground">
-                    Aucune recommandation détaillée n'a été fournie pour cette session.
+                {isEnrichmentRunning ? (
+                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
+                    L&apos;enrichissement IA est encore en cours. Nous preparons une reformulation plus claire et plus utile des conseils.
+                    Vous n&apos;avez rien a faire pour le moment.
                   </div>
+                ) : hasEnrichmentFailed ? (
+                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
+                    Le coaching enrichi n&apos;a pas pu etre genere cette fois-ci. Vous pouvez conserver les mesures brutes de cette session
+                    et relancer une analyse plus tard.
+                  </div>
+                ) : isEnrichmentReadyForRefresh ? (
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm leading-relaxed text-foreground">
+                    L&apos;enrichissement IA est termine. Veuillez actualiser la page pour afficher la version finale du coaching.
+                  </div>
+                ) : (
+                  <PracticeFocusCard
+                    primaryFocus={focusPrimary}
+                    secondaryFocus={focusSecondary}
+                    practiceDays={practiceDays}
+                  />
                 )}
               </CardContent>
             </Card>
           </section>
-
-          {/* ── Training plan + Context ────────────────────────────── */}
-          <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <Card className="print-card">
-              <CardHeader>
-                <CardTitle>Plan de pratique</CardTitle>
-                <CardDescription>
-                  Une proposition d'entraînement à suivre entre cette session et la suivante.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {report.training_plan.days.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {report.training_plan.days.map((day) => (
-                      <TrainingDayCard key={day.title} day={day} />
-                    ))}
+{/* Visual Analytics */}
+          {report.visuals && (
+            <section className="grid gap-6 lg:grid-cols-2">
+              <Card className="print-card">
+                <CardHeader>
+                  <CardTitle className="text-sm">Dynamique Vocale</CardTitle>
+                  <CardDescription>Fluctuations de l'énergie sonore durant votre discours.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-hidden rounded-xl border border-border/60 bg-white p-2 dark:bg-zinc-950">
+                    <img 
+                      src={`${apiBaseUrl}${report.visuals.audio_energy}`} 
+                      alt="Graphique d'énergie audio" 
+                      className="w-full object-contain"
+                      loading="lazy"
+                    />
                   </div>
-                ) : (
-                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-5 text-sm leading-relaxed text-muted-foreground">
-                    Le plan détaillé n'a pas encore été structuré pour cette session.
-                    Utilisez les recommandations ci-dessus comme feuille de route immédiate.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
+              <Card className="print-card">
+                <CardHeader>
+                   <CardTitle className="text-sm">Timeline Visuelle</CardTitle>
+                   <CardDescription>Présence du visage, du regard et des mains sur la durée.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <div className="overflow-hidden rounded-xl border border-border/60 bg-white p-2 dark:bg-zinc-950">
+                    <img 
+                      src={`${apiBaseUrl}${report.visuals.vision_timeline}`} 
+                      alt="Timeline de présence visuelle" 
+                      className="w-full object-contain"
+                      loading="lazy"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+          )}
+
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Context Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
+          <section>
             <Card className="print-card">
               <CardHeader>
                 <CardTitle>Notes utiles</CardTitle>
                 <CardDescription>
-                  Contexte technique et indicateurs complémentaires.
+                  Quelques reperes simples pour comprendre le contexte d'analyse.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-2.5">
-                <ContextRow label="Qualité de scène"  value={`${report.scores.scene}/100`} />
-                <ContextRow label="Luminosité"         value={`${report.metrics.brightness}`} />
-                <ContextRow label="Netteté"            value={`${report.metrics.blur}`} />
-                <ContextRow label="Pause cumulée"      value={`${report.metrics.pause_duration_total}s`} />
-                <ContextRow label="Session ID"         value={report.session.id.slice(0, 8)} mono />
-                <ContextRow label="Verdict"            value={getScoreVerdict(report.summary.overall_score)} />
+                <ContextRow label="Qualite visuelle" value={`${report.scores.scene}/100`} />
+                <ContextRow label="Eclairage" value={formatLightingLabel(report.metrics.brightness)} />
+                <ContextRow label="Resolution" value={formatResolutionValue(report.session.resolution)} />
+                <ContextRow label="Verdict" value={getScoreVerdict(report.summary.overall_score)} />
               </CardContent>
             </Card>
           </section>
 
-          {/* ── Transcript ────────────────────────────────────────────── */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Transcript Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <section>
             <Card className="print-card">
               <CardHeader>
                 <CardTitle>Transcription</CardTitle>
                 <CardDescription>
-                  Conservez la transcription complète pour vos relectures ou vos exports Markdown.
+                  Conservez la transcription complete pour vos relectures ou vos exports Markdown.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -512,7 +644,7 @@ export default function ReportPage() {
                           className="rounded-xl border border-border/60 bg-background/80 px-4 py-3 text-sm leading-relaxed"
                         >
                           <div className="font-mono text-xs text-muted-foreground">
-                            {segment.start.toFixed(1)}s – {segment.end.toFixed(1)}s
+                            {segment.start.toFixed(1)}s - {segment.end.toFixed(1)}s
                           </div>
                           <div className="mt-1.5 text-foreground">{segment.text}</div>
                         </div>
@@ -528,7 +660,7 @@ export default function ReportPage() {
             </Card>
           </section>
 
-          {/* ── Feedback ──────────────────────────────────────────────── */}
+          {/* Ã¢â€â‚¬Ã¢â€â‚¬ Feedback Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           {showFeedback && (
             <section className="no-print">
               <div className="mx-auto max-w-2xl">
@@ -542,7 +674,7 @@ export default function ReportPage() {
   );
 }
 
-/* ─── Helpers ────────────────────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 function downloadBlob(blob: Blob, filename: string) {
   const url  = URL.createObjectURL(blob);
@@ -553,7 +685,7 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-/* ─── Loading / Empty ────────────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Loading / Empty Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 function ReportLoadingState() {
   return (
@@ -583,7 +715,7 @@ function ReportEmptyState({ onRetry }: { onRetry: () => void }) {
         <div>
           <h2 className="font-display text-2xl font-medium">Rapport introuvable</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Cette session n'est peut-être pas terminée, ou elle n'est plus disponible
+            Cette session n'est peut-etre pas terminee, ou elle n'est plus disponible
             dans votre historique.
           </p>
         </div>
@@ -591,7 +723,7 @@ function ReportEmptyState({ onRetry }: { onRetry: () => void }) {
           <Button variant="outline" onClick={onRetry}>Recharger</Button>
           <Link href="/history">
             <Button>
-              Retour à l'historique
+              Retour a l'historique
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -601,7 +733,7 @@ function ReportEmptyState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-/* ─── Small components ───────────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Small components Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 function SessionMetaCard({ label, value }: { label: string; value: string }) {
   return (
@@ -629,6 +761,26 @@ function MiniMetricCard({ label, value }: { label: string; value: string }) {
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+function CompactScoreRow({
+  label,
+  value,
+  helper,
+}: {
+  label: string;
+  value: string;
+  helper: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-background/70 px-4 py-3.5">
+      <div className="min-w-0">
+        <div className="text-sm font-medium text-foreground">{label}</div>
+        <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{helper}</div>
+      </div>
+      <div className="shrink-0 font-mono text-base font-medium text-foreground">{value}</div>
     </div>
   );
 }
@@ -673,7 +825,17 @@ function MetricProgressCard({ label, value, description, icon: Icon }: MetricPro
   );
 }
 
-function MetricStatCard({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+function MetricStatCard({
+  icon: Icon,
+  label,
+  value,
+  description,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  description?: string;
+}) {
   return (
     <div className="rounded-xl border border-border/60 bg-background/70 p-4">
       <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -681,6 +843,9 @@ function MetricStatCard({ icon: Icon, label, value }: { icon: LucideIcon; label:
       </div>
       <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{label}</div>
       <div className="mt-1.5 font-mono text-lg font-medium text-foreground">{value}</div>
+      {description ? (
+        <div className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{description}</div>
+      ) : null}
     </div>
   );
 }
@@ -720,7 +885,7 @@ function ListSectionCard({
           ))
         ) : (
           <div className="rounded-xl border border-border/60 bg-background/70 px-4 py-3.5 text-sm text-muted-foreground">
-            Aucune information détaillée n'a été fournie dans cette section.
+            Aucune information detaillee n'a ete fournie dans cette section.
           </div>
         )}
       </CardContent>
@@ -728,52 +893,91 @@ function ListSectionCard({
   );
 }
 
-function RecommendationCard({ recommendation }: { recommendation: ReportRecommendation }) {
-  const severity = recommendation.severity.toLowerCase();
+function PracticeFocusCard({
+  primaryFocus,
+  secondaryFocus,
+  practiceDays,
+}: {
+  primaryFocus: string;
+  secondaryFocus?: string | null;
+  practiceDays: ReportResult['training_plan']['days'];
+}) {
   return (
     <div className="rounded-xl border border-border/60 bg-background/70 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="font-display text-base font-medium text-foreground">
-            {recommendation.category}
-          </div>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            {recommendation.message}
-          </p>
+        <div className="font-display text-base font-medium text-foreground">
+          Exercice conseille
         </div>
-        <Badge
-          variant="outline"
-          className={cn(
-            severity === 'critical' && 'border-destructive/25 bg-destructive/10 text-destructive',
-            severity === 'warning'  && 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-            severity === 'info'     && 'border-primary/20 bg-primary/10 text-primary'
-          )}
-        >
-          {recommendation.severity || 'Info'}
+        <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
+          Action concrete
         </Badge>
       </div>
-      <div className="mt-3.5 rounded-xl bg-secondary/50 px-4 py-3.5 text-sm leading-relaxed text-foreground">
-        <span className="font-medium">Action terrain — </span>
-        {recommendation.tip || 'Continuez à pratiquer avec la même exigence.'}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Badge variant="secondary" className="bg-secondary/70 text-foreground">
+          Focus : {primaryFocus}
+        </Badge>
+        {secondaryFocus ? (
+          <Badge variant="secondary" className="bg-secondary/50 text-muted-foreground">
+            Secondaire : {secondaryFocus}
+          </Badge>
+        ) : null}
       </div>
-    </div>
-  );
-}
-
-function TrainingDayCard({ day }: { day: ReportTrainingDay }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-background/70 p-5">
-      <div className="text-sm font-medium text-foreground">{day.title}</div>
-      <div className="mt-3 space-y-2">
-        {day.items.length > 0 ? (
-          day.items.map((item) => (
-            <div key={item} className="rounded-lg bg-secondary/50 px-3.5 py-2.5 text-sm leading-relaxed text-foreground">
-              {item}
+      <div className="mt-4 rounded-xl bg-secondary/50 p-4">
+        <div className="text-sm font-medium text-foreground">Plan de pratique</div>
+        {practiceDays.length > 0 ? (
+          <div className="mt-3 space-y-4">
+            <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+              <div className="text-sm font-medium text-foreground">{practiceDays[0].title}</div>
+              <div className="mt-3 space-y-2.5">
+                {practiceDays[0].items.map((step, stepIndex) => (
+                  <div
+                    key={`${practiceDays[0].title}-${step}`}
+                    className={cn(
+                      'rounded-lg px-3.5 py-2.5 text-sm leading-relaxed',
+                      stepIndex === 0
+                        ? 'border border-primary/30 bg-primary/10 text-foreground'
+                        : 'bg-background/80 text-foreground'
+                    )}
+                  >
+                    {stepIndex === 0 ? (
+                      <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-primary">
+                        A commencer ici
+                      </div>
+                    ) : null}
+                    {step}
+                  </div>
+                ))}
+              </div>
             </div>
-          ))
+
+            {practiceDays.length > 1 ? (
+              <details className="group rounded-xl border border-border/60 bg-background/70 p-4">
+                <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
+                  Voir tout le plan ({practiceDays.length - 1} blocs restants)
+                </summary>
+                <div className="mt-4 space-y-4">
+                  {practiceDays.slice(1).map((day) => (
+                    <div key={day.title} className="rounded-xl border border-border/60 bg-background/80 p-4">
+                      <div className="text-sm font-medium text-foreground">{day.title}</div>
+                      <div className="mt-3 space-y-2.5">
+                        {day.items.map((step) => (
+                          <div
+                            key={`${day.title}-${step}`}
+                            className="rounded-lg bg-secondary/50 px-3.5 py-2.5 text-sm leading-relaxed text-foreground"
+                          >
+                            {step}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
+          </div>
         ) : (
-          <div className="rounded-lg bg-secondary/50 px-3.5 py-2.5 text-sm text-muted-foreground">
-            Pas de détail supplémentaire pour ce bloc.
+          <div className="mt-3 rounded-lg bg-background/80 px-3.5 py-2.5 text-sm leading-relaxed text-muted-foreground">
+            Relisez l'axe prioritaire puis refaites une courte prise de parole en vous concentrant uniquement sur ce point.
           </div>
         )}
       </div>
@@ -791,6 +995,11 @@ function ContextRow({ label, value, mono = false }: { label: string; value: stri
     </div>
   );
 }
+
+
+
+
+
 
 
 

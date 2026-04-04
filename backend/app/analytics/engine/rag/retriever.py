@@ -1,12 +1,13 @@
-import os
 import json
 import logging
-from typing import List, Dict, Any
+import os
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import faiss
     import numpy as np
     from sentence_transformers import SentenceTransformer
+
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
@@ -14,98 +15,98 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+_RETRIEVER_CACHE: Dict[Tuple[str, str], Dict[str, Any]] = {}
+
+
 class RAGRetriever:
     def __init__(self, kb_path: str = None, model_name: str = "paraphrase-multilingual-MiniLM-L12-v2"):
         """
         Initializes the retriever with a multilingual sentence transformer to support French/English.
-        `paraphrase-multilingual-MiniLM-L12-v2` is relatively small and fast.
+        The embedding model and FAISS index are cached per worker process so enrichment doesn't cold-start every time.
         """
         if kb_path is None:
-            # Default to the same directory as this script
             kb_path = os.path.join(os.path.dirname(__file__), "knowledge_base.json")
-        
+
         self.kb_path = kb_path
         self.model_name = model_name
         self.documents: List[Dict[str, Any]] = []
         self.index = None
-        self.model = None
-        
-        if FAISS_AVAILABLE:
-            self._load_and_index()
+        self.model: Optional["SentenceTransformer"] = None
 
-    def _load_and_index(self):
-        """Loads documents from json and builds the FAISS index."""
-        if not os.path.exists(self.kb_path):
-            logger.error(f"Knowledge base not found at {self.kb_path}")
+        if FAISS_AVAILABLE:
+            self._load_cached_resources()
+
+    def _cache_key(self) -> Tuple[str, str]:
+        return (os.path.abspath(self.kb_path), self.model_name)
+
+    def _load_cached_resources(self):
+        cache_key = self._cache_key()
+        cached = _RETRIEVER_CACHE.get(cache_key)
+        if cached is not None:
+            self.documents = cached["documents"]
+            self.index = cached["index"]
+            self.model = cached["model"]
+            logger.info("Reusing cached RAG resources for %s", self.model_name)
             return
 
-        with open(self.kb_path, 'r', encoding='utf-8') as f:
-            self.documents = json.load(f)
+        if not os.path.exists(self.kb_path):
+            logger.error("Knowledge base not found at %s", self.kb_path)
+            return
+
+        with open(self.kb_path, "r", encoding="utf-8") as file:
+            self.documents = json.load(file)
 
         if not self.documents:
             logger.warning("Knowledge base is empty.")
             return
 
-        # Load embedding model
-        logger.info(f"Loading SentenceTransformer model: {self.model_name}")
+        logger.info("Loading SentenceTransformer model: %s", self.model_name)
         self.model = SentenceTransformer(self.model_name)
-        
-        # Build sentences to embed (Combine Title + problem_keywords for vector indexing)
-        texts_to_embed = []
+
+        texts_to_embed: List[str] = []
         for doc in self.documents:
-            # Combining title and keywords makes the semantic search heavily targeted
-            text = f"{doc['title']} " + " ".join(doc.get('problem_keywords', []))
+            text = f"{doc['title']} " + " ".join(doc.get("problem_keywords", []))
             texts_to_embed.append(text)
 
-        # Generate embeddings
-        logger.info(f"Generating embeddings for {len(texts_to_embed)} documents...")
+        logger.info("Generating embeddings for %s documents...", len(texts_to_embed))
         embeddings = self.model.encode(texts_to_embed, convert_to_numpy=True)
-        
-        # Normalize vectors for Cosine Similarity
         faiss.normalize_L2(embeddings)
 
-        # Build FAISS Index
         dim = embeddings.shape[1]
-        self.index = faiss.IndexFlatIP(dim) # Inner Product matching cosine similarity since normalized
+        self.index = faiss.IndexFlatIP(dim)
         self.index.add(embeddings)
-        logger.info(f"FAISS index built successfully with {self.index.ntotal} vectors.")
+        logger.info("FAISS index built successfully with %s vectors.", self.index.ntotal)
+
+        _RETRIEVER_CACHE[cache_key] = {
+            "documents": self.documents,
+            "index": self.index,
+            "model": self.model,
+        }
 
     def retrieve(self, query: str, top_k: int = 2) -> List[Dict[str, Any]]:
-        """
-        Embeds the query and fetches the top-k most relevant documents.
-        """
-        if not self.index or not self.model or not self.documents:
+        if self.index is None or self.model is None or not self.documents:
             logger.warning("RAG Retriever not properly initialized.")
             return []
 
-        # Embed query
         query_emb = self.model.encode([query], convert_to_numpy=True)
         faiss.normalize_L2(query_emb)
 
-        # Search
         distances, indices = self.index.search(query_emb, top_k)
-        
-        results = []
-        for i, idx in enumerate(indices[0]):
-            if idx != -1: # valid index
-                results.append(self.documents[idx])
+        logger.info("RAG retrieval distances: %s", distances[0].tolist() if len(distances) else [])
 
+        results: List[Dict[str, Any]] = []
+        for idx in indices[0]:
+            if idx != -1:
+                results.append(self.documents[idx])
         return results
 
     def release(self):
         """
-        Explicitly frees the SentenceTransformer model from RAM.
-        Call this after retrieval is done to reclaim memory before 
-        loading a large LLM (e.g., Ollama Mistral/phi3).
+        Keep resources warm between tasks for latency. This becomes a no-op intentionally.
         """
-        if self.model is not None:
-            import gc
-            del self.model
-            self.model = None
-            gc.collect()
-            try:
-                import torch
-                torch.cuda.empty_cache()
-            except Exception:
-                pass
-            logger.info("RAG embedding model released from RAM.")
+        logger.info("Keeping RAG resources warm in cache for reuse.")
+
+    @classmethod
+    def clear_cache(cls):
+        _RETRIEVER_CACHE.clear()
+        logger.info("RAG retriever cache cleared.")

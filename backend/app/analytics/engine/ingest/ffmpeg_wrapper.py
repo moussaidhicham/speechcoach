@@ -35,7 +35,8 @@ def _parse_frame_rate(value: Any) -> float:
             return float(numerator) / denominator_value
         except (TypeError, ValueError, ZeroDivisionError):
             return 0.0
-    return _safe_float(value)
+    parsed = _safe_float(value)
+    return parsed if 0 < parsed <= 240 else 0.0
 
 def extract_audio(video_path: str, output_wav_path: str) -> bool:
     """
@@ -141,7 +142,7 @@ def get_video_metadata(video_path: str) -> dict:
             nb_frames = _safe_float(video_stream.get('nb_frames'))
             if nb_frames > 0:
                 derived_fps = nb_frames / duration
-                if derived_fps > 1.0:
+                if 1.0 < derived_fps <= 240:
                     fps = derived_fps
 
         return {

@@ -24,7 +24,7 @@ class Profile(SQLModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.id")
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
-    preferred_language: str = Field(default="fr") # fr, en, ar
+    preferred_language: Optional[str] = Field(default="auto") # auto, fr, en, ar
     experience_level: Optional[str] = None # Beginner, Intermediate, Advanced
     current_goal: Optional[str] = None # Interview, PFE, Pitch, General
     weak_points: Optional[str] = None # JSON string or comma-separated

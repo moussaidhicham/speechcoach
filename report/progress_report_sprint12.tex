@@ -1,0 +1,672 @@
+﻿\documentclass[12pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{listings}
+\usepackage{inconsolata}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Avancement nÂ°3 - SpeechCoach}
+\rhead{Master SIE - 2026}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
+\titleformat{\subsubsection}{\bfseries\color{blue!35!black}}{}{0em}{}
+
+\title{
+    \vspace{-2cm}
+    \large Master SystÃ¨mes Intelligents pour l'Ã‰ducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'Ã‰tat d'Avancement nÂ°3}\\
+    \large \textit{Produit web, architecture technique, RAG/LLM et fine-tuning}
+}
+\author{\textbf{Ã‰tudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{PÃ©riode : aprÃ¨s le Rapport nÂ°2 jusqu'Ã  l'Ã©tat actuel du prototype}
+
+\begin{document}
+
+\maketitle
+
+\section{SynthÃ¨se et Ã‰tat Actuel du Projet}
+Depuis le dernier rapport, \textbf{SpeechCoach} a Ã©voluÃ© d'un moteur analytique vers un \textbf{prototype applicatif complet}. Le projet combine dÃ©sormais un backend multimodal (FastAPI), un frontend web (Next.js), une base RAG et une reformulation par LLM local.
+
+Le bilan de cette phase est le suivant :
+\begin{itemize}
+    \item \textbf{Consolidation produit} : authentification, gestion de profil, upload de vidÃ©os et export de rapports PDF/Markdown sont opÃ©rationnels.
+    \item \textbf{Moteur analytique stable} : les briques dÃ©terministes (voix, posture, regard) restent le socle de confiance.
+    \item \textbf{Exploration IA avancÃ©e} : intÃ©gration du RAG pour la pÃ©dagogie et expÃ©rimentation d'un cycle complet de fine-tuning (QLoRA) pour personnaliser le ton du coaching.
+    \item \textbf{Optimisation locale} : adoption d'une architecture hybride (dÃ©terministe + Ollama + GGUF) pour garantir la stabilitÃ© sur machine personnelle.
+\end{itemize}
+
+\section{Rappel du Cadre Initial et Positionnement dans la Roadmap}
+Selon la roadmap initiale, les sprints 10 Ã  12 devaient couvrir :
+\begin{itemize}
+    \item la construction de l'application ;
+    \item la prÃ©sentation des rapports ;
+    \item l'Ã©valuation technique ;
+    \item la stabilisation finale.
+\end{itemize}
+
+Les travaux rÃ©alisÃ©s pendant cette pÃ©riode couvrent bien ces objectifs, avec un approfondissement plus important que prÃ©vu sur la partie \textbf{coaching IA local}. LÃ  oÃ¹ la roadmap visait initialement un LLM local contrÃ´lÃ©, cette phase a conduit Ã  :
+\begin{itemize}
+    \item comparer plusieurs familles de modÃ¨les ;
+    \item revoir plusieurs fois l'architecture de gÃ©nÃ©ration ;
+    \item tester une approche hybride rÃ¨gles + RAG + LLM ;
+    \item lancer une piste de \textbf{fine-tuning supervisÃ©}.
+\end{itemize}
+
+\section{Travaux RÃ©alisÃ©s Depuis le DeuxiÃ¨me Rapport}
+
+\subsection{Passage Ã  une Architecture Produit ComplÃ¨te}
+L'un des changements majeurs est l'Ã©volution du projet d'un pipeline technique vers une architecture applicative complÃ¨te.
+
+\subsubsection{Backend}
+Le backend a Ã©tÃ© structurÃ© autour de \textbf{FastAPI} \cite{fastapi} pour exposer les fonctionnalitÃ©s mÃ©tier, avec une organisation modulaire autour des composants suivants :
+\begin{itemize}
+    \item authentification et gestion des utilisateurs ;
+    \item gestion du profil ;
+    \item upload et suivi des vidÃ©os ;
+    \item consultation des rapports et de l'historique ;
+    \item rÃ©cupÃ©ration et mise Ã  jour des feedbacks utilisateurs ;
+    \item exposition des fichiers de stockage gÃ©nÃ©rÃ©s.
+\end{itemize}
+
+Le backend s'appuie Ã©galement sur :
+\begin{itemize}
+    \item \textbf{SQLModel} pour la persistance ;
+    \item \textbf{Celery} \cite{celery} pour l'exÃ©cution asynchrone des tÃ¢ches d'analyse ;
+    \item \textbf{Redis} comme broker et backend de tÃ¢ches ;
+    \item un stockage local organisÃ© des fichiers d'entrÃ©e et des rÃ©sultats intermÃ©diaires.
+\end{itemize}
+
+\subsubsection{Frontend}
+Une interface web complÃ¨te a Ã©tÃ© mise en place avec :
+\begin{itemize}
+    \item \textbf{Next.js} \cite{nextjs} / \textbf{React} \cite{react} ;
+    \item \textbf{TypeScript} ;
+    \item \textbf{Tailwind CSS} ;
+    \item des composants UI modernes (shadcn/base-ui, Framer Motion, Recharts).
+\end{itemize}
+
+Cette interface permet aujourd'hui :
+\begin{itemize}
+    \item l'inscription et la connexion ;
+    \item l'import d'une vidÃ©o ou l'enregistrement direct ;
+    \item le suivi de traitement ;
+    \item la lecture dÃ©taillÃ©e d'un rapport ;
+    \item l'export en PDF et en Markdown ;
+    \item la consultation de l'historique et des avis.
+\end{itemize}
+
+\subsubsection{Base de donnÃ©es et persistance}
+La couche de persistance a Ã©tÃ© structurÃ©e pour supporter un usage produit rÃ©el. Le projet repose sur une base relationnelle pilotÃ©e par \textbf{SQLModel} \cite{sqlmodel}, avec les principales tables suivantes :
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}X @{}}
+        \toprule
+        \textbf{Table} & \textbf{RÃ´le et colonnes principales} \\
+        \midrule
+        \texttt{user} & compte applicatif ; \texttt{id}, \texttt{email}, \texttt{hashed\_password}, \texttt{is\_active}, \texttt{is\_superuser}, \texttt{is\_verified}. \\
+        \texttt{profile} & profil utilisateur ; \texttt{id}, \texttt{user\_id}, \texttt{full\_name}, \texttt{avatar\_url}, \texttt{preferred\_language}, \texttt{experience\_level}, \texttt{current\_goal}, \texttt{weak\_points}. \\
+        \texttt{videosession} & session d'analyse ; \texttt{id}, \texttt{user\_id}, \texttt{video\_url}, \texttt{status}, \texttt{duration\_seconds}, \texttt{title}, \texttt{created\_at}. \\
+        \texttt{analysisresult} & rÃ©sultat analytique consolidÃ© ; \texttt{id}, \texttt{video\_session\_id}, \texttt{overall\_score}, \texttt{metrics\_json}. \\
+        \texttt{coachingfeedback} & version textuelle du coaching ; \texttt{id}, \texttt{analysis\_result\_id}, \texttt{bilan}, \texttt{conseil}, \texttt{motivation}. \\
+        \texttt{platformfeedback} & avis sur l'application ; \texttt{id}, \texttt{user\_id}, \texttt{rating}, \texttt{comments}, \texttt{created\_at}. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{SchÃ©ma fonctionnel principal de la base de donnÃ©es.}
+\end{table}
+
+Ce schÃ©ma distingue clairement :
+\begin{itemize}
+    \item les donnÃ©es d'identitÃ© et de profil ;
+    \item les sessions vidÃ©o soumises Ã  l'analyse ;
+    \item les rÃ©sultats analytiques stockÃ©s en JSON structurÃ© ;
+    \item les sorties textuelles de coaching ;
+    \item les retours utilisateur sur l'application.
+\end{itemize}
+
+\subsection{Diagramme d'Architecture SimplifiÃ©}
+Le schÃ©ma ci-dessous rÃ©sume l'architecture technique actuellement retenue.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.6cm,
+    box/.style={draw, rounded corners, align=center, minimum width=3.4cm, minimum height=1.0cm, fill=blue!5},
+    service/.style={draw, rounded corners, align=center, minimum width=3.4cm, minimum height=1.0cm, fill=green!5},
+    storage/.style={draw, rounded corners, align=center, minimum width=3.4cm, minimum height=1.0cm, fill=orange!8},
+    arrow/.style={-{Latex[length=2.5mm]}, thick}
+]
+
+\node[box] (frontend) {Frontend web\\Next.js / React};
+\node[box, right=of frontend] (api) {Backend API\\FastAPI};
+\node[service, right=of api] (ollama) {LLM local\\Ollama / GGUF};
+
+\node[storage, below=of frontend] (db) {Base de donnÃ©es\\SQLModel / SQLite};
+\node[service, below=of api] (celery) {Traitement asynchrone\\Celery + Redis};
+\node[service, below=of ollama] (engine) {Moteur analytique\\FFmpeg, Whisper, MediaPipe};
+
+\node[storage, below=of celery] (storage) {Stockage local\\uploads / results};
+
+\draw[arrow] (frontend) -- (api);
+\draw[arrow] (api) -- (celery);
+\draw[arrow] (celery) -- (engine);
+\draw[arrow] (engine) -- (ollama);
+\draw[arrow] (api) -- (db);
+\draw[arrow] (celery) -- (storage);
+\draw[arrow] (engine) -- (storage);
+\draw[arrow] (api) -- (ollama);
+\end{tikzpicture}
+\caption{Architecture simplifiÃ©e de SpeechCoach dans son Ã©tat actuel.}
+\end{figure}
+
+\subsection{FonctionnalitÃ©s Frontend ImplÃ©mentÃ©es}
+L'interface web couvre les principaux cas d'usage via les modules suivants :
+\begin{description}
+    \item[Authentification :] inscription, connexion JWT et persistance de session.
+    \item[Dashboard :] statistiques globales, historique rÃ©cent, onbroading et progression des scores.
+    \item[Studio :] import de fichiers et enregistrement direct (webcam/micro) avec suivi en temps rÃ©el.
+    \item[Historique :] gestion des sessions (recherche, tri, renommage et suppression).
+    \item[Rapport :] verdict visuel, scores par axe, plan d'exercices et export PDF/Markdown.
+    \item[Profil \& ParamÃ¨tres :] gestion de l'identitÃ©, avatars, objectifs et sÃ©curitÃ©.
+\end{description}
+
+\subsection{Stabilisation du Pipeline d'Analyse}
+Le moteur multimodal a continuÃ© Ã  Ãªtre consolidÃ© :
+\begin{itemize}
+    \item audio : transcription, dÃ©bit, pauses, fillers, Ã©nergie ;
+    \item vision : prÃ©sence visage, contact visuel approximatif, mains visibles, intensitÃ© gestuelle, qualitÃ© visuelle ;
+    \item agrÃ©gation : scoring par dimension, score global, rÃ©sumÃ© forces/faiblesses.
+\end{itemize}
+
+Les Ã©volutions importantes ont surtout concernÃ© :
+\begin{itemize}
+    \item le recalibrage des scores ;
+    \item la priorisation des recommandations ;
+    \item la prÃ©sentation des rÃ©sultats de maniÃ¨re plus exploitable pÃ©dagogiquement.
+\end{itemize}
+
+\subsection{AmÃ©lioration du Moteur de Recommandations}
+Le moteur de recommandations a Ã©tÃ© enrichi pour devenir plus explicite et plus priorisÃ©.
+
+Les changements apportÃ©s incluent :
+\begin{itemize}
+    \item ajout d'une structure \texttt{Recommendation} avec catÃ©gorie, sÃ©vÃ©ritÃ©, message, \textit{actionable tip} et clÃ© d'exercice ;
+    \item amÃ©lioration du tri des recommandations selon la faiblesse la plus critique ;
+    \item ajustement des poids entre voix, regard, gestuelle et qualitÃ© visuelle ;
+    \item gÃ©nÃ©ration d'un plan de pratique plus cohÃ©rent avec les fiches pÃ©dagogiques.
+\end{itemize}
+
+Un point important de cette pÃ©riode a Ã©tÃ© la constatation suivante : \textbf{les erreurs utilisateur les plus gÃªnantes n'Ã©taient pas toujours dues au scoring brut, mais souvent Ã  l'ordre de prioritÃ© prÃ©sentÃ© dans le rapport}. Une part significative du travail a donc portÃ© sur le recalibrage de cette hiÃ©rarchie.
+
+\section{Stack Technique Actuelle}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}ll@{}}
+        \toprule
+        \textbf{Couche} & \textbf{Technologies principales} \\
+        \midrule
+        Ingestion vidÃ©o & FFmpeg \cite{ffmpeg}, OpenCV \cite{opencv_library} \\
+        ASR / audio & Faster-Whisper \cite{radford2022robust,ctranslate2}, Librosa \cite{mcfee2015librosa} \\
+        Vision & MediaPipe \cite{mediapipe2023} \\
+        Recherche sÃ©mantique & Sentence-Transformers \cite{reimers-2019-sentence-bert}, FAISS \cite{johnson2019billion} \\
+        Backend API & FastAPI \cite{fastapi}, SQLModel, Celery \cite{celery}, Redis \\
+        Frontend & Next.js \cite{nextjs}, React \cite{react}, TypeScript, Tailwind CSS \\
+        LLM local (tests) & Ollama \cite{ollama}, Qwen, Llama, Mistral \\
+        Fine-tuning & Transformers \cite{transformers}, PEFT \cite{peft}, TRL, QLoRA \cite{qlora} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Stack technique consolidÃ©e dans l'Ã©tat actuel du prototype.}
+\end{table}
+
+\section{Travaux sur la Restitution du Rapport}
+L'un des objectifs majeurs de cette phase a Ã©tÃ© d'amÃ©liorer la \textbf{lisibilitÃ© pÃ©dagogique} du rapport.
+
+Auparavant, le systÃ¨me exposait trop directement les mÃ©triques techniques. Le rapport a Ã©tÃ© rÃ©organisÃ© selon une logique plus lisible :
+\begin{itemize}
+    \item verdict global ;
+    \item bilan ;
+    \item prioritÃ© ;
+    \item encouragement ;
+    \item scores par axe ;
+    \item points forts ;
+    \item axes de progression ;
+    \item dÃ©tails techniques dans une section repliable.
+\end{itemize}
+
+Cette refonte a permis de mieux sÃ©parer :
+\begin{itemize}
+    \item la lecture rapide pour l'utilisateur ;
+    \item l'explication technique dÃ©taillÃ©e pour l'analyse.
+\end{itemize}
+
+\section{Travaux sur RAG et Connaissances PÃ©dagogiques}
+La base de connaissances a Ã©tÃ© structurÃ©e sous forme de fiches d'exercices portant notamment sur :
+\begin{itemize}
+    \item dÃ©bit trop rapide ;
+    \item dÃ©bit trop lent ;
+    \item fillers et hÃ©sitations ;
+    \item contact visuel ;
+    \item posture figÃ©e ;
+    \item gestes trop agitÃ©s ;
+    \item cadrage ;
+    \item luminositÃ© et nettetÃ©.
+\end{itemize}
+
+Le RAG a Ã©tÃ© exploitÃ© principalement pour :
+Le RAG a Ã©tÃ© exploitÃ© principalement pour :
+\begin{itemize}
+    \item rÃ©cupÃ©rer les fiches pÃ©dagogiques les plus pertinentes ;
+    \item enrichir le contexte pÃ©dagogique transmis au module de coaching ;
+    \item fournir une base explicative complÃ©mentaire au rapport.
+\end{itemize}
+\subsection{Constat important sur le RAG}
+Cette pÃ©riode a permis de clarifier un point essentiel : le RAG est \textbf{utile}, mais pas partout.
+
+Il s'est rÃ©vÃ©lÃ© particuliÃ¨rement utile pour :
+\begin{itemize}
+    \item les exercices conseillÃ©s ;
+    \item les explications pÃ©dagogiques ;
+    \item l'enrichissement du plan de pratique.
+\end{itemize}
+
+En revanche, son usage comme source principale pour gÃ©nÃ©rer directement le bilan, la prioritÃ© et l'encouragement s'est montrÃ© plus fragile, car les passages rÃ©cupÃ©rÃ©s pouvaient polluer la formulation finale et faire dÃ©river le ton du rapport. Dans l'architecture actuelle, ces trois champs restent pilotÃ©s par le moteur dÃ©terministe et reformulÃ©s par le LLM, avec un contexte RAG seulement en appui.
+
+\section{ExpÃ©rimentations LLM : ModÃ¨les EssayÃ©s}
+Une grande partie du travail rÃ©cent a consistÃ© Ã  expÃ©rimenter plusieurs modÃ¨les locaux pour gÃ©nÃ©rer les champs courts du rapport.
+
+\subsection{ModÃ¨les testÃ©s}
+Les modÃ¨les suivants ont Ã©tÃ© testÃ©s Ã  diffÃ©rentes Ã©tapes :
+\begin{itemize}
+    \item \textbf{Llama 3.2 1B / 3B} ;
+    \item \textbf{Llama 3.1 8B} ;
+    \item \textbf{Qwen 2.5 3B Instruct} ;
+    \item \textbf{Qwen 2.5 7B Instruct} ;
+    \item \textbf{Mistral 7B / latest}.
+\end{itemize}
+
+\subsection{Constats empiriques}
+Les observations principales ont Ã©tÃ© les suivantes :
+\begin{itemize}
+    \item les petits modÃ¨les sont rapides mais fragiles sur la cohÃ©rence logique ;
+    \item les modÃ¨les plus gros ne garantissent pas une meilleure qualitÃ© en franÃ§ais contraint ;
+    \item \textbf{Qwen 2.5 3B Instruct} s'est rÃ©vÃ©lÃ© le meilleur compromis parmi les modÃ¨les testÃ©s pour ce besoin prÃ©cis ;
+    \item \textbf{Mistral} a montrÃ© un comportement technique correct mais une qualitÃ© linguistique insuffisante pour des champs courts en franÃ§ais ;
+    \item \textbf{Llama 3.x} n'a pas produit des rÃ©sultats suffisamment propres et stables sur les sorties trÃ¨s contraintes.
+\end{itemize}
+
+\section{ProblÃ©matique Centrale RencontrÃ©e avec les LLM}
+La difficultÃ© majeure n'a pas Ã©tÃ© la gÃ©nÃ©ration longue, mais au contraire la production de \textbf{trois textes trÃ¨s courts et trÃ¨s contraints} :
+\begin{itemize}
+    \item \texttt{bilan\_global} ;
+    \item \texttt{point\_prioritaire} ;
+    \item \texttt{encouragement}.
+\end{itemize}
+
+Ce type de gÃ©nÃ©ration s'est rÃ©vÃ©lÃ© plus difficile que prÃ©vu pour un LLM local, car il faut simultanÃ©ment :
+\begin{itemize}
+    \item respecter strictement les mÃ©triques ;
+    \item garder un ton simple et professionnel ;
+    \item Ã©viter le langage gÃ©nÃ©rique ;
+    \item rester court ;
+    \item ne pas halluciner ;
+    \item ne pas changer de registre (\og tu \fg{} / \og vous \fg{}).
+\end{itemize}
+
+\subsection{Types d'erreurs rÃ©ellement observÃ©es}
+Les Ã©checs observÃ©s au fil des tests incluent :
+\begin{itemize}
+    \item fuite de prompt ;
+    \item mÃ©lange franÃ§ais / anglais ;
+    \item encouragements gÃ©nÃ©riques ou creux ;
+    \item tournures traduites ou peu naturelles ;
+    \item usage accidentel du tutoiement ;
+    \item conseils trop verbeux ou mal reliÃ©s Ã  l'axe prioritaire ;
+    \item contamination par la fiche RAG ;
+    \item JSON invalide ou clÃ©s incorrectes.
+\end{itemize}
+
+\section{Solutions EssayÃ©es pour Corriger les Sorties LLM}
+
+\subsection{Prompt Engineering}
+Un travail important d'itÃ©ration a Ã©tÃ© menÃ© sur les prompts :
+\begin{itemize}
+    \item sÃ©paration des champs ;
+    \item tentative de sortie JSON unique ;
+    \item consignes de style plus strictes ;
+    \item exemples positifs et nÃ©gatifs ;
+    \item limitation explicite du nombre de phrases ;
+    \item interdiction des formulations lyriques ou gÃ©nÃ©riques ;
+    \item consignes explicites de vouvoiement ;
+    \item baisse de la tempÃ©rature ;
+    \item validation du JSON en sortie.
+\end{itemize}
+
+\subsection{Validation et garde-fous}
+Des mÃ©canismes de sÃ©curitÃ© ont Ã©tÃ© ajoutÃ©s :
+\begin{itemize}
+    \item nettoyage agressif des sorties ;
+    \item dÃ©tection de tutoiement ;
+    \item dÃ©tection de formulations interdites ;
+    \item fallback si la phrase gÃ©nÃ©rÃ©e est trop faible ;
+    \item validation du schÃ©ma attendu ;
+    \item contrÃ´le du nombre de phrases.
+\end{itemize}
+
+\subsection{Recentrage architectural}
+Un rÃ©sultat important de cette phase a Ã©tÃ© la conclusion suivante :
+\begin{quote}
+Le LLM est utile comme \textbf{couche d'enrichissement ou de reformulation}, mais il n'est pas suffisamment fiable pour Ãªtre la source unique de vÃ©ritÃ© du rapport.
+\end{quote}
+
+Cela a conduit Ã  une architecture de plus en plus hybride :
+\begin{itemize}
+    \item dÃ©terministe pour le scoring, les forces, les faiblesses et les recommandations ;
+    \item base de connaissances et mapping dÃ©terministe pour les exercices, avec rÃ©cupÃ©ration sÃ©mantique pour enrichir certaines explications ;
+    \item LLM comme reformulation ou enrichissement contrÃ´lÃ©.
+\end{itemize}
+
+\section{Travaux de Fine-Tuning}
+
+\subsection{Motivation}
+Face aux limites du prompting seul, une nouvelle piste a Ã©tÃ© explorÃ©e : le \textbf{fine-tuning supervisÃ©} d'un petit modÃ¨le local pour l'adapter plus prÃ©cisÃ©ment au style de SpeechCoach.
+
+\subsection{Objectif du fine-tuning}
+L'objectif n'Ã©tait pas d'amÃ©liorer le scoring ni le raisonnement mÃ©tier, mais d'apprendre au modÃ¨le Ã  produire des sorties plus stables pour :
+\begin{itemize}
+    \item le respect du schÃ©ma JSON ;
+    \item la qualitÃ© du franÃ§ais ;
+    \item la cohÃ©rence de ton ;
+    \item le respect de la structure des trois champs.
+\end{itemize}
+
+\subsection{MÃ©thode de constitution du dataset}
+Le dataset n'a pas Ã©tÃ© construit comme un simple export brut des rapports. Une phase de structuration a Ã©tÃ© nÃ©cessaire.
+
+\subsubsection{Source des donnÃ©es}
+Les exemples ont Ã©tÃ© construits Ã  partir de rapports rÃ©els gÃ©nÃ©rÃ©s par le projet, en exploitant notamment :
+\begin{itemize}
+    \item les scores ;
+    \item les forces et faiblesses ;
+    \item les recommandations ;
+    \item les \textit{actionable tips}.
+\end{itemize}
+
+\subsubsection{Format et structure des donnÃ©es}
+Le dataset a d'abord Ã©tÃ© construit sous un format simple \textbf{input/target} (score, forces, faiblesses $\rightarrow$ bilan, prioritÃ©, encouragement) pour faciliter la validation humaine, avant d'Ãªtre converti au format final \textbf{messages} (type chat) pour l'entraÃ®nement.
+
+\subsubsection{Format de type chat (EntraÃ®nement)}
+Le format final utilisÃ© pour le fine-tuning (compatible avec les modÃ¨les instruct et les tokenizers modernes) est le suivant :
+
+\begin{lstlisting}[language={}]
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": "Tu es un coach de prise de parole. Tu dois repondre uniquement en JSON valide..."
+    },
+    {
+      "role": "user",
+      "content": "Score global: 69\nVoix: 6.1/10\n..."
+    },
+    {
+      "role": "assistant",
+      "content": "{\"bilan_global\":\"...\",\"point_prioritaire\":\"...\",\"encouragement\":\"...\"}"
+    }
+  ]
+}
+\end{lstlisting}
+
+\subsubsection{StratÃ©gie de gÃ©nÃ©ration des donnÃ©es}
+Deux mÃ©thodes ont Ã©tÃ© utilisÃ©es :
+\begin{itemize}
+    \item extraction de cas cohÃ©rents depuis les rapports existants ;
+    \item crÃ©ation de cas synthÃ©tiques mais alignÃ©s avec la logique du moteur afin de couvrir davantage de scÃ©narios.
+\end{itemize}
+
+\subsubsection{ScÃ©narios couverts}
+Le dataset a Ã©tÃ© enrichi pour inclure plusieurs familles de situations :
+\begin{itemize}
+    \item dÃ©bit trop rapide ;
+    \item dÃ©bit trop lent ;
+    \item fillers et hÃ©sitations ;
+    \item regard camÃ©ra faible ou moyen ;
+    \item gestuelle trop figÃ©e ;
+    \item gestes trop agitÃ©s ;
+    \item cadrage instable ;
+    \item image floue ;
+    \item Ã©clairage faible.
+\end{itemize}
+
+\subsection{Nettoyage et itÃ©rations du dataset}
+Le travail sur le dataset a demandÃ© plusieurs itÃ©rations :
+\begin{itemize}
+    \item premiÃ¨re version manuelle de quelques exemples ;
+    \item extension progressive Ã  20 puis 50 exemples ;
+    \item tentative d'extension automatique vers 300 exemples via IA ;
+    \item nettoyage important pour supprimer les doublons, les catÃ©gories non alignÃ©es avec le moteur et les formulations artificielles ;
+    \item version consolidÃ©e d'environ \textbf{159 exemples exploitables}.
+\end{itemize}
+
+\subsection{Outils et mÃ©thode de fine-tuning}
+Le fine-tuning a Ã©tÃ© rÃ©alisÃ© sur \textbf{Google Colab} avec GPU gratuit, en utilisant :
+\begin{itemize}
+    \item \textbf{Transformers} \cite{transformers} ;
+    \item \textbf{PEFT} \cite{peft} ;
+    \item \textbf{TRL} ;
+    \item \textbf{QLoRA} \cite{qlora}.
+\end{itemize}
+
+Le modÃ¨le ciblÃ© pour cette premiÃ¨re expÃ©rience a Ã©tÃ© :
+\begin{itemize}
+    \item \textbf{Qwen/Qwen2.5-3B-Instruct} \cite{qwen25}.
+\end{itemize}
+
+\subsection{RÃ©sultats obtenus}
+Les rÃ©sultats ont montrÃ© des progrÃ¨s rÃ©els :
+\begin{itemize}
+    \item meilleure stabilitÃ© du schÃ©ma JSON ;
+    \item bonne gÃ©nÃ©ration des bonnes clÃ©s ;
+    \item meilleure cohÃ©rence entre entrÃ©e et sortie ;
+    \item rÃ©duction des fuites de prompt ;
+    \item amÃ©lioration du respect de la structure globale.
+\end{itemize}
+
+Cependant, des limites sont restÃ©es prÃ©sentes :
+\begin{itemize}
+    \item certains champs ne respectaient pas toujours exactement le nombre de phrases attendu ;
+    \item l'encouragement restait le champ le plus fragile ;
+    \item certains cas rares produisaient encore des formulations imparfaites.
+\end{itemize}
+
+\section{DifficultÃ©s de DÃ©ploiement du ModÃ¨le Fine-TunÃ©}
+Le fine-tuning a donnÃ© de bons rÃ©sultats en environnement Colab, mais son \textbf{dÃ©ploiement local} a rÃ©vÃ©lÃ© de nouvelles contraintes.
+
+\subsection{ProblÃ¨mes rencontrÃ©s}
+\begin{itemize}
+    \item nÃ©cessitÃ© de charger Ã  la fois le \textbf{modÃ¨le de base} et l'\textbf{adapter LoRA} ;
+    \item poids important de la base Qwen 2.5 3B ;
+    \item temps de tÃ©lÃ©chargement long ;
+    \item consommation disque importante ;
+    \item chargement CPU lourd sur machine locale ;
+    \item temps d'enrichissement fortement allongÃ© ;
+    \item pics de mÃ©moire vive dans le worker Celery ;
+    \item exÃ©cution instable en environnement local Windows/CPU.
+\end{itemize}
+
+\subsection{Pourquoi l'approche \textit{base model + adapter} a montrÃ© ses limites}
+L'approche initiale consistait Ã  charger le modÃ¨le de base via Hugging Face, puis Ã  y rattacher l'adapter fine-tunÃ© avec \textbf{PEFT}. Cette logique est correcte du point de vue thÃ©orique, mais elle s'est rÃ©vÃ©lÃ©e difficile Ã  soutenir dans le contexte applicatif rÃ©el du projet.
+
+Le backend exÃ©cute l'enrichissement dans un worker Celery local, sur CPU, en parallÃ¨le du pipeline d'analyse. Pendant les essais, le chargement du modÃ¨le de base et de l'adapter Ã  l'intÃ©rieur du mÃªme processus a produit :
+\begin{itemize}
+    \item des temps de chargement Ã©levÃ©s ;
+    \item une forte occupation mÃ©moire ;
+    \item des risques de plantage du worker ;
+    \item une trÃ¨s mauvaise expÃ©rience de dÃ©ploiement local.
+\end{itemize}
+
+\subsection{Solutions Ã©tudiÃ©es face Ã  ce problÃ¨me}
+Plusieurs pistes ont Ã©tÃ© explorÃ©es :
+\begin{itemize}
+    \item conserver le modÃ¨le fine-tunÃ© tel quel et compenser ses dÃ©fauts par du fallback ;
+    \item tester un modÃ¨le plus petit, notamment \textbf{Qwen 2.5 1.5B Instruct} ;
+    \item prÃ©-tÃ©lÃ©charger localement le modÃ¨le de base ;
+    \item dÃ©placer la charge d'infÃ©rence en dehors du worker Python principal ;
+    \item fusionner le modÃ¨le de base et l'adapter dans un seul artefact prÃªt Ã  servir.
+\end{itemize}
+
+Les essais sur \textbf{Qwen 2.5 1.5B Instruct} ont Ã©tÃ© utiles d'un point de vue expÃ©rimental, mais ils ont Ã©galement montrÃ© une baisse sensible de la qualitÃ© sÃ©mantique et linguistique. Cette piste est donc restÃ©e intÃ©ressante, sans devenir le choix principal pour le produit.
+
+\subsection{Fusion des poids : pourquoi et comment}
+La solution retenue a consistÃ© Ã  \textbf{fusionner} les poids appris par l'adapter LoRA avec un modÃ¨le de base compatible afin d'obtenir un \textbf{modÃ¨le unique}.
+
+La combinaison se fait en trois Ã©tapes :
+\begin{enumerate}
+    \item on part d'un modÃ¨le de base ;
+    \item on y applique les poids appris par l'adapter LoRA ;
+    \item on exporte ensuite un modÃ¨le fusionnÃ© unique.
+\end{enumerate}
+
+L'intÃ©rÃªt de cette fusion est double :
+\begin{itemize}
+    \item supprimer le chargement sÃ©parÃ© du modÃ¨le de base et de l'adapter au runtime ;
+    \item transformer le rÃ©sultat du fine-tuning en un artefact unique, plus simple Ã  dÃ©ployer.
+\end{itemize}
+
+\subsection{Quantification et passage au format GGUF}
+AprÃ¨s fusion, le modÃ¨le a Ã©tÃ© converti dans un format plus adaptÃ© au dÃ©ploiement local :
+\begin{itemize}
+    \item format \textbf{GGUF} ;
+    \item quantification 4 bits de type \texttt{Q4\_K\_M}.
+\end{itemize}
+
+Le but de cette Ã©tape Ã©tait de rÃ©duire :
+\begin{itemize}
+    \item la taille disque ;
+    \item la pression mÃ©moire ;
+    \item le coÃ»t d'infÃ©rence sur machine locale CPU.
+\end{itemize}
+
+\subsection{Pourquoi Ollama a Ã©tÃ© retenu pour le runtime}
+Une fois le modÃ¨le fusionnÃ© et quantifiÃ©, il restait Ã  choisir une stratÃ©gie d'infÃ©rence stable. Le projet a finalement retenu \textbf{Ollama} \cite{ollama}.
+
+Ce choix s'explique par plusieurs raisons pratiques :
+\begin{itemize}
+    \item Ollama encapsule l'infÃ©rence locale et Ã©vite de charger de gros objets PyTorch directement dans le worker applicatif ;
+    \item l'isolation mÃ©moire est meilleure que dans l'approche initiale ;
+    \item l'intÃ©gration cÃ´tÃ© backend devient simple, sous forme d'appel local au service Ollama ;
+    \item l'ensemble est beaucoup plus robuste en usage produit local.
+\end{itemize}
+
+\subsection{Architecture LLM actuellement retenue}
+L'architecture actuelle du coaching peut Ãªtre rÃ©sumÃ©e ainsi :
+\begin{itemize}
+    \item scoring, hiÃ©rarchisation des prioritÃ©s et recommandations : \textbf{dÃ©terministes} ;
+    \item exercices et plan de pratique : \textbf{base de connaissances + mapping dÃ©terministe par \texttt{exercise\_key}} ;
+    \item rÃ©cupÃ©ration de fiches pÃ©dagogiques complÃ©mentaires : \textbf{RAG} ;
+    \item reformulation des champs courts (\texttt{bilan\_global}, \texttt{point\_prioritaire}, \texttt{encouragement}) : \textbf{modÃ¨le local fusionnÃ©, quantifiÃ© et servi par Ollama, avec contexte RAG en appui} ;
+    \item validation, nettoyage et fallback : \textbf{dÃ©terministes}.
+
+\section{Tableau de SynthÃ¨se : ImplÃ©mentÃ© / Restant Ã  Faire}
+Afin d'Ã©viter de disperser l'Ã©tat d'avancement dans plusieurs sections, le tableau suivant rÃ©sume l'Ã©tat actuel des principales briques du projet.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{@{}p{5.2cm}p{3.2cm}p{6cm}@{}}
+        \toprule
+        \textbf{Ã‰lÃ©ment} & \textbf{Statut} & \textbf{Commentaire} \\
+        \midrule
+        Authentification (inscription / connexion) & ImplÃ©mentÃ© & Parcours frontend disponible avec session JWT. \\
+        Profil utilisateur & ImplÃ©mentÃ© & Modification du profil, avatar, langue, niveau et objectif. \\
+        Changement de mot de passe & ImplÃ©mentÃ© & Disponible dans les paramÃ¨tres. \\
+        Suppression du compte & Partiel / Ã  finaliser & PrÃ©sentÃ©e cÃ´tÃ© interface, non activÃ©e cÃ´tÃ© backend. \\
+        Studio import vidÃ©o & ImplÃ©mentÃ© & TÃ©lÃ©versement, progression, lancement de l'analyse. \\
+        Studio enregistrement direct & ImplÃ©mentÃ© & Webcam + microphone + prÃ©visualisation. \\
+        Historique des analyses & ImplÃ©mentÃ© & Recherche, tri, renommage, suppression. \\
+        Lecture du rapport web & ImplÃ©mentÃ© & Verdict, scores, prioritÃ©s, exercices, transcription. \\
+        Export PDF / Markdown & ImplÃ©mentÃ© & Deux formats de restitution disponibles. \\
+        Scoring dÃ©terministe & ImplÃ©mentÃ© & Partie la plus stable du systÃ¨me. \\
+        RAG d'exercices & ImplÃ©mentÃ© & Utile pour enrichir les plans de pratique. \\
+        LLM local non fine-tunÃ© & ExpÃ©rimentÃ© & QualitÃ© variable sur les sorties courtes. \\
+        Fine-tuning QLoRA & ExpÃ©rimentÃ© & RÃ©sultats encourageants, mais dÃ©ploiement initial trop lourd. \\
+        Runtime GGUF + Ollama & ImplÃ©mentÃ© & Option actuellement la plus rÃ©aliste localement. \\
+        Ã‰valuation utilisateur formelle & Ã€ approfondir & Encore Ã  structurer pour la phase mÃ©moire finale. \\
+        \bottomrule
+    \end{tabular}
+    \caption{Vue synthÃ©tique de l'Ã©tat d'avancement fonctionnel et technique.}
+\end{table}
+
+\section{Bilan, Enseignements et Perspectives}
+L'Ã©tat actuel du projet et les enseignements tirÃ©s de cette phase peuvent Ãªtre synthÃ©tisÃ©s ainsi :
+
+\begin{itemize}
+    \item \textbf{SoliditÃ© du socle :} le pipeline multimodal et le scoring dÃ©terministe sont stables et constituent la source de vÃ©ritÃ© du systÃ¨me.
+    \item \textbf{Apports du RAG :} la base de connaissances pÃ©dagogiques enrichit efficacement les plans de pratique sans complexitÃ© excessive.
+    \item \textbf{LeÃ§ons sur le LLM :} la reformulation par LLM local (Ollama/GGUF) est utile mais doit Ãªtre strictement encadrÃ©e par des garde-fous dÃ©terministes pour Ã©viter les hallucinations et les problÃ¨mes de ton. 
+    \item \textbf{Fine-tuning :} le cycle QLoRA a prouvÃ© son utilitÃ© pour le respect des formats (JSON) et du style, bien que son dÃ©ploiement nÃ©cessite une fusion de poids et une quantification GGUF pour rester rÃ©aliste sur CPU.
+    \item \textbf{ProblÃ¨mes rÃ©solus :} la friction entre qualitÃ© de gÃ©nÃ©ration et temps d'exÃ©cution a Ã©tÃ© traitÃ©e par une architecture hybride (logique mÃ©tier + LLM asynchrone).
+\end{itemize}
+
+Les perspectives pour les prochains sprints concernent dÃ©sormais :
+\begin{itemize}
+    \item \textbf{AdaptabilitÃ© multi-appareils :} le systÃ¨me doit encore Ãªtre recalibrÃ© pour des enregistrements issus de smartphones, tablettes et PC, car des signaux comme le regard camÃ©ra, le pitch et le yaw ne se lisent pas de la mÃªme maniÃ¨re selon la position de l'appareil.
+    \item \textbf{Plan de progression :} le format actuel sur 7 jours fonctionne comme premiÃ¨re version, mais reste trop statique. Il faudra le faire Ã©voluer vers un plan plus court, plus adaptatif et plus cohÃ©rent avec le profil et le niveau de l'utilisateur.
+    \item \textbf{ResponsivitÃ© et interface :} l'interface devra Ãªtre davantage adaptÃ©e aux diffÃ©rents Ã©crans, avec un travail complÃ©mentaire sur la qualitÃ© visuelle, l'ergonomie et l'ajout de nouveaux graphiques.
+    \item \textbf{FonctionnalitÃ©s produit restantes :} certaines briques doivent encore Ãªtre ajoutÃ©es ou finalisÃ©es, notamment la vÃ©rification d'e-mail et quelques Ã©lÃ©ments de robustesse dans le parcours utilisateur.
+    \item \textbf{Ã‰valuation :} une Ã©tude utilisateur plus formelle restera nÃ©cessaire pour la phase mÃ©moire finale.
+\end{itemize}
+
+\section{Conclusion}
+Cette phase du projet a Ã©tÃ© particuliÃ¨rement riche, car elle a permis de dÃ©passer une vision simpliste du type \og ajouter un LLM = amÃ©liorer automatiquement le coaching \fg. L'expÃ©rience montre au contraire que :
+\begin{itemize}
+    \item les composantes dÃ©terministes bien conÃ§ues restent essentielles ;
+    \item le RAG apporte une valeur rÃ©elle mais ciblÃ©e ;
+    \item la qualitÃ© d'un LLM local dÃ©pend fortement du contexte, de la langue, du format attendu et des contraintes de dÃ©ploiement ;
+    \item le fine-tuning est une piste prometteuse, mais qui doit Ãªtre Ã©valuÃ©e non seulement en qualitÃ©, mais aussi en coÃ»t d'intÃ©gration.
+\end{itemize}
+
+Le projet SpeechCoach dispose dÃ©sormais d'une base technique et produit beaucoup plus mature qu'au prÃ©cÃ©dent rapport. Les prochaines Ã©tapes porteront donc moins sur l'ajout de nouvelles briques que sur l'arbitrage entre \textbf{robustesse, qualitÃ© du coaching gÃ©nÃ©rÃ© et coÃ»t d'exÃ©cution}.
+
+\section{RÃ©fÃ©rences Bibliographiques}
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}
+

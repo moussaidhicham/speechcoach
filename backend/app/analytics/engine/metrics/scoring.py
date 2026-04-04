@@ -1,5 +1,7 @@
-from typing import Tuple, List
-from app.analytics.engine.metrics.schema import AudioMetrics, VisionMetrics, Scores
+﻿from typing import List, Tuple
+
+from app.analytics.engine.metrics.schema import AudioMetrics, Scores, VisionMetrics
+
 
 def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     """
@@ -8,25 +10,21 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     """
     scores = Scores()
 
-    # 1. Voice Score (0-10)
-    # Target WPM: 130-150 (More specific)
     wpm_score = 10.0
     if audio.wpm < 0.1:
-        wpm_score = 0.0 # Silent or undecipherable speech
+        wpm_score = 0.0
     elif audio.wpm < 110:
         wpm_score -= (110 - audio.wpm) * 0.15
     elif audio.wpm > 160:
         wpm_score -= (audio.wpm - 160) * 0.15
-    
-    # Penalize for fillers (> 2 per minute is bad)
+
     estimated_mins = audio.wpm / 140.0 if audio.wpm > 0.1 else 1.0
     fillers_per_min = audio.filler_count / estimated_mins
-    
+
     filler_penalty = 0.0
     if fillers_per_min > 2:
         filler_penalty = min((fillers_per_min - 2) * 0.5, 3.0)
-    
-    # Penalize too many pauses
+
     pauses_per_min = audio.pause_count / estimated_mins
     pause_penalty = 0.0
     if pauses_per_min > 4:
@@ -35,119 +33,115 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     voice_score = max(0.0, min(10.0, wpm_score - filler_penalty - pause_penalty))
     scores.voice_score = round(voice_score, 1)
 
-    # 2. Presence Score (Eye Contact & Face) (0-10)
-    # Target: >90% for a 10/10. 
-    # Current heuristic: Linear scale up to 0.9
     eye_score = (vision.eye_contact_ratio / 0.9) * 10.0
     if vision.eye_contact_ratio >= 0.92:
-        eye_score = 10.0 
-    
-    # Face presence must be almost 100% for top score
+        eye_score = 10.0
+
     presence = min(10.0, eye_score * vision.face_presence_ratio)
     scores.presence_score = round(presence, 1)
 
-    # 3. Body Language Score (Hands & Posture) (0-10)
-    # Baseline lowered to 4.0 (Need to EARN points by moving)
-    body_score = 4.0 
-    
-    # Points for hand visibility
+    body_score = 4.0
     if vision.hands_visibility_ratio > 0.6:
         body_score += 3.0
     elif vision.hands_visibility_ratio > 0.3:
         body_score += 1.5
-        
-    # Activity score (Not static, but not frantic)
+
     if 2.5 <= vision.hands_activity_score <= 6.5:
         body_score += 3.0
     elif vision.hands_activity_score > 6.5:
-        body_score += max(0, 3.0 - (vision.hands_activity_score - 6.5)) # Diminishing returns/penalty
+        body_score += max(0, 3.0 - (vision.hands_activity_score - 6.5))
     elif 0.5 < vision.hands_activity_score < 2.5:
-        body_score += 1.0 # Slight movement
-        
+        body_score += 1.0
+
     scores.body_language_score = max(0.0, min(10.0, round(body_score, 1)))
 
-    # 4. Scene Score (Light, Framing) (0-10)
     scene_score = 10.0
     if vision.avg_brightness < 70 or vision.avg_brightness > 210:
-        scene_score -= 2.0 
-    
-    # More realistic on blur (Laplacian variance)
+        scene_score -= 2.0
+
     if vision.avg_blur < 20:
-        scene_score -= 1.5 # Blurry
+        scene_score -= 1.5
     elif vision.avg_blur < 40:
-        scene_score -= 0.5 # Soft focus
-        
+        scene_score -= 0.5
+
     scores.scene_score = max(0.0, min(10.0, round(scene_score, 1)))
 
-
-
-    # Overall Score (0-100)
-    # Weights: Voice (30%), Presence (35%), Body (25%), Scene (10%)
     overall = (
-        (scores.voice_score * 3.0) +
-        (scores.presence_score * 3.5) +
-        (scores.body_language_score * 2.5) +
-        (scores.scene_score * 1.0)
+        (scores.voice_score * 3.0)
+        + (scores.presence_score * 3.5)
+        + (scores.body_language_score * 2.5)
+        + (scores.scene_score * 1.0)
     )
     scores.overall_score = round(overall, 1)
 
     return scores
 
-def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: VisionMetrics) -> Tuple[List[str], List[str]]:
-    """
-    Generates rule-based deterministic Strengths and Weaknesses lists.
-    """
-    strengths = []
-    weaknesses = []
 
-    # Voice feedback
-    if audio.wpm >= 120 and audio.wpm <= 160:
+def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: VisionMetrics) -> Tuple[List[str], List[str]]:
+    """Generate deterministic strengths and weaknesses for the report."""
+    strengths: List[str] = []
+    weakness_entries: List[Tuple[int, str]] = []
+    presence_priority_bonus = 10 if scores.presence_score + 1.0 < scores.voice_score else 0
+    voice_priority_penalty = 10 if scores.presence_score + 1.0 < scores.voice_score else 0
+
+    def add_weakness(priority: int, text: str) -> None:
+        weakness_entries.append((priority, text))
+
+    if 120 <= audio.wpm <= 160:
         strengths.append(f"Excellent rythme vocal ({round(audio.wpm)} mots/minute).")
     elif audio.wpm < 110:
-        weaknesses.append(f"Rythme d'élocution trop lent ({round(audio.wpm)} mots/minute).")
+        add_weakness(82, f"Rythme d'elocution trop lent ({round(audio.wpm)} mots/minute).")
     elif audio.wpm > 160:
-        weaknesses.append(f"Vous parlez trop vite ({round(audio.wpm)} mots/minute).")
+        voice_priority = 82 if audio.wpm > 175 else 65
+        voice_priority -= voice_priority_penalty
+        add_weakness(voice_priority, f"Vous parlez trop vite ({round(audio.wpm)} mots/minute).")
 
-    # Fillers feedback (using normalized rate)
     estimated_mins = audio.wpm / 140.0 if audio.wpm > 0.1 else 1.0
     fillers_per_min = audio.filler_count / estimated_mins
-    
+
     if audio.filler_count == 0:
         strengths.append("Discours clair, sans tics de langage ('euh', 'hum').")
     elif fillers_per_min > 3:
-        weaknesses.append(f"Attention aux mots parasites ({audio.filler_count} détectés).")
+        add_weakness(70, f"Attention aux mots parasites ({audio.filler_count} detectes).")
 
-    # Presence feedback
+    eye_contact_percent = round(vision.eye_contact_ratio * 100)
     if vision.eye_contact_ratio >= 0.7:
-        strengths.append(f"Très bon contact visuel ({round(vision.eye_contact_ratio*100)}% du temps).")
-    else:
-        weaknesses.append(f"Le regard est parfois fuyant ({round(vision.eye_contact_ratio*100)}%). Regardez plus la caméra.")
+        strengths.append(f"Tres bon contact visuel ({eye_contact_percent}% du temps).")
+    elif vision.eye_contact_ratio < 0.4:
+        add_weakness(
+            92 + presence_priority_bonus,
+            f"Le regard quitte trop souvent la camera ({eye_contact_percent}%). Cherchez un contact plus direct sur vos phrases cles."
+        )
+    elif vision.eye_contact_ratio < 0.6:
+        add_weakness(
+            78 + presence_priority_bonus,
+            f"Le contact camera peut etre plus regulier ({eye_contact_percent}%). Essayez de revenir plus souvent a l'objectif."
+        )
 
     if vision.face_presence_ratio < 0.8:
-        weaknesses.append("Votre visage disparaît parfois du cadre. Restez bien centré.")
+        add_weakness(95, "Votre visage disparait parfois du cadre. Restez bien centre.")
 
-    # Gestures
     if vision.hands_visibility_ratio >= 0.3:
         if 2.0 <= vision.hands_activity_score <= 8.0:
-            strengths.append("Gestuelle naturelle et équilibrée, appuyant bien les propos.")
+            strengths.append("Gestuelle naturelle et equilibree, appuyant bien les propos.")
         elif vision.hands_activity_score > 8:
-            weaknesses.append("Mouvements des mains un peu trop agités, ce qui peut distraire l'attention.")
+            add_weakness(68, "Mouvements des mains un peu trop agites, ce qui peut distraire l'attention.")
     else:
-        weaknesses.append("Corps un peu figé. N'hésitez pas à utiliser vos mains pour illustrer vos points clés.")
+        add_weakness(72, "Corps un peu fige. N'hesitez pas a utiliser vos mains pour illustrer vos points cles.")
 
-    # Scene
     if vision.avg_brightness < 70:
-        weaknesses.append("L'éclairage est trop faible (vidéo sombre).")
+        add_weakness(52, "L'eclairage est trop faible (video sombre).")
     elif vision.avg_brightness > 210:
-        weaknesses.append("L'image est trop exposée (trop de lumière).")
+        add_weakness(52, "L'image est trop exposee (trop de lumiere).")
 
     if vision.avg_blur < 20:
-        weaknesses.append("L'image manque de netteté. Nettoyez l'objectif ou améliorez le focus.")
+        add_weakness(58, "L'image manque de nettete. Nettoyez l'objectif ou ameliorez le focus.")
 
-    # Fallbacks in case nothing was triggered
     if not strengths:
-        strengths.append("Bases de présentation correctes.")
-    if not weaknesses:
-        weaknesses.append("Pas de défaut majeur identifié à ce stade.")
+        strengths.append("Bases de presentation correctes.")
+    if not weakness_entries:
+        weakness_entries.append((0, "Pas de defaut majeur identifie a ce stade."))
 
+    weakness_entries.sort(key=lambda item: item[0], reverse=True)
+    weaknesses = [text for _, text in weakness_entries]
     return strengths, weaknesses

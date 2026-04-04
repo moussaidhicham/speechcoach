@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.db.database import get_session
 from app.users.models import User, Profile
+from app.analytics.models import VideoSession, AnalysisResult, CoachingFeedback, PlatformFeedback
 from app.auth.router import current_active_user
 
 profile_router = APIRouter()
@@ -137,3 +138,47 @@ async def delete_avatar(
     await session.refresh(profile)
     
     return {"message": "Avatar deleted successfully."}
+
+@profile_router.delete("/account")
+async def delete_account(
+    user: User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """Delete the current user's account and all associated data."""
+    # 1. Delete PlatformFeedback
+    feedbacks = await session.execute(select(PlatformFeedback).where(PlatformFeedback.user_id == user.id))
+    for fb in feedbacks.scalars():
+        await session.delete(fb)
+        
+    # 2. Delete VideoSessions and their results
+    vid_sessions = await session.execute(select(VideoSession).where(VideoSession.user_id == user.id))
+    for session_info in vid_sessions.scalars():
+        results = await session.execute(select(AnalysisResult).where(AnalysisResult.video_session_id == session_info.id))
+        analysis = results.scalar_one_or_none()
+        if analysis:
+            coachings = await session.execute(select(CoachingFeedback).where(CoachingFeedback.analysis_result_id == analysis.id))
+            coaching = coachings.scalar_one_or_none()
+            if coaching:
+                await session.delete(coaching)
+            await session.delete(analysis)
+        await session.delete(session_info)
+        
+    # 3. Delete Profile
+    profiles = await session.execute(select(Profile).where(Profile.user_id == user.id))
+    prof = profiles.scalar_one_or_none()
+    if prof:
+        if prof.avatar_url:
+            try:
+                filename = prof.avatar_url.split("/")[-1]
+                file_path = os.path.join(AVATAR_DIR, filename)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception:
+                pass
+        await session.delete(prof)
+        
+    # 4. Delete User
+    await session.delete(user)
+    await session.commit()
+    
+    return {"message": "Account deleted successfully."}

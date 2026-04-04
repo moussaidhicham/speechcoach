@@ -54,13 +54,6 @@ export interface ReportMetrics {
   blur: number;
 }
 
-export interface ReportRecommendation {
-  category: string;
-  severity: string;
-  message: string;
-  tip: string;
-}
-
 export interface ReportTrainingDay {
   title: string;
   items: string[];
@@ -85,10 +78,14 @@ export interface ReportResult {
   metrics: ReportMetrics;
   strengths: string[];
   weaknesses: string[];
-  recommendations: ReportRecommendation[];
   training_plan: ReportTrainingPlan;
   training_plan_markdown: string;
   transcript: ReportTranscriptSegment[];
+  visuals?: {
+    audio_energy: string;
+    vision_timeline: string;
+  };
+  enrichment_status?: 'pending' | 'completed' | 'failed';
 }
 
 export interface DashboardProgressPoint {
@@ -109,7 +106,6 @@ export interface DashboardCoachingSnapshot {
   first_strength?: string | null;
   next_practice_title?: string | null;
   next_practice_step?: string | null;
-  recommendations: ReportRecommendation[];
 }
 
 export interface DashboardSummary {

@@ -50,7 +50,7 @@ const steps = [
 ] as const;
 
 const languageLabel: Record<string, string> = {
-  fr: 'Français', en: 'English', ar: 'Arabe',
+  auto: 'Auto', fr: 'Français', en: 'English', ar: 'Arabe',
 };
 
 /* ─── Wizard ─────────────────────────────────────────────────────────── */
@@ -60,7 +60,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [isSaving,  setIsSaving]  = React.useState(false);
   const [formState, setFormState] = React.useState<OnboardingFormState>({
     full_name:          '',
-    preferred_language: 'fr',
+    preferred_language: 'auto',
     experience_level:   'Beginner',
     current_goal:       'General',
   });
@@ -229,6 +229,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                               <SelectValue placeholder="Choisir une langue" />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="auto">Auto</SelectItem>
                               <SelectItem value="fr">Français</SelectItem>
                               <SelectItem value="en">English</SelectItem>
                               <SelectItem value="ar">Arabe</SelectItem>

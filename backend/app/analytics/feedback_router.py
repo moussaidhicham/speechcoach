@@ -61,7 +61,21 @@ async def get_my_feedback(
     from sqlmodel import select
     statement = select(PlatformFeedback).where(PlatformFeedback.user_id == user.id)
     results = await db.execute(statement)
-    return results.scalars().all()
+    feedback_items = results.scalars().all()
+
+    response: list[PlatformFeedbackRead] = []
+    for feedback in feedback_items:
+        response.append(
+            PlatformFeedbackRead(
+                id=feedback.id,
+                user_id=feedback.user_id,
+                rating=feedback.rating,
+                comments=feedback.comments,
+                created_at=normalize_feedback_created_at(getattr(feedback, "created_at", None)),
+            )
+        )
+
+    return response
 
 @feedback_router.get("/platform/check")
 async def check_feedback_status(

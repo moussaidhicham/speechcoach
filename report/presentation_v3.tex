@@ -1,0 +1,401 @@
+﻿\documentclass[10pt,aspectratio=169]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{lmodern}
+\usepackage{tcolorbox}
+\usepackage{pifont}
+\usepackage[style=numeric,backend=bibtex]{biblatex}
+\usepackage{csquotes}
+\usetikzlibrary{positioning,calc,arrows.meta,shapes.geometric,fit}
+\tcbuselibrary{skins}
+\addbibresource{references.bib}
+
+\definecolor{primary}{RGB}{12,54,106}
+\definecolor{secondary}{RGB}{234,241,255}
+\definecolor{accent}{RGB}{255,111,0}
+\definecolor{darktext}{RGB}{20,33,61}
+\definecolor{lighttext}{RGB}{108,117,125}
+\definecolor{success}{RGB}{42,157,143}
+\definecolor{danger}{RGB}{230,57,70}
+\definecolor{warning}{RGB}{244,162,97}
+
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\huge,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large,series=\normalfont}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=darktext}
+\setbeamercolor{frametitle}{fg=primary}
+\setbeamercolor{title}{fg=primary}
+\setbeamercolor{subtitle}{fg=lighttext}
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{item}{fg=accent}
+
+\newtcolorbox{keybox}[1][] {
+    colframe=primary!25,
+    colback=secondary!35,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt,
+    #1
+}
+
+\newcommand{\cmark}{\textcolor{success}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{danger}{\ding{55}}}
+
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture,overlay]
+    \fill[secondary!30] (current page.south west) rectangle (current page.north east);
+    \fill[primary!5, opacity=0.85] (current page.north west) -- (current page.south east) -- (current page.south west) -- cycle;
+    \fill[accent, opacity=0.08] ($(current page.center)+(3cm,1.2cm)$) circle (4cm);
+    \node[anchor=center, align=center] at (current page.center) {
+        {\Huge\bfseries\textcolor{primary}{SpeechCoach}}\\[0.3cm]
+        {\huge\bfseries\textcolor{darktext}{Réunion d'avancement n\textdegree 3}}\\[0.55cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (3.2cm,0.12cm);
+        \end{tikzpicture}\\[0.55cm]
+        {\Large\itshape\textcolor{lighttext}{Prototype web, moteur analytique et coaching IA local}}\\[1.2cm]
+        {\normalsize Hicham Moussaid}\\[0.15cm]
+        {\small Master SIE -- ENS Meknès}\\[0.15cm]
+        {\small Encadrant : Pr. Abdelaaziz Hessane}
+    };
+\end{tikzpicture}
+\end{frame}
+
+\setbeamertemplate{footline}{
+    \begin{tikzpicture}[remember picture,overlay]
+        \fill[primary!5] (current page.south west) rectangle ($(current page.south east)+(0,15pt)$);
+        \node[anchor=south east, xshift=-14pt, yshift=4pt, text=primary!60, font=\scriptsize\bfseries] at (current page.south east) {
+            \insertframenumber~|~\inserttotalframenumber
+        };
+        \fill[accent] (current page.south west) rectangle ($(current page.south west)+(3pt,15pt)$);
+        \node[anchor=south west, xshift=10pt, yshift=4pt, text=primary!60, font=\tiny\bfseries] at (current page.south west) {
+            SPEECHCOACH | AVANCEMENT 2026
+        };
+    \end{tikzpicture}
+}
+
+\begin{frame}{Plan}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{1. Où en est le projet ?}
+\begin{itemize}
+    \item objectif produit
+    \item état global du prototype
+\end{itemize}
+\vspace{0.3cm}
+\textbf{2. Ce qui a été implémenté}
+\begin{itemize}
+    \item application web
+    \item pipeline analytique
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{3. Le point difficile : le LLM}
+\begin{itemize}
+    \item problèmes observés
+    \item solutions essayées
+\end{itemize}
+\vspace{0.3cm}
+\textbf{4. Solution retenue et suite}
+\begin{itemize}
+    \item architecture actuelle
+    \item limites et prochaines étapes
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Objectif actuel}
+\begin{keybox}
+\textbf{Idée centrale :} transformer une vidéo de prise de parole en un rapport utile, lisible et actionnable, pas seulement en une liste de métriques.
+\end{keybox}
+\vspace{0.35cm}
+\begin{itemize}
+    \item Le projet est passé d'un pipeline technique à un \textbf{prototype web complet}.
+    \item Le cœur reste \textbf{multimodal} : audio, regard, gestuelle, qualité visuelle.
+    \item Le but de cette phase était surtout de rendre le système \textbf{présentable, stable et exploitable} pour un vrai usage.
+\end{itemize}
+\vspace{0.3cm}
+% \begin{tcolorbox}[colback=success!6,colframe=success!35]
+% \small \textbf{Message cle a dire :} cette phase n'a pas seulement ajoute des fonctions, elle a transforme le prototype en produit utilisable.
+% \end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Architecture actuelle du prototype}
+\centering
+\begin{tikzpicture}[
+    node distance=1.3cm and 1.5cm,
+    box/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=1.05cm, fill=blue!5, font=\scriptsize},
+    service/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=1.05cm, fill=green!5, font=\scriptsize},
+    storage/.style={draw, rounded corners, align=center, minimum width=3.2cm, minimum height=1.05cm, fill=orange!8, font=\scriptsize},
+    arrow/.style={-{Latex[length=2.3mm]}, thick}
+]
+\node[box] (frontend) {Frontend web\\Next.js / React / TypeScript};
+\node[box, right=of frontend] (api) {Backend API\\FastAPI / SQLModel};
+\node[service, right=of api] (ollama) {Coaching IA local\\Ollama + GGUF};
+\node[storage, below=of frontend] (db) {Base de donnees\\utilisateurs / profils / sessions};
+\node[service, below=of api] (celery) {Traitement asynchrone\\Celery + Redis};
+\node[service, below=of ollama] (engine) {Moteur analytique\\FFmpeg, Whisper, MediaPipe, OpenCV};
+\node[storage, below=of celery] (storage) {Stockage local\\uploads / rapports};
+\draw[arrow] (frontend) -- (api);
+\draw[arrow] (api) -- (celery);
+\draw[arrow] (celery) -- (engine);
+\draw[arrow] (engine) -- (ollama);
+\draw[arrow] (api) -- (db);
+\draw[arrow] (celery) -- (storage);
+\draw[arrow] (api) -- (ollama);
+\end{tikzpicture}
+\vspace{0.07cm}
+\begin{itemize}
+    \item Le calcul analytique et le coaching sont \textbf{separes} pour garder une execution stable.
+    \item Le LLM ne decide pas seul : il \textbf{reformule} une base deja produite par le moteur deterministe.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Ce qui a ete implemente}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Application web, colframe=primary, colback=primary!3]
+\small
+\begin{itemize}
+    \item inscription et connexion
+    \item gestion du profil et des parametres
+    \item dashboard et historique des analyses
+    \item export PDF et Markdown
+\end{itemize}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Studio, colframe=accent, colback=accent!3]
+\small
+\begin{itemize}
+    \item import d'une video
+    \item enregistrement direct webcam/micro
+    \item suivi du traitement et consultation du rapport
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Moteur analytique, colframe=success, colback=success!3]
+\small
+\begin{itemize}
+    \item transcription et debit de parole
+    \item pauses, fillers, energie
+    \item regard camera, mains visibles, intensite gestuelle
+    \item qualite visuelle et cadrage
+\end{itemize}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Restitution, colframe=warning!70!black, colback=warning!8]
+\small
+\begin{itemize}
+    \item score global et scores par axe
+    \item points forts / axes de progression
+    \item plan d'exercice et transcription
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Pourquoi le LLM a été difficile}
+\begin{keybox}[colframe=danger!35,colback=danger!4]
+\textbf{Le vrai problème :} demander à un LLM local de produire \textbf{trois textes courts, justes, sobres et en français propre} est plus difficile que de générer un long paragraphe libre.
+\end{keybox}
+\vspace{0.35cm}
+\begin{itemize}
+    \item Erreurs observées : hallucinations, ton générique, fuite de prompt, JSON invalide, confusion entre force et faiblesse.
+    \item Le contexte \textbf{RAG} aidait à enrichir l'appui pédagogique, mais pouvait aussi perturber le \textbf{bilan court}.
+    \item Le problème n'était donc pas seulement le choix du modèle, mais aussi \textbf{l'architecture de génération}. 
+\end{itemize}
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{Le LLM était utile, mais pas assez fiable pour devenir la source principale de vérité.}
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Solutions essayées pendant cette phase}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+    \item comparaison de plusieurs modèles locaux : Llama, Qwen, Mistral
+    \item prompt engineering plus strict
+    \item validation JSON et fallbacks déterministes
+    \item ajout du RAG pour donner plus de contexte pédagogique au coaching
+\end{itemize}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{itemize}
+    \item fine-tuning supervisé avec \textbf{QLoRA}
+    \item dataset construit en \textbf{input/target}, puis converti en \textbf{messages}
+    \item essais sur plusieurs tailles de modèles
+    \item tests de déploiement local en CPU
+\end{itemize}
+\end{column}
+\end{columns}
+\vspace{0.35cm}
+\begin{tcolorbox}[colback=accent!8,colframe=accent!45]
+\small \textbf{Ce qu'on a appris :} le fine-tuning a amélioré le format et le style, mais le problème du déploiement local restait entier avec l'approche base model + adapter.
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Dataset de fine-tuning : construction et nettoyage}
+\vspace{-0.35cm}
+
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Comment le dataset a été construit, colframe=primary, colback=primary!3]
+\small
+\begin{itemize}
+    \item point de départ : cas réels issus des rapports du projet
+    \item ajout de cas synthétiques pour couvrir plus de scénarios
+    \item objectif : apprendre le ton, la structure et le format des 3 champs courts
+\end{itemize}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Nettoyage réalisé, colframe=warning!60!black, colback=warning!8]
+\small
+\begin{itemize}
+    \item suppression des doublons
+    \item suppression des cas incohérents ou trop artificiels
+    \item recentrage sur les catégories réellement utilisées par le moteur
+    \item version finale compacte et exploitable
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Structure des données, colframe=success, colback=success!4]
+\small
+\textbf{Étape 1 : format lisible pour nous}
+\begin{itemize}
+    \item \texttt{input} : scores, forces, faiblesses, top recommendation
+    \item \texttt{target} : bilan, priorité, encouragement
+\end{itemize}
+\vspace{0.15cm}
+\textbf{Étape 2 : conversion pour l'entraînement}
+\begin{itemize}
+    \item ajout d'un message system
+    \item transformation en format \texttt{messages}
+    \item compatibilite avec QLoRA / Transformers
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.25cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{Message clé :} le dataset n'a pas été un export brut ; il a été construit, nettoyé puis converti pour rester cohérent avec le vrai comportement de SpeechCoach.
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Architecture retenue pour le coaching IA}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Avant}
+\begin{itemize}
+    \item modele de base + adapter LoRA separes
+    \item chargement lourd dans le worker Python
+    \item temps longs et risque de crash memoire
+\end{itemize}
+\vspace{0.2cm}
+\textbf{Maintenant}
+\begin{itemize}
+    \item fusion des poids
+    \item quantification GGUF
+    \item service local via Ollama
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{tcolorbox}[title=Architecture actuelle, colframe=success, colback=success!4]
+\small
+\begin{itemize}
+    \item scoring et priorites : \textbf{deterministes}
+    \item exercices : \textbf{base de connaissances + mapping deterministe}
+    \item bilan / priorite / encouragement : \textbf{LLM local enrichi par RAG}
+    \item nettoyage et fallback : \textbf{deterministes}
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=primary!4,colframe=primary!25]
+\small \textbf on n'a pas remplace le systeme par un LLM ; on a garde un coeur fiable et on a utilise le LLM seulement la ou il apporte une vraie valeur.
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{État actuel du prototype}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Points solides, colframe=success, colback=success!4]
+\small
+\begin{itemize}
+    \item application web deja exploitable
+    \item pipeline analytique stable
+    \item rapport plus lisible pour l'utilisateur
+    \item coaching IA local fonctionnel
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Points à finaliser, colframe=warning!60!black, colback=warning!8]
+\small
+\begin{itemize}
+    \item polissage final du texte généré
+    \item adaptation aux différents appareils
+    \item plan de progression encore trop statique
+    \item interface et responsive à consolider
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.35cm}
+\begin{keybox}
+\textbf{Le projet est déjà démontrable de bout en bout ; la suite porte surtout sur le polissage, l'évaluation et la consolidation.}
+\end{keybox}
+\end{frame}
+
+\begin{frame}{Prochaines étapes}
+\begin{itemize}
+    \item adapter le système à différents appareils : smartphone, tablette, PC, avec recalibrage des signaux comme pitch, yaw et regard caméra
+    \item faire évoluer le plan de progression, aujourd'hui encore trop statique, vers un format plus court et plus personnalisé que le schéma fixe sur 7 jours
+    \item rendre l'interface vraiment responsive et ajouter les briques produit restantes : vérification e-mail, derniers raffinements des paramètres et du parcours utilisateur
+    \item enrichir la restitution avec d'autres graphiques et un meilleur niveau de finition visuelle
+\end{itemize}
+\vspace{0.4cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{La prochaine phase ne consiste pas à changer l'idée du projet, mais à rendre le système plus adaptable, plus personnalisable et plus propre côté produit.}
+\end{tcolorbox}
+\end{frame}
+
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+    \fill[primary] (current page.south west) rectangle (current page.north east);
+    \node[text=white, align=center] at (current page.center) {
+        {\Huge\bfseries Merci de votre attention}\\[0.45cm]
+        {\Large Questions et demonstration}\\[0.9cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (4cm,0.14cm);
+        \end{tikzpicture}
+    };
+\end{tikzpicture}
+\end{frame}
+% --- SLIDE 14: RÉFÉRENCES ---
+\begin{frame}[allowframebreaks]{Références Bibliographiques}
+    \nocite{*}
+    \printbibliography[heading=none]
+\end{frame}
+
+\end{document}

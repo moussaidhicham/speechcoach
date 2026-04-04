@@ -23,6 +23,10 @@ backend/app/storage/
 backend/storage/
 app/storage/
 
+# === Local Models / Large Artifacts ===
+backend/models/
+*.gguf
+
 # === Outputs (generated data, videos, frames, audio) ===
 outputs/
 **/outputs/
@@ -33,3 +37,8 @@ tmp/
 .agents/
 brain/
 *debug*.py
+
+# === Tooling Caches ===
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

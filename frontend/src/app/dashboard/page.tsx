@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -39,12 +39,11 @@ import { videoService } from '@/services/video.service';
 import {
   DashboardCoachingSnapshot,
   DashboardSummary,
-  ReportRecommendation,
   SessionHistory,
 } from '@/types/analytics';
 import { UserProfile } from '@/types/auth';
 
-/* ─── Types ──────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 interface StatCardProps {
   label: string;
@@ -53,7 +52,7 @@ interface StatCardProps {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export default function DashboardPage() {
   const { user, token } = useAuth();
@@ -118,28 +117,27 @@ export default function DashboardPage() {
 
       <div className="space-y-8">
 
-        {/* ── Hero banner ───────────────────────────────────────────── */}
+        {/* â”€â”€ Hero banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <section className="rounded-3xl border border-border/60 bg-card p-7 lg:p-9">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <Badge variant="secondary" className="mb-4 bg-accent text-accent-foreground">
-                Coach workspace
+                Votre espace de travail
               </Badge>
               <h2 className="font-display max-w-xl text-3xl font-medium leading-snug sm:text-4xl">
-                Un tableau de bord qui ressemble à une salle de revue,{' '}
-                <em className="not-italic text-primary">pas à une grille de cartes.</em>
+                Retrouvez vos analyses, votre progression et votre prochaine action.
               </h2>
               <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-                Suivez la progression, ouvrez votre dernier rapport et gardez le prochain
-                exercice de répétition sous les yeux.
+                Ouvrez votre dernier rapport, suivez vos scores et gardez le prochain
+                exercice recommande sous les yeux.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                ['Dernière lecture',  recentSessions[0]?.title || 'Aucune session'],
-                ['Prochain geste',    dashboardSummary?.latest_coaching?.primary_focus || 'Lancez une analyse'],
-                ['Cadence',           `${dashboardSummary?.total_sessions || 0} sessions`],
+                ['Dernier rapport', recentSessions[0]?.title || 'Aucune session'],
+                ['Prochaine priorite', dashboardSummary?.latest_coaching?.primary_focus || 'Lancez une analyse'],
+                ['Total sessions', `${dashboardSummary?.total_sessions || 0} sessions`],
               ].map(([label, value]) => (
                 <div key={label} className="min-w-0 rounded-2xl border border-border/60 bg-background/70 px-4 py-5">
                   <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
@@ -157,16 +155,16 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── Error state ───────────────────────────────────────────── */}
+        {/* â”€â”€ Error state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {isError && (
           <Card className="border-dashed">
             <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="font-display text-lg font-medium">
-                  Le dashboard ne s'est pas chargé correctement
+                  Le dashboard ne s'est pas charge correctement
                 </div>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  Nous n'avons pas pu récupérer vos statistiques ou votre profil.
+                  Nous n'avons pas pu recuperer vos statistiques ou votre profil.
                   Vous pouvez relancer le chargement sans quitter la page.
                 </p>
               </div>
@@ -178,7 +176,7 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* ── Stat cards ────────────────────────────────────────────── */}
+        {/* â”€â”€ Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="grid grid-cols-1 gap-5 md:grid-cols-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
@@ -189,13 +187,13 @@ export default function DashboardPage() {
               <StatCard
                 label="Score moyen"
                 value={`${dashboardSummary?.average_score || 0}%`}
-                subValue="Sur les vidéos terminées"
+                subValue="Sur les videos terminees"
                 icon={TrendingUp}
               />
               <StatCard
                 label="Analyses totales"
                 value={`${dashboardSummary?.total_sessions || 0}`}
-                subValue="Sessions enregistrées"
+                subValue="Sessions enregistrees"
                 icon={Video}
               />
               <StatCard
@@ -207,20 +205,20 @@ export default function DashboardPage() {
               <StatCard
                 label="Temps pratique"
                 value={`${dashboardSummary?.total_practice_minutes || 0} min`}
-                subValue="Temps d'entraînement cumulé"
+                subValue="Temps d'entrainement cumule"
                 icon={Clock}
               />
             </>
           )}
         </div>
 
-        {/* ── Chart + recent sessions ───────────────────────────────── */}
+        {/* â”€â”€ Chart + recent sessions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Progression des scores</CardTitle>
               <CardDescription>
-                Évolution de votre performance globale au fil des analyses.
+                Evolution de votre performance globale au fil des analyses.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -281,7 +279,7 @@ export default function DashboardPage() {
           <RecentAnalyses recentSessions={recentSessions} />
         </div>
 
-        {/* ── Coach recommendations ─────────────────────────────────── */}
+        {/* â”€â”€ Coach recommendations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <Recommendations
           latestCoaching={dashboardSummary?.latest_coaching || null}
           isLoading={isLoading}
@@ -291,7 +289,7 @@ export default function DashboardPage() {
   );
 }
 
-/* ─── StatCard ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€ StatCard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function StatCard({ label, value, subValue, icon: Icon }: StatCardProps) {
   return (
@@ -310,14 +308,14 @@ function StatCard({ label, value, subValue, icon: Icon }: StatCardProps) {
   );
 }
 
-/* ─── RecentAnalyses ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ RecentAnalyses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function RecentAnalyses({ recentSessions }: { recentSessions: SessionHistory[] }) {
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle>Dernières analyses</CardTitle>
-        <CardDescription>Accès rapide à vos sessions les plus récentes.</CardDescription>
+        <CardTitle>Dernieres analyses</CardTitle>
+        <CardDescription>Acces rapide a vos sessions les plus recentes.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col gap-2.5">
         {recentSessions.length > 0 ? (
@@ -364,23 +362,23 @@ function RecentAnalyses({ recentSessions }: { recentSessions: SessionHistory[] }
   );
 }
 
-/* ─── EmptyState ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ EmptyState â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border/60 bg-secondary/30 p-8 text-center">
       <BarChart3 className="h-7 w-7 text-muted-foreground/40" />
-      <p className="text-sm text-muted-foreground">Pas encore assez de données.</p>
+      <p className="text-sm text-muted-foreground">Pas encore assez de donnees.</p>
       <Link href="/studio">
         <Button variant="outline" size="sm">
-          Faire ma première analyse
+          Faire ma premiere analyse
         </Button>
       </Link>
     </div>
   );
 }
 
-/* ─── Recommendations ────────────────────────────────────────────────── */
+/* â”€â”€â”€ Recommendations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function Recommendations({
   latestCoaching,
@@ -392,13 +390,13 @@ function Recommendations({
   const sectionHeader = (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
       <div>
-        <h2 className="font-display text-2xl font-medium">Priorités du coach</h2>
+        <h2 className="font-display text-2xl font-medium">Priorites du coach</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {isLoading
             ? 'Chargement des recommandations issues de votre dernier rapport.'
             : latestCoaching
             ? 'Conseils issus de votre dernier rapport complet.'
-            : 'Les recommandations apparaîtront ici après votre première analyse terminée.'}
+            : 'Les recommandations apparaitront ici apres votre premiere analyse terminee.'}
         </p>
       </div>
       {latestCoaching && !isLoading && (
@@ -435,11 +433,11 @@ function Recommendations({
             <Sparkles className="h-7 w-7 text-primary/40" />
             <div>
               <div className="font-display text-lg font-medium">
-                Aucune recommandation détaillée pour le moment
+                Aucune recommandation detaillee pour le moment
               </div>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Lancez une session dans le studio pour débloquer un coaching basé
-                sur votre rapport le plus récent.
+                Lancez une session dans le studio pour debloquer un coaching base
+                sur votre rapport le plus recent.
               </p>
             </div>
             <Link href="/studio">
@@ -466,7 +464,7 @@ function Recommendations({
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
               <div>
                 <Badge variant="secondary" className="mb-3 bg-primary/10 text-primary">
-                  Dernière session analysée
+                  Derniere session analysee
                 </Badge>
                 <h3 className="font-display text-2xl font-medium">{latestCoaching.priority_focus}</h3>
                 <p className="mt-2.5 max-w-lg text-sm leading-relaxed text-muted-foreground">
@@ -492,12 +490,12 @@ function Recommendations({
               <DashboardInsightStat
                 label="Focus principal"
                 value={latestCoaching.primary_focus || latestCoaching.priority_focus}
-                helper="Direction recommandée"
+                helper="A travailler en priorite"
               />
               <DashboardInsightStat
-                label="Point fort à conserver"
+                label="Point fort a conserver"
                 value={latestCoaching.first_strength || 'Progression stable'}
-                helper="Élément positif détecté"
+                helper="A garder dans vos prochaines repetitions"
               />
             </div>
           </CardContent>
@@ -506,9 +504,9 @@ function Recommendations({
         {/* Next practice */}
         <Card>
           <CardHeader>
-            <CardTitle>Prochaine répétition</CardTitle>
+            <CardTitle>Prochaine repetition</CardTitle>
             <CardDescription>
-              Le premier bloc de pratique suggéré par le plan d'entraînement.
+              Le premier bloc de pratique suggere par le plan d'entrainement.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3.5">
@@ -519,42 +517,23 @@ function Recommendations({
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {latestCoaching.next_practice_step ||
-                  'Reprenez votre discours en appliquant la première recommandation du rapport.'}
+                  'Reprenez votre discours en appliquant la premiere recommandation du rapport.'}
               </p>
             </div>
             {latestCoaching.encouragement && (
               <div className="rounded-xl border border-border/60 bg-background/70 p-4 text-sm leading-relaxed text-muted-foreground">
-                <span className="font-medium text-foreground">Encouragement — </span>
+                <span className="font-medium text-foreground">Encouragement - </span>
                 {latestCoaching.encouragement}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Recommendation cards */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {latestCoaching.recommendations.length > 0 ? (
-          latestCoaching.recommendations.map((recommendation) => (
-            <CoachRecommendationCard
-              key={`${recommendation.category}-${recommendation.message}`}
-              recommendation={recommendation}
-            />
-          ))
-        ) : (
-          <Card className="md:col-span-2">
-            <CardContent className="p-6 text-sm leading-relaxed text-muted-foreground">
-              Le dernier rapport ne contient pas encore de recommandations structurées.
-              Le focus principal reste disponible ci-dessus.
-            </CardContent>
-          </Card>
-        )}
-      </div>
     </div>
   );
 }
 
-/* ─── DashboardInsightStat ───────────────────────────────────────────── */
+/* â”€â”€â”€ DashboardInsightStat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function DashboardInsightStat({ label, value, helper }: {
   label: string;
@@ -577,43 +556,7 @@ function DashboardInsightStat({ label, value, helper }: {
   );
 }
 
-/* ─── CoachRecommendationCard ────────────────────────────────────────── */
 
-function CoachRecommendationCard({ recommendation }: { recommendation: ReportRecommendation }) {
-  const severity = recommendation.severity.toLowerCase();
 
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="font-display text-base font-medium">{recommendation.category}</h3>
-              <div className="text-xs text-muted-foreground">Recommandation</div>
-            </div>
-          </div>
-          <Badge
-            variant="outline"
-            className={cn(
-              severity === 'critical' && 'border-destructive/25 bg-destructive/10 text-destructive',
-              severity === 'warning'  && 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400',
-              severity === 'info'     && 'border-primary/20 bg-primary/10 text-primary'
-            )}
-          >
-            {recommendation.severity}
-          </Badge>
-        </div>
 
-        <p className="text-sm leading-relaxed text-muted-foreground">{recommendation.message}</p>
 
-        <div className="mt-4 rounded-xl bg-secondary/50 px-4 py-3.5 text-sm leading-relaxed text-foreground">
-          <span className="font-medium">Action terrain — </span>
-          {recommendation.tip}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

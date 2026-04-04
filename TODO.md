@@ -1,1 +1,0 @@
-# TODO: Push Refactor Commit to GitHub\n\n- [ ] Update README.md with full-stack instructions\n- [ ] Stage all changes (git add .)\n- [ ] Commit with exact refactor message\n- [ ] Push to origin/main\n- [ ] Verify on GitHub

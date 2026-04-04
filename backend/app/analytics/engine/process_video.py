@@ -11,7 +11,13 @@ from app.analytics.engine.metrics.schema import SpeechCoachReport, VideoMetadata
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def process_video(video_path: str, output_dir: str, forced_language: Optional[str] = None):
+def process_video(
+    video_path: str,
+    output_dir: str,
+    forced_language: Optional[str] = None,
+    include_enrichment: bool = False,
+    custom_session_id: Optional[str] = None,
+):
     """
     Main orchestration function.
     """
@@ -21,7 +27,9 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     
     # 0. Setup
     video_name = os.path.splitext(os.path.basename(video_path))[0]
-    session_dir = os.path.join(output_dir, video_name)
+    # If custom_session_id is provided, use it as folder name. Otherwise use video filename.
+    folder_name = custom_session_id if custom_session_id else video_name
+    session_dir = os.path.join(output_dir, folder_name)
     os.makedirs(session_dir, exist_ok=True)
     
     audio_path = os.path.join(session_dir, "audio.wav")
@@ -74,7 +82,11 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     from app.analytics.engine.audio.analytics import analyze_audio_file
     from app.analytics.engine.vision.analysis import analyze_frames
     from app.analytics.engine.metrics.scoring import calculate_scores, generate_feedback_summary
-    from app.analytics.engine.metrics.recommendations import generate_recommendations, generate_training_plan
+    from app.analytics.engine.metrics.recommendations import (
+        build_exercise_payload,
+        generate_recommendations,
+        generate_training_plan,
+    )
 
     # Initialize ASR (Using 'small' model for CPU performance)
     asr = ASRProcessor(model_size="small", device="cpu", compute_type="int8")
@@ -104,43 +116,46 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     
     # Generate Recommendations and Training Plan
     recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
+    exercise_recommendation = build_exercise_payload(recommendations)
     training_plan = generate_training_plan(recommendations)
-    
-    # -- Step 2c: RAG Retrieval (initialized HERE, after ASR+Vision free their peak RAM) --
-    logger.info("Step 2c: RAG Retrieval...")
     fetched_docs = []
-    rag_ready = False
-    try:
-        from app.analytics.engine.rag.retriever import RAGRetriever
-        retriever = RAGRetriever()
-        rag_ready = True
-    except ImportError:
-        logger.warning("RAG Retriever could not be loaded. Skipping RAG.")
+    llm_coaching = None
 
-    if rag_ready and recommendations:
-        top_rec = recommendations[0]
-        query = f"{top_rec.category} {top_rec.message}"
-        logger.info(f"Querying RAG with top weakness: {query}")
-        fetched_docs = retriever.retrieve(query, top_k=2)
-        # Free embedding model RAM before Ollama LLM loads
-        retriever.release()
+    if include_enrichment:
+        logger.info("Step 2c: RAG Retrieval...")
+        rag_ready = False
+        try:
+            from app.analytics.engine.rag.retriever import RAGRetriever
+            retriever = RAGRetriever()
+            rag_ready = True
+        except ImportError:
+            logger.warning("RAG Retriever could not be loaded. Skipping RAG.")
 
-    # Run LLM Agent Coach (Sprint 9)
-    from app.analytics.engine.agent.agent_coach import generate_coaching_text
-    logger.info("Step 2d: Generating LLM coaching text (Agent Coach)...")
-    llm_coaching = generate_coaching_text(
-        scores=scores,
-        strengths=strengths,
-        weaknesses=weaknesses,
-        recommendations=recommendations,
-        fetched_docs=fetched_docs,
-        language=language,
-        model="llama3.2"
-    )
-    if llm_coaching:
-        logger.info("Agent Coach text generated successfully.")
+        if rag_ready and recommendations:
+            top_rec = recommendations[0]
+            query = f"{top_rec.category} {top_rec.message}"
+            logger.info(f"Querying RAG with top weakness: {query}")
+            fetched_docs = retriever.retrieve(query, top_k=2)
+            retriever.release()
+
+        from app.analytics.engine.agent.agent_coach import generate_coaching_text
+
+        logger.info("Step 2d: Generating coaching text with RAG + LLM...")
+        llm_coaching = generate_coaching_text(
+            scores=scores,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            recommendations=recommendations,
+            fetched_docs=fetched_docs,
+            language=language,
+            model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
+        )
+        if llm_coaching:
+            logger.info("Coach text generated successfully.")
+        else:
+            logger.warning("Coach text generation failed. Falling back to deterministic report wording.")
     else:
-        logger.warning("Agent Coach unavailable (Ollama not installed or model missing). Skipping LLM text.")
+        logger.info("Skipping RAG and LLM coaching to keep the main processing path fast.")
 
     # Fallback for duration if video metadata failed (common in browser WebM)
     if duration == 0 and audio_metrics.total_duration > 0:
@@ -171,6 +186,8 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     # Add training plan and llm coaching to report dict output
     report_dict = report.to_dict()
     report_dict['training_plan'] = training_plan
+    report_dict['exercise_recommendation'] = exercise_recommendation
+    report_dict['retrieved_documents'] = fetched_docs
     if llm_coaching:
         report_dict['llm_coaching'] = llm_coaching
     
@@ -191,44 +208,68 @@ def process_video(video_path: str, output_dir: str, forced_language: Optional[st
     matplotlib.use('Agg') # Force non-GUI backend
     import matplotlib.pyplot as plt
     
+    # Chart Colors & Style
+    PRIMARY_COLOR = '#4f46e5'  # Indigo
+    SECONDARY_COLOR = '#10b981' # Emerald
+    NEUTRAL_COLOR = '#9ca3af'   # Gray
+    
     # Graph 1: Audio Energy (Prosody)
     if energy_curve:
         plt.figure(figsize=(10, 3))
-        # Create time axis for energy (approx 10Hz = 0.1s steps)
         t_energy = [i * 0.1 for i in range(len(energy_curve))]
-        plt.plot(t_energy, energy_curve, color='#FF5733', linewidth=1)
-        plt.fill_between(t_energy, energy_curve, color='#FF5733', alpha=0.3)
-        plt.title("Dynamique Vocale (Énergie/Volume)")
-        plt.xlabel("Temps (s)")
-        plt.ylabel("Amplitude (RMS)")
-        plt.grid(True, linestyle=':', alpha=0.6)
+        plt.plot(t_energy, energy_curve, color=PRIMARY_COLOR, linewidth=1.5, alpha=0.9)
+        plt.fill_between(t_energy, energy_curve, color=PRIMARY_COLOR, alpha=0.15)
+        
+        plt.title("Dynamique Vocale (Énergie)", fontsize=12, fontweight='bold', pad=15)
+        plt.xlabel("Temps (secondes)", fontsize=10)
+        plt.ylabel("Amplitude", fontsize=10)
+        
+        ax = plt.gca()
+        ax.spines[['top', 'right']].set_visible(False)
+        ax.spines[['left', 'bottom']].set_color('#e5e7eb')
+        plt.grid(True, linestyle='--', alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(session_dir, "audio_energy.png"))
+        plt.savefig(os.path.join(session_dir, "audio_energy.png"), dpi=150, bbox_inches='tight')
         plt.close()
 
     # Graph 2: Vision Timeline (Gure Gantt)
     if frame_data_list:
         plt.figure(figsize=(10, 4))
         
-        # Extract series
-        times = [d['frame_idx'] * 1.0 for d in frame_data_list] # Assuming 1 FPS extract
-        face_vals = [1 if d['face_present'] else 0 for d in frame_data_list]
-        eye_vals = [1 if d['eye_contact'] else 0 for d in frame_data_list]
-        hand_vals = [1 if d['hands_visible'] else 0 for d in frame_data_list]
+        # We transform frame_data into intervals for broken_barh
+        def get_intervals(key):
+            intervals = []
+            start = None
+            for d in frame_data_list:
+                val = d.get(key, False)
+                t = d['frame_idx'] * 1.0 # 1 FPS
+                if val and start is None:
+                    start = t
+                elif not val and start is not None:
+                    intervals.append((start, t - start))
+                    start = None
+            if start is not None:
+                intervals.append((start, duration - start))
+            return intervals
+
+        face_intervals = get_intervals('face_present')
+        eyes_intervals = get_intervals('eye_contact')
+        hands_intervals = get_intervals('hands_visible')
+
+        ax = plt.gca()
+        # Broken barh for Gantt look
+        if hands_intervals: ax.broken_barh(hands_intervals, (0.7, 0.6), facecolors=NEUTRAL_COLOR, alpha=0.6, label='Mains')
+        if eyes_intervals: ax.broken_barh(eyes_intervals, (1.7, 0.6), facecolors=SECONDARY_COLOR, alpha=0.8, label='Regard')
+        if face_intervals: ax.broken_barh(face_intervals, (2.7, 0.6), facecolors=PRIMARY_COLOR, alpha=0.9, label='Visage')
+
+        plt.yticks([1, 2, 3], ['Mains', 'Regard', 'Visage'], fontsize=10)
+        plt.xlabel("Temps (secondes)", fontsize=10)
+        plt.title("Timeline de Présence Visuelle", fontsize=12, fontweight='bold', pad=15)
         
-        # Plot bars (using scatter or broken_barh could be better, but step plot is easy)
-        # Offset them vertically
-        plt.step(times, [v * 3 for v in face_vals], where='mid', label='Visage', color='black', linewidth=2)
-        plt.step(times, [v * 2 for v in eye_vals], where='mid', label='Regard Caméra', color='gray', linewidth=2)
-        plt.step(times, [v * 1 for v in hand_vals], where='mid', label='Mains', color='lightgray', linewidth=2)
-        
-        plt.yticks([1, 2, 3], ['Mains', 'Regard', 'Visage'])
-        plt.xlabel("Temps (secondes)")
-        plt.title("Analyse Visuelle Temporelle")
-        plt.grid(True, axis='x', linestyle='--', alpha=0.5)
-        plt.ylim(0, 3.5)
+        ax.spines[['top', 'right', 'left']].set_visible(False)
+        plt.grid(True, axis='x', linestyle='--', alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(session_dir, "vision_timeline.png"))
+        plt.savefig(os.path.join(session_dir, "vision_timeline.png"), dpi=150, bbox_inches='tight')
         plt.close()
         
     # Generate Minimal Markdown Report (Sprint 1+2 Goal)

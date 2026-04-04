@@ -117,7 +117,6 @@ def _serialize_session_history_item(
 
 def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]:
     strengths = report.get('strengths') or []
-    recommendations = report.get('recommendations') or []
     training_plan = report.get('training_plan') or {}
     first_day = (training_plan.get('days') or [None])[0] or {}
 
@@ -133,7 +132,6 @@ def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]
         'first_strength': strengths[0] if strengths else None,
         'next_practice_title': first_day.get('title'),
         'next_practice_step': (first_day.get('items') or [None])[0],
-        'recommendations': recommendations[:2],
     }
 
 

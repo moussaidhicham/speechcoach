@@ -37,7 +37,7 @@ import { authService } from '@/services/auth.service';
 import { UserProfile } from '@/types/auth';
 import { FeedbackForm } from '@/features/feedback/FeedbackForm';
 
-/* ─── Types ──────────────────────────────────────────────────────────── */
+/* Section */
 
 interface UserFeedback {
   id:       string;
@@ -63,9 +63,11 @@ interface SecuritySectionProps {
   }>>;
   onSave:          () => Promise<void>;
   isSaving:        boolean;
+  isDeleting:      boolean;
+  onDeleteAccount: () => Promise<void>;
 }
 
-/* ─── Page ───────────────────────────────────────────────────────────── */
+/* Section */
 
 export default function SettingsPage() {
   const { user, token } = useAuth();
@@ -75,6 +77,7 @@ export default function SettingsPage() {
   const [isError,           setIsError]           = React.useState(false);
   const [isSaving,          setIsSaving]          = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
   const [passwordData,      setPasswordData]      = React.useState({
     current_password: '', new_password: '', confirm_password: '',
   });
@@ -107,7 +110,7 @@ export default function SettingsPage() {
     try {
       const updated = await authService.updateProfile(profile);
       setProfile(updated);
-      toast.success('Profil mis à jour.');
+      toast.success('Profil mis a jour.');
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de la sauvegarde.');
@@ -117,7 +120,7 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/')) { toast.error('Veuillez sélectionner une image.'); return; }
+    if (!file.type.startsWith('image/')) { toast.error('Veuillez selectionner une image.'); return; }
     const formData = new FormData();
     formData.append('file', file);
     setIsUploadingAvatar(true);
@@ -126,7 +129,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setProfile((p) => p ? { ...p, avatar_url: res.data.avatar_url } : p);
-      toast.success('Photo de profil mise à jour.');
+      toast.success('Photo de profil mise a jour.');
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de l'envoi de l'image.");
@@ -139,7 +142,7 @@ export default function SettingsPage() {
     try {
       await api.delete('/user/profile/avatar');
       setProfile((p) => p ? { ...p, avatar_url: null } : p);
-      toast.success('Photo de profil supprimée.');
+      toast.success('Photo de profil supprimee.');
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de la suppression.');
@@ -155,17 +158,34 @@ export default function SettingsPage() {
     try {
       await api.patch('/auth/me', { password: passwordData.new_password });
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' });
-      toast.success('Mot de passe modifié.');
+      toast.success('Mot de passe modifie.');
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors du changement de mot de passe.');
     } finally { setIsSaving(false); }
   };
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Etes-vous absolument sur de vouloir supprimer votre compte ? Cette action est irreversible et supprimera toutes vos videos.')) {
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      await authService.deleteAccount();
+      toast.success('Votre compte a été supprimé.');
+      authService.logout();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la suppression du compte.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   return (
     <AppShell
-      title="Profil et préférences"
-      subtitle="Ajustez votre profil, vos accès et votre espace feedback."
+      title="Profil et preferences"
+      subtitle="Ajustez votre profil, vos acces et votre espace feedback."
       maxWidth="5xl"
     >
       {/* Loading */}
@@ -186,10 +206,10 @@ export default function SettingsPage() {
           <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="font-display text-lg font-medium">
-                Impossible de charger vos préférences
+                Impossible de charger vos preferences
               </div>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                Le profil ou le feedback n'a pas pu être récupéré.
+                Le profil ou le feedback n'a pas pu etre recupere.
                 Vous pouvez relancer le chargement.
               </p>
             </div>
@@ -204,7 +224,7 @@ export default function SettingsPage() {
       {!isLoading && !isError && profile && (
         <Tabs defaultValue="profile" className="space-y-6">
           {/*
-            Use the "line" variant — it's cleaner for a settings page where
+            Use the "line" variant - it's cleaner for a settings page where
             tabs sit inline with the content rather than as pill toggles.
           */}
           <TabsList variant="line" className="w-full justify-start">
@@ -214,7 +234,7 @@ export default function SettingsPage() {
             </TabsTrigger>
             <TabsTrigger value="account" className="gap-2">
               <Lock className="h-3.5 w-3.5" />
-              Sécurité
+              Securite
             </TabsTrigger>
             <TabsTrigger value="feedback" className="gap-2">
               <MessageCircle className="h-3.5 w-3.5" />
@@ -241,6 +261,8 @@ export default function SettingsPage() {
               setPasswordData={setPasswordData}
               onSave={handlePasswordChange}
               isSaving={isSaving}
+              isDeleting={isDeletingAccount}
+              onDeleteAccount={handleDeleteAccount}
             />
           </TabsContent>
 
@@ -259,7 +281,7 @@ export default function SettingsPage() {
   );
 }
 
-/* ─── ProfileSection ─────────────────────────────────────────────────── */
+/* Section */
 
 function ProfileSection({
   profile,
@@ -273,7 +295,7 @@ function ProfileSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Identité et coaching</CardTitle>
+        <CardTitle>Identite et coaching</CardTitle>
         <CardDescription>
           Personnalisez votre analyse et gardez un profil propre pour vos futurs rapports.
         </CardDescription>
@@ -300,7 +322,7 @@ function ProfileSection({
                 {profile.full_name || 'Coach Speech'}
               </div>
               <div className="mt-0.5 text-sm text-muted-foreground">
-                Votre photo apparaîtra dans les espaces de feedback et le shell.
+                Votre photo apparaitra dans les espaces de feedback et le shell.
               </div>
             </div>
           </div>
@@ -348,19 +370,20 @@ function ProfileSection({
 
           {/* Language */}
           <div className="space-y-1.5">
-            <Label>Langue préférée</Label>
+            <Label>Langue preferee</Label>
             <Select
-              value={profile.preferred_language}
+              value={profile.preferred_language || 'auto'}
               onValueChange={(v) =>
                 setProfile((p) => p ? { ...p, preferred_language: v } : p)
               }
             >
-              <SelectTrigger aria-label="Choisir la langue préférée">
+              <SelectTrigger aria-label="Choisir la langue preferee">
                 <Globe className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <SelectValue placeholder="Choisir une langue" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fr">Français</SelectItem>
+                <SelectItem value="auto">Auto</SelectItem>
+                <SelectItem value="fr">Francais</SelectItem>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="ar">Arabe</SelectItem>
               </SelectContent>
@@ -381,7 +404,7 @@ function ProfileSection({
                 <SelectValue placeholder="Votre objectif" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="General">Général</SelectItem>
+                <SelectItem value="General">General</SelectItem>
                 <SelectItem value="PFE">Soutenance PFE</SelectItem>
                 <SelectItem value="Interview">Entretien</SelectItem>
                 <SelectItem value="Pitch">Pitch</SelectItem>
@@ -394,9 +417,9 @@ function ProfileSection({
             <Label>Niveau actuel</Label>
             <div className="grid grid-cols-3 gap-2.5" role="radiogroup" aria-label="Niveau actuel">
               {[
-                ['Beginner',     'Débutant'],
-                ['Intermediate', 'Intermédiaire'],
-                ['Advanced',     'Avancé'],
+                ['Beginner',     'Debutant'],
+                ['Intermediate', 'Intermediaire'],
+                ['Advanced',     'Avance'],
               ].map(([value, fr]) => {
                 const active = profile.experience_level === value;
                 return (
@@ -405,17 +428,25 @@ function ProfileSection({
                     type="button"
                     role="radio"
                     aria-checked={active}
+                    aria-pressed={active}
+                    aria-label={`Choisir le niveau ${fr}`}
                     onClick={() =>
-                      setProfile((p) => p ? { ...p, experience_level: value } : p)
+                      setProfile((p) => (p ? { ...p, experience_level: value } : p))
                     }
+                    onKeyDown={(event) => {
+                      if (event.key === ' ' || event.key === 'Enter') {
+                        event.preventDefault();
+                        setProfile((p) => (p ? { ...p, experience_level: value } : p));
+                      }
+                    }}
                     className={cn(
-                      'flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center text-xs transition-colors',
+                      'inline-flex items-center justify-center shrink-0 h-auto min-h-16 cursor-pointer flex-col gap-1.5 rounded-xl px-3 py-3 text-center text-sm font-medium transition-colors outline-none select-none focus-visible:ring-2 focus-visible:border-ring focus-visible:ring-ring/40 active:scale-[0.98]',
                       active
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border/60 bg-background/60 text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                        ? 'border-transparent bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
+                        : 'border border-border/70 bg-background/80 text-foreground hover:bg-secondary hover:border-border dark:bg-input/20 dark:hover:bg-input/40'
                     )}
                   >
-                    <TrendingUp className="h-4 w-4" />
+                    <TrendingUp className="h-4 w-4 shrink-0" />
                     {fr}
                   </button>
                 );
@@ -439,7 +470,7 @@ function ProfileSection({
   );
 }
 
-/* ─── SecuritySection ────────────────────────────────────────────────── */
+/* Section */
 
 function SecuritySection({
   userEmail,
@@ -447,14 +478,16 @@ function SecuritySection({
   setPasswordData,
   onSave,
   isSaving,
+  isDeleting,
+  onDeleteAccount,
 }: SecuritySectionProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sécurité du compte</CardTitle>
+        <CardTitle>Securite du compte</CardTitle>
         <CardDescription>
-          Gardez un accès simple et clair. Les actions destructives sont masquées
-          tant que le backend n'est pas prêt.
+          Gardez un acces simple et clair. Les actions destructives sont masquees
+          tant que le backend n'est pas pret.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 px-7 pb-7">
@@ -493,27 +526,50 @@ function SecuritySection({
         </div>
 
         {/* Account deletion notice */}
-        <div className="rounded-2xl border border-dashed border-border/60 bg-secondary/30 px-5 py-4">
-          <div className="text-sm font-medium text-foreground">Suppression du compte</div>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            Cette action sera disponible lorsque le backend de suppression sera
-            implémenté proprement.
-          </p>
+        <div className="rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-5 py-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="text-sm font-semibold text-destructive">Suppression du compte</div>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Cette action supprimera definitivement votre profil, vos videos et vos analyses.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onDeleteAccount}
+              disabled={isDeleting}
+              className="shrink-0"
+            >
+              {isDeleting ? (
+                <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+              )}
+              {isDeleting ? "Suppression..." : "Supprimer mon compte"}
+            </Button>
+          </div>
         </div>
 
-        {/* Save */}
-        <Button
-          variant="outline"
-          onClick={onSave}
-          disabled={isSaving || !passwordData.new_password}
-        >
-          {isSaving
-            ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
-            : <Lock       className="mr-2 h-3.5 w-3.5" />
-          }
-          Mettre à jour le mot de passe
-        </Button>
+        {/* Update password button */}
+        <div className="flex justify-start">
+          <Button
+            variant="outline"
+            onClick={onSave}
+            disabled={isSaving || !passwordData.new_password}
+          >
+            {isSaving
+              ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+              : <Lock       className="mr-2 h-3.5 w-3.5" />
+            }
+            Mettre a jour le mot de passe
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
+
+
+

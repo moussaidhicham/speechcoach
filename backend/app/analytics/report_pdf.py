@@ -220,13 +220,37 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     story.append(summary_table)
     story.append(Spacer(1, 14))
 
-    story.append(Paragraph('Scores detaillees', styles['SectionTitle']))
+    story.append(Paragraph('Vos reperes essentiels', styles['SectionTitle']))
+    overall_table = Table(
+        [['Evaluation generale', summary.get('overall_score', scores.get('overall', 0))]],
+        colWidths=[110 * mm, 52 * mm],
+    )
+    overall_table.setStyle(
+        TableStyle(
+            [
+                ('BOX', (0, 0), (-1, -1), 0.75, palette['border']),
+                ('BACKGROUND', (0, 0), (-1, -1), palette['primary_soft']),
+                ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
+                ('FONTNAME', (1, 0), (1, 0), 'Helvetica-Bold'),
+                ('TEXTCOLOR', (1, 0), (1, 0), palette['primary']),
+                ('FONTSIZE', (0, 0), (0, 0), 11),
+                ('FONTSIZE', (1, 0), (1, 0), 18),
+                ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ]
+        )
+    )
+    story.append(overall_table)
+    story.append(Spacer(1, 8))
+
     score_rows = [
-        ['Voix', scores.get('voice', 0), 'Corps', scores.get('body_language', 0)],
-        ['Presence', scores.get('presence', 0), 'Regard', scores.get('eye_contact', 0)],
-        ['Scene', scores.get('scene', 0), 'Global', summary.get('overall_score', scores.get('overall', 0))],
+        ['Voix et rythme', scores.get('voice', 0), 'Gestes et posture', scores.get('body_language', 0)],
+        ['Regard camera', scores.get('presence', 0), 'Qualite video', scores.get('scene', 0)],
     ]
-    score_table = Table(score_rows, colWidths=[36 * mm, 30 * mm, 36 * mm, 30 * mm])
+    score_table = Table(score_rows, colWidths=[52 * mm, 29 * mm, 52 * mm, 29 * mm])
     score_table.setStyle(
         TableStyle(
             [
@@ -238,7 +262,11 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
                 ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
                 ('TEXTCOLOR', (1, 0), (1, -1), palette['primary']),
                 ('TEXTCOLOR', (3, 0), (3, -1), palette['primary']),
-                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('FONTSIZE', (0, 0), (0, -1), 9.5),
+                ('FONTSIZE', (2, 0), (2, -1), 9.5),
+                ('FONTSIZE', (1, 0), (1, -1), 13),
+                ('FONTSIZE', (3, 0), (3, -1), 13),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 10),
                 ('RIGHTPADDING', (0, 0), (-1, -1), 10),
                 ('TOPPADDING', (0, 0), (-1, -1), 8),
@@ -249,11 +277,11 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     story.append(score_table)
     story.append(Spacer(1, 14))
 
-    story.append(Paragraph('Points forts et axes de progression', styles['SectionTitle']))
+    story.append(Paragraph('Ce qui fonctionne deja bien / Ce que je vous conseille de corriger ensuite', styles['SectionTitle']))
     insights_data = [
         [
-            Paragraph('<b>Points forts</b>', styles['BodyTextCustom']),
-            Paragraph('<b>Axes de progression</b>', styles['BodyTextCustom']),
+            Paragraph('<b>Ce qui fonctionne deja bien</b>', styles['BodyTextCustom']),
+            Paragraph('<b>Ce que je vous conseille de corriger ensuite</b>', styles['BodyTextCustom']),
         ],
         [
             Paragraph('<br/>'.join(f'- {escape(str(item))}' for item in strengths) or 'Aucun point fort detaille.', styles['BodyTextCustom']),
@@ -279,7 +307,7 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     story.append(insights_table)
     story.append(Spacer(1, 14))
 
-    story.append(Paragraph('Recommandations prioritaires', styles['SectionTitle']))
+    story.append(Paragraph('Votre prochaine action', styles['SectionTitle']))
     if recommendations:
         for item in recommendations:
             severity = str(item.get('severity', 'Info')).lower()
@@ -317,27 +345,17 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
             story.append(recommendation_table)
             story.append(Spacer(1, 8))
     else:
-        story.append(Paragraph('Aucune recommandation detaillee n a ete fournie pour cette session.', styles['BodyTextCustom']))
+        fallback_text = escape(str(summary.get('priority_focus', '') or 'Conservez vos points forts et repetez avec la meme exigence.'))
+        story.append(Paragraph(f"Aucune alerte majeure supplementaire. Priorite a garder en tete : {fallback_text}", styles['BodyTextCustom']))
     story.append(Spacer(1, 10))
 
-    story.append(Paragraph('Plan de pratique', styles['SectionTitle']))
-    story.append(Paragraph(f"<b>Focus principal:</b> {escape(str(training_plan.get('focus_primary', '') or 'Progression generale'))}", styles['BodyTextCustom']))
-    story.append(Paragraph(f"<b>Focus secondaire:</b> {escape(str(training_plan.get('focus_secondary', '') or 'Consolidation'))}", styles['BodyTextCustom']))
-    for day in training_plan.get('days', []):
-        story.append(Spacer(1, 4))
-        story.append(Paragraph(f"<b>{escape(str(day.get('title', 'Bloc de pratique')))}</b>", styles['BodyTextCustom']))
-        items = day.get('items', []) or ['Pas de detail supplementaire pour ce bloc.']
-        for item in items:
-            story.append(Paragraph(f'- {escape(str(item))}', styles['MutedText']))
-    story.append(Spacer(1, 14))
-
-    story.append(Paragraph('Metriques', styles['SectionTitle']))
+    story.append(Paragraph('Details techniques', styles['SectionTitle']))
     metrics_table = Table(
         [
-            ['Debit vocal', f"{metrics.get('wpm', 0)} WPM", 'Pauses', str(metrics.get('pause_count', 0))],
-            ['Fillers', str(metrics.get('filler_count', 0)), 'Pause cumulee', f"{metrics.get('pause_duration_total', 0)}s"],
-            ['Presence visage', f"{metrics.get('face_presence_ratio', 0)}%", 'Regard camera', f"{metrics.get('eye_contact_ratio', 0)}%"],
-            ['Visibilite des mains', f"{metrics.get('hands_visibility_ratio', 0)}%", 'Qualite de scene', f"{scores.get('scene', 0)}/100"],
+            ['Rythme de parole', f"{metrics.get('wpm', 0)} mots/min", 'Pauses marquees', str(metrics.get('pause_count', 0))],
+            ['Hesitations', str(metrics.get('filler_count', 0)), 'Temps de silence', f"{metrics.get('pause_duration_total', 0)}s"],
+            ['Visage visible dans le cadre', f"{metrics.get('face_presence_ratio', 0)}%", 'Regard vers la camera', f"{metrics.get('eye_contact_ratio', 0)}%"],
+            ['Mains visibles', f"{metrics.get('hands_visibility_ratio', 0)}%", 'Qualite video', f"{scores.get('scene', 0)}/100"],
         ],
         colWidths=[42 * mm, 39 * mm, 42 * mm, 39 * mm],
     )
@@ -357,10 +375,22 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
         )
     )
     story.append(metrics_table)
+    story.append(Spacer(1, 14))
+
+    story.append(Paragraph('Plan de pratique', styles['SectionTitle']))
+    story.append(Paragraph(f"<b>Focus principal:</b> {escape(str(training_plan.get('focus_primary', '') or 'Progression generale'))}", styles['BodyTextCustom']))
+    story.append(Paragraph(f"<b>Focus secondaire:</b> {escape(str(training_plan.get('focus_secondary', '') or 'Consolidation'))}", styles['BodyTextCustom']))
+    for day in training_plan.get('days', []):
+        story.append(Spacer(1, 4))
+        story.append(Paragraph(f"<b>{escape(str(day.get('title', 'Bloc de pratique')))}</b>", styles['BodyTextCustom']))
+        items = day.get('items', []) or ['Pas de detail supplementaire pour ce bloc.']
+        for item in items:
+            story.append(Paragraph(f'- {escape(str(item))}', styles['MutedText']))
+    story.append(Spacer(1, 14))
 
     if transcript:
         story.append(PageBreak())
-        story.append(Paragraph('Transcription', styles['SectionTitle']))
+        story.append(Paragraph('Transcription automatique', styles['SectionTitle']))
         for segment in transcript:
             start = float(segment.get('start', 0))
             end = float(segment.get('end', 0))

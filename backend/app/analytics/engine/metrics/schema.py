@@ -47,6 +47,7 @@ class Recommendation:
     severity: str  # Critical, Warning, Info
     message: str
     actionable_tip: str
+    exercise_key: str = ""
 
 @dataclass
 class SpeechCoachReport:

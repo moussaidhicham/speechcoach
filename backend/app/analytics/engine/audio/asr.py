@@ -6,6 +6,8 @@ from app.analytics.engine.metrics.schema import TranscriptionSegment
 
 logger = logging.getLogger(__name__)
 
+_MODEL_CACHE: dict[tuple[str, str, str], WhisperModel] = {}
+
 class ASRProcessor:
     def __init__(self, model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
         """
@@ -18,10 +20,16 @@ class ASRProcessor:
         self.model_size = model_size
         self.device = device
         self.compute_type = compute_type
-        logger.info(f"Loading Whisper model '{model_size}' on {device} ({compute_type})...")
+        cache_key = (model_size, device, compute_type)
         try:
-            self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
-            logger.info("Whisper model loaded successfully.")
+            if cache_key not in _MODEL_CACHE:
+                logger.info(f"Loading Whisper model '{model_size}' on {device} ({compute_type})...")
+                _MODEL_CACHE[cache_key] = WhisperModel(model_size, device=device, compute_type=compute_type)
+                logger.info("Whisper model loaded successfully.")
+            else:
+                logger.info(f"Reusing cached Whisper model '{model_size}' on {device} ({compute_type}).")
+
+            self.model = _MODEL_CACHE[cache_key]
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             self.model = None

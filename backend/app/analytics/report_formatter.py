@@ -42,9 +42,58 @@ def _format_resolution(value: Any) -> str:
 
 def _format_fps(value: Any) -> str:
     fps = _safe_float(value)
-    if fps <= 1:
+    if fps <= 1 or fps > 240:
         return 'Non renseigne'
     return str(round(fps, 2)).rstrip('0').rstrip('.')
+
+
+def _format_sharpness_label(value: Any) -> str:
+    blur = _safe_int(value)
+    if blur < 20:
+        return 'Floue'
+    if blur < 40:
+        return 'Correcte'
+    return 'Nette'
+
+
+def _format_axis_score(value: Any) -> str:
+    return f"{_safe_float(value) / 10:.1f}/10"
+
+
+def _format_pace_label(value: Any) -> str:
+    wpm = _safe_int(value)
+    if wpm > 160:
+        return 'Rapide'
+    if wpm >= 120:
+        return 'Correct'
+    return 'Lent'
+
+
+def _format_eye_contact_label(value: Any) -> str:
+    ratio = _safe_int(value)
+    if ratio >= 70:
+        return 'Bon'
+    if ratio >= 40:
+        return 'Moyen'
+    return 'Faible'
+
+
+def _format_hands_label(value: Any) -> str:
+    ratio = _safe_int(value)
+    if ratio >= 60:
+        return 'Visibles'
+    if ratio >= 30:
+        return 'Parfois visibles'
+    return 'Peu visibles'
+
+
+def _format_lighting_label(value: Any) -> str:
+    brightness = _safe_int(value)
+    if brightness < 70:
+        return 'Trop sombre'
+    if brightness > 210:
+        return 'Trop fort'
+    return 'Correct'
 
 
 def _score_headline(score: int) -> str:
@@ -191,6 +240,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     vision = metrics.get('vision_metrics') or {}
     metadata = metrics.get('metadata') or {}
     llm_coaching = metrics.get('llm_coaching') or {}
+    enrichment_status = str(metrics.get('enrichment_status') or 'completed')
 
     strengths = [str(item).strip() for item in (metrics.get('strengths') or []) if str(item).strip()]
     weaknesses = [str(item).strip() for item in (metrics.get('weaknesses') or []) if str(item).strip()]
@@ -198,6 +248,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     transcript = _normalize_transcript(metrics.get('transcript') or [])
     training_plan_markdown = str(metrics.get('training_plan') or '')
     training_plan = _parse_training_plan(training_plan_markdown)
+    exercise_recommendation = metrics.get('exercise_recommendation') or {}
 
     duration_seconds = _safe_float(session.duration_seconds)
     if duration_seconds <= 0:
@@ -260,8 +311,14 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         'weaknesses': weaknesses[:4],
         'recommendations': recommendations,
         'training_plan': training_plan,
+        'exercise_recommendation': exercise_recommendation,
         'training_plan_markdown': training_plan_markdown,
         'transcript': transcript,
+        'enrichment_status': enrichment_status,
+        'visuals': {
+            'audio_energy': f"/storage/processing/{str(session.id)}/audio_energy.png",
+            'vision_timeline': f"/storage/processing/{str(session.id)}/vision_timeline.png",
+        }
     }
 
 
@@ -272,7 +329,6 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     metrics = report.get('metrics') or {}
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
-    recommendations = report.get('recommendations') or []
     training_plan = report.get('training_plan') or {}
     transcript = report.get('transcript') or []
 
@@ -299,15 +355,15 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         lines.extend([f'> {encouragement}', ''])
 
     lines.extend([
-        '## Scores',
+        '## Scores & bilan',
         '',
-        f"- Voix : {scores.get('voice', 0)}/100",
-        f"- Langage corporel : {scores.get('body_language', 0)}/100",
-        f"- Presence : {scores.get('presence', 0)}/100",
-        f"- Scene : {scores.get('scene', 0)}/100",
-        f"- Regard : {scores.get('eye_contact', 0)}/100",
+        f"**Evaluation generale : {summary.get('overall_score', scores.get('overall', 0))}/100**",
+        f"- Voix et rythme : {_format_axis_score(scores.get('voice', 0))}",
+        f"- Gestes et posture : {_format_axis_score(scores.get('body_language', 0))}",
+        f"- Regard camera et stabilite : {_format_axis_score(scores.get('presence', 0))}",
+        f"- Qualite video : {_format_axis_score(scores.get('scene', 0))}",
         '',
-        '## Points forts',
+        '## Ce qui fonctionne deja bien',
         '',
     ])
 
@@ -316,26 +372,21 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     else:
         lines.append('- Aucun point fort detaille n a ete fourni.')
 
-    lines.extend(['', '## Axes de progression', ''])
+    lines.extend(['', '## Ce que je vous conseille de corriger ensuite', ''])
     if weaknesses:
         lines.extend([f'- {item}' for item in weaknesses])
     else:
         lines.append('- Aucun point de vigilance detaille n a ete fourni.')
 
-    lines.extend(['', '## Recommandations', ''])
-    if recommendations:
-        for item in recommendations:
-            lines.extend(
-                [
-                    f"### {item.get('category', 'General')}",
-                    f"- Severite : {item.get('severity', 'Info')}",
-                    f"- Diagnostic : {item.get('message', '')}",
-                    f"- Action : {item.get('tip', '')}",
-                    '',
-                ]
-            )
-    else:
-        lines.extend(['- Continuez vos repetitions avec le meme niveau d exigence.', ''])
+    lines.extend([
+        '',
+        '## Votre priorite pour la prochaine repetition',
+        '',
+        f"- Focus principal : {summary.get('priority_focus', '') or training_plan.get('focus_primary', '') or 'Progression generale'}",
+    ])
+    if summary.get('encouragement'):
+        lines.append(f"- Encouragement : {summary.get('encouragement')}")
+    lines.append('')
 
     lines.extend([
         '## Plan de pratique',
@@ -352,16 +403,24 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         lines.append('')
 
     lines.extend([
-        '## Metriques',
+        '## Details des mesures',
         '',
-        f"- Debit vocal : {metrics.get('wpm', 0)} WPM",
-        f"- Pauses : {metrics.get('pause_count', 0)}",
-        f"- Fillers : {metrics.get('filler_count', 0)}",
-        f"- Presence visage : {metrics.get('face_presence_ratio', 0)}%",
-        f"- Regard camera : {metrics.get('eye_contact_ratio', 0)}%",
-        f"- Visibilite des mains : {metrics.get('hands_visibility_ratio', 0)}%",
+        '### Voix',
+        f"- Rythme de parole : {metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
+        f"- Pauses marquees (>0.5s) : {metrics.get('pause_count', 0)}",
+        f"- Hesitations detectees : {metrics.get('filler_count', 0)}",
         '',
-        '## Transcription',
+        '### Qualite video',
+        f"- Eclairage : {_format_lighting_label(metrics.get('brightness', 0))}",
+        f"- Nettete de l image : {_format_sharpness_label(metrics.get('blur', 0))}",
+        '',
+        '### Presence a l ecran',
+        f"- Visage visible dans le cadre : {metrics.get('face_presence_ratio', 0)}%",
+        f"- Regard vers la camera : {metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
+        f"- Mains visibles : {metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
+        f"- Energie gestuelle : {metrics.get('hands_activity_score', 0)}/10",
+        '',
+        '## Transcription automatique',
         '',
     ])
 
@@ -382,26 +441,31 @@ def _render_bullet_cards(items: List[str], empty_message: str) -> str:
     return ''.join(f'<div class="bullet-card">{escape(item)}</div>' for item in items)
 
 
-def _render_recommendations(items: List[Dict[str, str]]) -> str:
-    if not items:
-        return '<div class="note">Aucune recommandation detaillee n a ete fournie pour cette session.</div>'
+def _render_coaching_block(summary: Dict[str, Any], training_plan: Dict[str, Any], enrichment_status: str) -> str:
+    if enrichment_status == 'pending':
+        return '<div class="note">Le coaching enrichi est encore en preparation. Revenez dans quelques instants pour une formulation plus fine.</div>'
 
-    blocks = []
-    for item in items:
-        severity = escape(item.get('severity', 'Info'))
-        blocks.append(
-            f"""
-            <article class=\"recommendation\">
-              <div class=\"recommendation-top\">
-                <h4>{escape(item.get('category', 'General'))}</h4>
-                <span class=\"severity severity-{severity.lower()}\">{severity}</span>
-              </div>
-              <p>{escape(item.get('message', ''))}</p>
-              <div class=\"tip\"><strong>Action terrain:</strong> {escape(item.get('tip', '') or 'Continuez a pratiquer avec la meme exigence.')}</div>
-            </article>
-            """
-        )
-    return ''.join(blocks)
+    if enrichment_status == 'failed':
+        return '<div class="note">Le coaching enrichi n a pas pu etre charge cette fois-ci. Le plan de pratique reste disponible ci-dessous.</div>'
+
+    priority_focus = str(summary.get('priority_focus', '') or training_plan.get('focus_primary', '') or 'Progression generale')
+    encouragement = str(summary.get('encouragement') or '').strip()
+
+    encouragement_block = (
+        f'<div class="tip"><strong>Encouragement:</strong> {escape(encouragement)}</div>'
+        if encouragement
+        else ''
+    )
+    return f"""
+        <article class=\"recommendation\">
+          <div class=\"recommendation-top\">
+            <h4>Focus prioritaire</h4>
+            <span class=\"severity severity-info\">Coach IA</span>
+          </div>
+          <p>{escape(priority_focus)}</p>
+          {encouragement_block}
+        </article>
+    """
 
 
 def _render_training_days(days: List[Dict[str, Any]]) -> str:
@@ -446,9 +510,9 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     metrics = report.get('metrics') or {}
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
-    recommendations = report.get('recommendations') or []
     training_plan = report.get('training_plan') or {}
     transcript = report.get('transcript') or []
+    enrichment_status = str(report.get('enrichment_status') or 'completed')
 
     title = escape(str(session.get('title', 'Rapport SpeechCoach')))
     created_at = _format_date(str(session.get('created_at', '')))
@@ -606,48 +670,50 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
       <section class=\"stack\">
         <article class=\"card\">
           <div class=\"section-title\">
-            <h2>Scores detaillees</h2>
-            <span class=\"badge\">Lecture rapide des piliers de la note</span>
+            <h2>Vos reperes essentiels</h2>
+            <span class=\"badge\">Lecture rapide avant les details</span>
+          </div>
+          <div class=\"summary-chip\" style=\"margin-bottom: 18px;\">
+            <strong>Evaluation generale</strong>
+            <span>{summary.get('overall_score', scores.get('overall', 0))}/100</span>
           </div>
           <div class=\"score-grid\">
-            <div class=\"score-item\"><strong>Voix</strong><div class=\"value\">{scores.get('voice', 0)}</div><div class=\"helper\">Rythme, fluidite et projection</div></div>
-            <div class=\"score-item\"><strong>Corps</strong><div class=\"value\">{scores.get('body_language', 0)}</div><div class=\"helper\">Posture et gestuelle</div></div>
-            <div class=\"score-item\"><strong>Presence</strong><div class=\"value\">{scores.get('presence', 0)}</div><div class=\"helper\">Occupation du cadre</div></div>
-            <div class=\"score-item\"><strong>Regard</strong><div class=\"value\">{scores.get('eye_contact', 0)}</div><div class=\"helper\">Connexion camera</div></div>
+            <div class=\"score-item\"><strong>Voix et rythme</strong><div class=\"value\">{_format_axis_score(scores.get('voice', 0))}</div><div class=\"helper\">Debit, pauses et fluidite de parole</div></div>
+            <div class=\"score-item\"><strong>Gestes et posture</strong><div class=\"value\">{_format_axis_score(scores.get('body_language', 0))}</div><div class=\"helper\">Aisance corporelle et visibilite des mains</div></div>
+            <div class=\"score-item\"><strong>Regard camera</strong><div class=\"value\">{_format_axis_score(scores.get('presence', 0))}</div><div class=\"helper\">Connexion visuelle et stabilite dans le cadre</div></div>
+            <div class=\"score-item\"><strong>Qualite video</strong><div class=\"value\">{_format_axis_score(scores.get('scene', 0))}</div><div class=\"helper\">Nettete, lumiere et lisibilite generale</div></div>
           </div>
         </article>
 
         <div class=\"two-col\">
           <article class=\"card\">
-            <div class=\"section-title\"><h2>Points forts</h2></div>
+            <div class=\"section-title\"><h2>Ce qui fonctionne deja bien</h2></div>
             {_render_bullet_cards(strengths, 'Aucun point fort detaille n a ete fourni.')}
           </article>
           <article class=\"card\">
-            <div class=\"section-title\"><h2>Axes de progression</h2></div>
+            <div class=\"section-title\"><h2>Ce que je vous conseille de corriger ensuite</h2></div>
             {_render_bullet_cards(weaknesses, 'Aucun point de vigilance detaille n a ete fourni.')}
           </article>
         </div>
 
         <article class=\"card\">
-          <div class=\"section-title\"><h2>Indicateurs et preuves</h2></div>
+          <div class=\"section-title\"><h2>Details techniques</h2></div>
           <div class=\"metrics-grid\">
-            <div class=\"metric-item\"><strong>Debit vocal</strong><span>{metrics.get('wpm', 0)} WPM</span></div>
-            <div class=\"metric-item\"><strong>Pauses</strong><span>{metrics.get('pause_count', 0)}</span></div>
-            <div class=\"metric-item\"><strong>Fillers</strong><span>{metrics.get('filler_count', 0)}</span></div>
-            <div class=\"metric-item\"><strong>Pause cumulee</strong><span>{metrics.get('pause_duration_total', 0)}s</span></div>
-            <div class=\"metric-item\"><strong>Presence visage</strong><span>{metrics.get('face_presence_ratio', 0)}%</span></div>
-            <div class=\"metric-item\"><strong>Regard camera</strong><span>{metrics.get('eye_contact_ratio', 0)}%</span></div>
-            <div class=\"metric-item\"><strong>Visibilite des mains</strong><span>{metrics.get('hands_visibility_ratio', 0)}%</span></div>
-            <div class=\"metric-item\"><strong>Qualite de scene</strong><span>{scores.get('scene', 0)}/100</span></div>
+            <div class=\"metric-item\"><strong>Rythme de parole</strong><span>{metrics.get('wpm', 0)} mots/min</span></div>
+            <div class=\"metric-item\"><strong>Pauses marquees</strong><span>{metrics.get('pause_count', 0)}</span></div>
+            <div class=\"metric-item\"><strong>Eclairage</strong><span>{_format_lighting_label(metrics.get('brightness', 0))}</span></div>
+            <div class=\"metric-item\"><strong>Nettete de l image</strong><span>{_format_sharpness_label(metrics.get('blur', 0))}</span></div>
+            <div class=\"metric-item\"><strong>Regard vers la camera</strong><span>{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})</span></div>
+            <div class=\"metric-item\"><strong>Mains visibles</strong><span>{metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})</span></div>
           </div>
         </article>
 
         <article class=\"card\">
           <div class=\"section-title\">
-            <h2>Recommandations prioritaires</h2>
+            <h2>Votre prochaine action</h2>
             <span class=\"badge\">Focus principal: {escape(str(training_plan.get('focus_primary', '') or 'General'))}</span>
           </div>
-          {_render_recommendations(recommendations)}
+          {_render_coaching_block(summary, training_plan, enrichment_status)}
         </article>
 
         <article class=\"card\">
@@ -656,7 +722,7 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
         </article>
 
         <article class=\"card\">
-          <div class=\"section-title\"><h2>Transcription</h2></div>
+          <div class=\"section-title\"><h2>Transcription automatique</h2></div>
           {_render_transcript(transcript)}
         </article>
       </section>
@@ -666,3 +732,4 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
   </body>
 </html>
     """
+

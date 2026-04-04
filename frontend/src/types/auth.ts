@@ -10,7 +10,7 @@ export interface UserProfile {
   id: string;
   user_id: string;
   full_name?: string | null;
-  preferred_language: string;
+  preferred_language?: string | null;
   experience_level?: string | null;
   current_goal?: string | null;
   weak_points?: string | null;

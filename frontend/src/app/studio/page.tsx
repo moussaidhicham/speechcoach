@@ -263,7 +263,7 @@ export default function StudioPage() {
       subtitle="Capturez ou importez votre prise de parole avant analyse."
       actions={
         <Badge variant="secondary" className="bg-accent text-accent-foreground">
-          Capture room
+          Studio
         </Badge>
       }
       maxWidth="5xl"
@@ -275,15 +275,14 @@ export default function StudioPage() {
           <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
             <div className="space-y-3">
               <Badge className="w-fit bg-white/12 text-white hover:bg-white/12">
-                Capture room
+                Studio
               </Badge>
               <h2 className="font-display max-w-md text-3xl font-medium leading-snug">
-                Le studio qui donne envie de s'enregistrer,{' '}
-                <em className="not-italic text-white/70">pas juste d'uploader.</em>
+                Préparez votre prise de parole avant l'analyse.
               </h2>
               <p className="max-w-md text-sm leading-relaxed text-white/65">
-                Préparation, capture et traitement pensés comme un parcours unique —
-                plus immersif, plus rassurant.
+                Vérifiez votre cadre, importez une vidéo ou enregistrez-vous,
+                puis lancez l'analyse.
               </p>
             </div>
 
