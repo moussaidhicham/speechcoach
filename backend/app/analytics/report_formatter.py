@@ -233,6 +233,127 @@ def _sanitize_filename(title: str) -> str:
     return normalized or 'speechcoach-report'
 
 
+def _normalize_overlap_text(value: str) -> List[str]:
+    return [
+        token
+        for token in re.sub(r'[^a-z0-9\s]', ' ', (value or '').lower())
+        .split()
+        if len(token) > 3
+    ]
+
+
+def _has_strong_overlap(candidate: str, references: List[str]) -> bool:
+    candidate_tokens = set(_normalize_overlap_text(candidate))
+    if len(candidate_tokens) < 4:
+        return False
+
+    for reference in references:
+        reference_tokens = set(_normalize_overlap_text(reference))
+        if not reference_tokens:
+            continue
+        shared = candidate_tokens & reference_tokens
+        if len(shared) / max(len(candidate_tokens), 1) >= 0.55:
+            return True
+    return False
+
+
+def _sanitize_exercise_recommendation(
+    exercise_recommendation: Dict[str, Any],
+    summary: Dict[str, Any],
+    recommendations: List[Dict[str, str]],
+) -> Dict[str, Any]:
+    if not isinstance(exercise_recommendation, dict):
+        return {}
+
+    cleaned = dict(exercise_recommendation)
+    references = [
+        str(summary.get('narrative') or ''),
+        str(summary.get('priority_focus') or ''),
+        str(summary.get('encouragement') or ''),
+    ]
+    if recommendations:
+        references.append(str(recommendations[0].get('message') or ''))
+        references.append(str(recommendations[0].get('tip') or ''))
+
+    summary_text = str(cleaned.get('summary') or '').strip()
+    if _has_strong_overlap(summary_text, references):
+        cleaned['summary'] = ''
+
+    filtered_steps: List[str] = []
+    for step in cleaned.get('steps') or []:
+        step_text = str(step).strip()
+        if not step_text:
+            continue
+        if _has_strong_overlap(step_text, references):
+            continue
+        filtered_steps.append(step_text)
+    cleaned['steps'] = filtered_steps[:3]
+
+    if not cleaned.get('summary') and cleaned['steps']:
+        cleaned['summary'] = cleaned['steps'][0]
+        cleaned['steps'] = cleaned['steps'][1:]
+
+    return cleaned
+
+
+def _sanitize_encouragement(
+    encouragement: Any,
+    weaknesses: List[str],
+    recommendations: List[Dict[str, str]],
+) -> str | None:
+    text = str(encouragement or '').strip()
+    if not text:
+        return None
+
+    references = list(weaknesses)
+    if recommendations:
+        references.append(str(recommendations[0].get('message') or ''))
+        references.append(str(recommendations[0].get('tip') or ''))
+
+    if _has_strong_overlap(text, references):
+        return None
+
+    return text
+
+
+def _sanitize_training_plan(
+    training_plan: Dict[str, Any],
+    summary: Dict[str, Any],
+    recommendations: List[Dict[str, str]],
+) -> Dict[str, Any]:
+    if not isinstance(training_plan, dict):
+        return {'focus_primary': '', 'focus_secondary': '', 'days': []}
+
+    references = [
+        str(summary.get('narrative') or ''),
+        str(summary.get('priority_focus') or ''),
+        str(summary.get('encouragement') or ''),
+    ]
+    if recommendations:
+        references.append(str(recommendations[0].get('message') or ''))
+        references.append(str(recommendations[0].get('tip') or ''))
+
+    cleaned_days: List[Dict[str, Any]] = []
+    for day in training_plan.get('days', []):
+        title = str(day.get('title') or '').strip() or 'Bloc de pratique'
+        items = []
+        for item in day.get('items', []):
+            text = str(item).strip()
+            if not text:
+                continue
+            if _has_strong_overlap(text, references):
+                continue
+            items.append(text)
+        if items:
+            cleaned_days.append({'title': title, 'items': items[:3]})
+
+    return {
+        'focus_primary': training_plan.get('focus_primary', ''),
+        'focus_secondary': training_plan.get('focus_secondary', ''),
+        'days': cleaned_days,
+    }
+
+
 def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Dict[str, Any]:
     metrics = analysis.metrics_json or {}
     scores = metrics.get('scores') or {}
@@ -269,6 +390,20 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         else:
             priority_focus = 'Progression generale'
 
+    encouragement = _sanitize_encouragement(llm_coaching.get('encouragement'), weaknesses, recommendations)
+
+    summary_payload = {
+        'overall_score': overall_score,
+        'headline': _score_headline(overall_score),
+        'narrative': summary_narrative,
+        'priority_focus': priority_focus,
+        'encouragement': encouragement,
+    }
+    exercise_recommendation = _sanitize_exercise_recommendation(exercise_recommendation, summary_payload, recommendations)
+    training_plan = _sanitize_training_plan(training_plan, summary_payload, recommendations)
+    if exercise_recommendation.get('should_display') and not training_plan.get('days') and not exercise_recommendation.get('summary') and not exercise_recommendation.get('steps'):
+        exercise_recommendation['should_display'] = False
+
     return {
         'session': {
             'id': str(session.id),
@@ -280,13 +415,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
             'fps': round(fps, 2),
             'resolution': [resolution[0], resolution[1]],
         },
-        'summary': {
-            'overall_score': overall_score,
-            'headline': _score_headline(overall_score),
-            'narrative': summary_narrative,
-            'priority_focus': priority_focus,
-            'encouragement': str(llm_coaching.get('encouragement') or '').strip() or None,
-        },
+        'summary': summary_payload,
         'scores': {
             'overall': overall_score,
             'voice': _safe_int(_safe_float(scores.get('voice_score')) * 10),
@@ -299,6 +428,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
             'wpm': _safe_int(audio.get('wpm')),
             'pause_count': _safe_int(audio.get('pause_count')),
             'filler_count': _safe_int(audio.get('filler_count')),
+            'stutter_count': _safe_int(audio.get('stutter_count')),
             'pause_duration_total': round(_safe_float(audio.get('pause_duration_total')), 2),
             'face_presence_ratio': _safe_int(_safe_float(vision.get('face_presence_ratio')) * 100),
             'eye_contact_ratio': _safe_int(_safe_float(vision.get('eye_contact_ratio')) * 100),
@@ -330,6 +460,7 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
     training_plan = report.get('training_plan') or {}
+    exercise_recommendation = report.get('exercise_recommendation') or {}
     transcript = report.get('transcript') or []
 
     lines: List[str] = [
@@ -388,19 +519,36 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         lines.append(f"- Encouragement : {summary.get('encouragement')}")
     lines.append('')
 
-    lines.extend([
-        '## Plan de pratique',
-        '',
-        f"- Focus principal : {training_plan.get('focus_primary', '') or 'Progression generale'}",
-        f"- Focus secondaire : {training_plan.get('focus_secondary', '') or 'Consolidation'}",
-        '',
-    ])
+    practice_mode = str(exercise_recommendation.get('mode') or '')
+    if exercise_recommendation.get('should_display', True):
+        section_title = '## Plan de pratique'
+        if practice_mode == 'light_tip':
+            section_title = '## Conseil de repetition'
+        elif practice_mode == 'setup_action':
+            section_title = '## Verification avant la prochaine prise'
+        elif practice_mode == 'single_exercise':
+            section_title = '## Exercice prioritaire'
 
-    for day in training_plan.get('days', []):
-        lines.append(f"### {day.get('title', 'Bloc de pratique')}")
-        for item in day.get('items', []):
-            lines.append(f'- {item}')
-        lines.append('')
+        lines.extend([
+            section_title,
+            '',
+            f"- Focus principal : {training_plan.get('focus_primary', '') or exercise_recommendation.get('focus_primary', '') or 'Progression generale'}",
+            f"- Focus secondaire : {training_plan.get('focus_secondary', '') or exercise_recommendation.get('focus_secondary', '') or 'Consolidation'}",
+            '',
+        ])
+
+        if training_plan.get('days'):
+            for day in training_plan.get('days', []):
+                lines.append(f"### {day.get('title', 'Bloc de pratique')}")
+                for item in day.get('items', []):
+                    lines.append(f'- {item}')
+                lines.append('')
+        else:
+            lines.append(f"- {exercise_recommendation.get('summary', 'Aucune consigne detaillee n a ete fournie.')}")
+            for step in exercise_recommendation.get('steps', []):
+                if step != exercise_recommendation.get('summary'):
+                    lines.append(f"- {step}")
+            lines.append('')
 
     lines.extend([
         '## Details des mesures',
@@ -511,6 +659,7 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
     training_plan = report.get('training_plan') or {}
+    exercise_recommendation = report.get('exercise_recommendation') or {}
     transcript = report.get('transcript') or []
     enrichment_status = str(report.get('enrichment_status') or 'completed')
 
@@ -519,6 +668,29 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     duration = _format_duration(session.get('duration_seconds', 0))
     language = _format_language(str(session.get('language', 'unknown')))
     encouragement = str(summary.get('encouragement') or '').strip()
+    practice_mode = str(exercise_recommendation.get('mode') or '')
+
+    practice_title = 'Plan de pratique'
+    if practice_mode == 'light_tip':
+        practice_title = 'Conseil de repetition'
+    elif practice_mode == 'setup_action':
+        practice_title = 'Verification avant la prochaine prise'
+    elif practice_mode == 'single_exercise':
+        practice_title = 'Exercice prioritaire'
+
+    practice_section = ''
+    if exercise_recommendation.get('should_display', True):
+        practice_body = _render_training_days(training_plan.get('days', []))
+        if not training_plan.get('days'):
+            practice_body = (
+                f"<div class=\"note\">{escape(str(exercise_recommendation.get('summary') or 'Aucune consigne detaillee n a ete fournie.'))}</div>"
+            )
+        practice_section = f"""
+        <article class=\"card\">
+          <div class=\"section-title\"><h2>{escape(practice_title)}</h2></div>
+          <div class=\"training-grid\">{practice_body}</div>
+        </article>
+        """
 
     return f"""
 <!DOCTYPE html>
@@ -716,10 +888,7 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
           {_render_coaching_block(summary, training_plan, enrichment_status)}
         </article>
 
-        <article class=\"card\">
-          <div class=\"section-title\"><h2>Plan de pratique</h2></div>
-          <div class=\"training-grid\">{_render_training_days(training_plan.get('days', []))}</div>
-        </article>
+        {practice_section}
 
         <article class=\"card\">
           <div class=\"section-title\"><h2>Transcription automatique</h2></div>

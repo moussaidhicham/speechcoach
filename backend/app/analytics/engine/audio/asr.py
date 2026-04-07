@@ -1,15 +1,30 @@
-import logging
+﻿import logging
 import os
-from typing import List, Tuple, Optional
+from typing import List, Optional, Tuple
+
 from faster_whisper import WhisperModel
+
 from app.analytics.engine.metrics.schema import TranscriptionSegment
 
 logger = logging.getLogger(__name__)
 
 _MODEL_CACHE: dict[tuple[str, str, str], WhisperModel] = {}
+_ALLOWED_LANGS = {"ar", "fr", "en"}
+_LANGUAGE_PROMPTS = {
+    "ar": "يعني، آه، ام، همم، هممم، مم، إي، مرحبا، حسناً",
+    "fr": "Euh, hum, hmm, mm, mmm, ah, ben, alors, donc, Bonjour, salut",
+    "en": "Um, uh, er, ah, like, you know, mmm, Hello, hi",
+}
+
 
 class ASRProcessor:
-    def __init__(self, model_size: str = "small", device: str = "cpu", compute_type: str = "int8"):
+    def __init__(
+        self,
+        model_size: str = "medium",
+        device: str = "cpu",
+        compute_type: str = "int8",
+        beam_size: int = 5,
+    ):
         """
         Initialize the Faster-Whisper model.
         Args:
@@ -20,6 +35,7 @@ class ASRProcessor:
         self.model_size = model_size
         self.device = device
         self.compute_type = compute_type
+        self.beam_size = beam_size
         cache_key = (model_size, device, compute_type)
         try:
             if cache_key not in _MODEL_CACHE:
@@ -33,6 +49,21 @@ class ASRProcessor:
         except Exception as e:
             logger.error(f"Failed to load Whisper model: {e}")
             self.model = None
+
+    def _run_transcription(
+        self,
+        audio_path: str,
+        forced_language: Optional[str] = None,
+        prompt_language: Optional[str] = None,
+    ):
+        return self.model.transcribe(
+            audio_path,
+            beam_size=self.beam_size,
+            vad_filter=True,
+            language=forced_language,
+            vad_parameters=dict(min_silence_duration_ms=500),
+            initial_prompt=_LANGUAGE_PROMPTS.get(prompt_language),
+        )
 
     def transcribe(self, audio_path: str, forced_language: Optional[str] = None) -> Tuple[List[TranscriptionSegment], str]:
         """
@@ -53,41 +84,48 @@ class ASRProcessor:
             return [], "unknown"
 
         logger.info(f"Starting transcription for: {audio_path} (Forced Lang: {forced_language})")
-        try:
-            # VAD (Voice Activity Detection) enabled for better silence handling
-            # If forced_language is provided, we skip auto-detection.
-            segments, info = self.model.transcribe(
-                audio_path, 
-                beam_size=1, 
-                vad_filter=True, 
-                language=forced_language, # If None, it will auto-detect
-                vad_parameters=dict(min_silence_duration_ms=500),
-                initial_prompt="Bonjour, hello, مرحبا" if not forced_language else None
-            )
-            
-            detected_language = forced_language or info.language
-            
-            if not forced_language:
-                # Optional: Strict check if we want to ensure it's one of the 3
-                allowed_langs = ["ar", "fr", "en"]
-                if detected_language not in allowed_langs:
-                    logger.warning(f"Language {detected_language} detected, outside of [ar, fr, en].")
-            
-            logger.info(f"Language used: {detected_language} (forced={bool(forced_language)})")
 
+        try:
+            if forced_language in _ALLOWED_LANGS:
+                segments, info = self._run_transcription(
+                    audio_path,
+                    forced_language=forced_language,
+                    prompt_language=forced_language,
+                )
+                detected_language = forced_language
+            else:
+                detect_segments, detect_info = self._run_transcription(audio_path)
+                detected_language = detect_info.language
+                segments = detect_segments
+                info = detect_info
+
+                if detected_language in _ALLOWED_LANGS:
+                    logger.info("Detected %s in auto mode; rerunning with language-specific prompt.", detected_language)
+                    segments, info = self._run_transcription(
+                        audio_path,
+                        forced_language=detected_language,
+                        prompt_language=detected_language,
+                    )
+                else:
+                    logger.warning(f"Language {detected_language} detected, outside of [ar, fr, en].")
+
+            logger.info(f"Language used: {detected_language} (forced={bool(forced_language)})")
 
             transcription_segments = []
             for segment in segments:
-                # Store in our schema format
-                transcription_segments.append(TranscriptionSegment(
-                    start=segment.start,
-                    end=segment.end,
-                    text=segment.text.strip()
-                ))
-            
+                transcription_segments.append(
+                    TranscriptionSegment(
+                        start=segment.start,
+                        end=segment.end,
+                        text=segment.text.strip(),
+                    )
+                )
+
             logger.info(f"Transcription complete. {len(transcription_segments)} segments managed.")
             return transcription_segments, detected_language
 
         except Exception as e:
             logger.error(f"Error during transcription: {e}")
             return [], "unknown"
+
+

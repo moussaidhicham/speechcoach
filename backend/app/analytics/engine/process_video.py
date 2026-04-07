@@ -88,8 +88,8 @@ def process_video(
         generate_training_plan,
     )
 
-    # Initialize ASR (Using 'small' model for CPU performance)
-    asr = ASRProcessor(model_size="small", device="cpu", compute_type="int8")
+    # Initialize ASR with the current test configuration.
+    asr = ASRProcessor(model_size="medium", device="cpu", compute_type="int8", beam_size=5)
     
     def run_audio_pipeline():
         logger.info(f"Starting Audio Pipeline (ASR + Analytics) with forced_lang={forced_language}...")
@@ -116,8 +116,8 @@ def process_video(
     
     # Generate Recommendations and Training Plan
     recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
-    exercise_recommendation = build_exercise_payload(recommendations)
-    training_plan = generate_training_plan(recommendations)
+    exercise_recommendation = build_exercise_payload(recommendations, scores=scores)
+    training_plan = generate_training_plan(recommendations, scores=scores)
     fetched_docs = []
     llm_coaching = None
 

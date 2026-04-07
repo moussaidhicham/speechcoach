@@ -1,0 +1,215 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{tabularx}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Avancement n°4 - SpeechCoach}
+\rhead{Master SIE - 2026}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
+
+\title{
+    \vspace{-2cm}
+    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'État d'Avancement n°4}\\
+    \large \textit{Itérations sur le bloc d'exercices et sur la couche ASR}
+}
+\author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{Période : après la dernière réunion de suivi}
+
+\begin{document}
+
+\maketitle
+
+\section{Objectif de la phase}
+Cette phase avait deux objectifs :
+\begin{itemize}
+    \item améliorer le bloc d'exercices pour qu'il soit plus crédible et plus utile dans le rapport final ;
+    \item améliorer la détection des hésitations et des répétitions dans le pipeline audio, en particulier dans les cas français, anglais et arabe.
+\end{itemize}
+
+\section{Travail sur le bloc d'exercices}
+
+\subsection{Problème initial}
+La première version du bloc d'exercices présentait plusieurs limites :
+\begin{itemize}
+    \item le plan sur 7 jours était trop long ;
+    \item le bloc apparaissait presque systématiquement, même pour des bonnes sessions ;
+    \item certaines consignes répétaient le bilan ou la priorité au lieu d'apporter une vraie action ;
+    \item des problèmes de setup comme la netteté ou le cadrage étaient parfois affichés comme des exercices de prise de parole.
+\end{itemize}
+
+\subsection{Itérations réalisées}
+Le travail n'a pas été fait en une seule étape. Plusieurs ajustements successifs ont été nécessaires :
+\begin{itemize}
+    \item remplacement du plan par défaut sur 7 jours par une logique conditionnelle ;
+    \item introduction de plusieurs modes : \texttt{none}, \texttt{light\_tip}, \texttt{setup\_action}, \texttt{single\_exercise}, \texttt{mini\_plan\_3\_days} ;
+    \item réduction du plan long vers un mini-plan sur 3 jours ;
+    \item séparation entre \textbf{exercice de parole} et \textbf{action de préparation} ;
+    \item suppression de nombreuses répétitions textuelles entre exercice, bilan, priorité et encouragement ;
+    \item réécriture de plusieurs formulations jugées trop scolaires, trop vagues ou trop artificielles ;
+    \item ajustement du comportement pour que les sessions fortes n'affichent plus automatiquement un exercice.
+\end{itemize}
+
+\subsection{Résultat retenu}
+Le comportement obtenu est plus cohérent :
+\begin{itemize}
+    \item les très bonnes sessions peuvent ne plus afficher d'exercice ;
+    \item les cas intermédiaires affichent un conseil court ou un exercice ciblé ;
+    \item les cas plus faibles affichent un mini-plan plus lisible ;
+    \item les problèmes techniques sont traités comme des vérifications et non comme des exercices oraux.
+\end{itemize}
+
+\section{Travail sur l'ASR : hésitations et répétitions}
+
+\subsection{Constat de départ}
+Le problème principal observé était le suivant : la métrique \texttt{Hesitations} ne reflétait pas toujours ce qui était réellement prononcé. Dans plusieurs tests, des fillers comme \textit{um}, \textit{uh}, \textit{euh}, \textit{hum}, \textit{mmm} ou certaines formes arabes étaient entendus, mais pas correctement conservés dans la transcription \cite{radford2022robust,ctranslate2}. Cela affectait directement le score voix/débit.
+
+\subsection{Première piste explorée : changer de moteur}
+Un benchmark isolé a été mené avec \textbf{CrisperWhisper} \cite{zusag2024crisperwhisper,crisperwhisper_repo}. L'idée était de vérifier si un moteur plus orienté verbatim pouvait résoudre le problème à la racine.
+
+\subsection{Résultat du benchmark CrisperWhisper}
+La piste a été rejetée, car :
+\begin{itemize}
+    \item le temps d'exécution était beaucoup trop élevé ;
+    \item l'amélioration sur nos cas réels n'était pas convaincante ;
+    \item la qualité globale des sorties n'était pas suffisamment stable.
+\end{itemize}
+
+La conclusion a été de conserver Faster-Whisper et de corriger notre propre pipeline.
+
+\subsection{Problèmes réellement identifiés}
+L'analyse détaillée a montré que le problème venait de plusieurs sources :
+\begin{itemize}
+    \item certaines chaînes arabes dans les prompts et les regex étaient corrompues ;
+    \item le prompt multilingue de secours favorisait les hallucinations ;
+    \item certaines listes de fillers étaient incomplètes ou mal calibrées ;
+    \item Faster-Whisper lissait encore une partie des sons nasaux de type \textit{mm}, \textit{mmm}, \textit{همم} ;
+    \item les répétitions simples et les redémarrages n'étaient pas assez bien modélisés.
+\end{itemize}
+
+\subsection{Itérations réalisées sur Faster-Whisper}
+Le correctif final est le résultat de plusieurs itérations :
+\begin{itemize}
+    \item restauration des chaînes arabes correctes dans les prompts et les regex ;
+    \item suppression du prompt multilingue global ;
+    \item mise en place d'une stratégie en deux passes en mode auto :
+    \begin{itemize}
+        \item première passe pour détecter la langue ;
+        \item seconde passe avec langue forcée et prompt spécifique à la langue détectée ;
+    \end{itemize}
+    \item amélioration des listes de fillers en anglais, français et arabe ;
+    \item exclusion de certains marqueurs discursifs trop généraux, par exemple \textit{like} et \textit{you know} en anglais, ou \textit{donc}, \textit{du coup}, \textit{en fait}, \textit{enfin} en français ;
+    \item conservation de certains fillers jugés pédagogiquement pertinents, comme \textit{ben} en français ;
+    \item ajout d'un détecteur acoustique léger pour les fillers nasaux de type \textit{hum}, \textit{hmm}, \textit{mm}, \textit{mmm}, \textit{مم}, \textit{همم}, à partir de caractéristiques extraites avec \texttt{librosa} \cite{mcfee2015librosa} ;
+    \item amélioration du comptage des répétitions via un détecteur spécifique de redémarrages et répétitions simples.
+\end{itemize}
+
+\subsection{Résultats observés par langue}
+\textbf{Anglais}
+\begin{itemize}
+    \item l'anglais est devenu le cas le plus stable ;
+    \item les fillers comme \textit{um}, \textit{uh}, \textit{mmm}, \textit{hmm} sont mieux conservés ;
+    \item les répétitions comme \textit{like like like} ou \textit{the system, the system} sont correctement détectées.
+\end{itemize}
+
+\textbf{Français}
+\begin{itemize}
+    \item plusieurs itérations ont été nécessaires ;
+    \item un bug dans les regex françaises a d'abord empêché le bon comptage ;
+    \item les fillers de type \textit{hum}, \textit{hmm}, \textit{mmm} étaient parfois perdus par la transcription ;
+    \item le fallback acoustique a amélioré la situation ;
+    \item le comptage final est plus cohérent après nettoyage de la liste des marqueurs à conserver.
+\end{itemize}
+
+\textbf{Arabe}
+\begin{itemize}
+    \item l'arabe restait le cas le plus difficile ;
+    \item les fillers textuels comme \textit{يعني}, \textit{آه}, \textit{ام} sont mieux récupérés ;
+    \item les formes nasales comme \textit{مم} ou \textit{همم} ne sont pas toujours transcrites ;
+    \item le détecteur acoustique permet néanmoins de récupérer une partie de ces cas même lorsqu'ils n'apparaissent pas dans le texte.
+\end{itemize}
+
+\subsection{Impact sur la note voix/débit}
+Un point important mis en évidence pendant cette phase est que la note voix/débit dépend directement de la configuration ASR. Dès qu'on change le modèle ou le comportement de transcription, on modifie :
+\begin{itemize}
+    \item le nombre d'hésitations détectées ;
+    \item le nombre de répétitions détectées ;
+    \item parfois même certaines métriques temporelles dérivées.
+\end{itemize}
+
+L'ASR a donc un impact direct sur l'évaluation pédagogique globale.
+
+\section{Comparaison de configurations Faster-Whisper}
+
+\subsection{Configurations comparées}
+Deux configurations ont été testées :
+\begin{itemize}
+    \item \texttt{base + beam size 5} ;
+    \item \texttt{medium + beam size 5}.
+\end{itemize}
+
+\subsection{Résultat}
+La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade trop la fidélité utile pour SpeechCoach :
+\begin{itemize}
+    \item perte d'une partie des fillers en anglais ;
+    \item résultats plus faibles en arabe ;
+    \item transcriptions globalement moins fiables pour l'évaluation pédagogique ;
+    \item variation artificielle du score voix/débit.
+\end{itemize}
+
+À l'inverse, \texttt{medium + beam size 5} est plus coûteuse, mais elle stabilise mieux le comptage des hésitations et des répétitions. C'est donc la configuration la plus adaptée à l'objectif du projet.
+
+\section{Synthèse}
+\begin{table}[H]
+    \centering
+    \begin{tabularx}{\textwidth}{@{}p{5.4cm}p{2.5cm}X@{}}
+        \toprule
+        \textbf{Sujet} & \textbf{État} & \textbf{Observation} \\
+        \midrule
+        Bloc d'exercices adaptatif & Implémenté & Plus court, conditionnel et mieux aligné avec le niveau réel de la session. \\
+        Plan 7 jours & Abandonné & Remplacé par des formats plus compacts et plus crédibles. \\
+        Benchmark CrisperWhisper & Rejeté & Trop lent et peu convaincant sur nos cas réels. \\
+        Hésitations multilingues & Améliorées & Travail itératif sur prompts, regex et fallback acoustique. \\
+        Répétitions & Améliorées & Détection plus robuste des répétitions simples et redémarrages. \\
+        Configuration ASR retenue & Validée & Retour à \texttt{medium + beam size 5}. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Résumé des travaux de cette phase.}
+\end{table}
+
+\section{Prochaines étapes}
+\begin{itemize}
+    \item rétablir officiellement la configuration \texttt{medium + beam size 5} ;
+    \item poursuivre le travail sur le regard caméra selon le type d'appareil ;
+    \item continuer à documenter les résultats backend afin de mieux valoriser la contribution de recherche.
+\end{itemize}
+
+\section{Références Bibliographiques}
+\nocite{*}
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

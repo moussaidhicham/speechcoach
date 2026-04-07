@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -245,9 +245,21 @@ export default function ReportPage() {
   const displayEncouragement = shouldDisplayEncouragement(coachingEncouragement, coachingNarrative, coachingPriority)
     ? coachingEncouragement
     : null;
-  const focusPrimary = report?.training_plan.focus_primary || 'Progression generale';
-  const focusSecondary = report?.training_plan.focus_secondary || null;
+  const exerciseRecommendation = report?.exercise_recommendation;
+  const focusPrimary = report?.training_plan.focus_primary || exerciseRecommendation?.focus_primary || 'Progression generale';
+  const focusSecondary = report?.training_plan.focus_secondary || exerciseRecommendation?.focus_secondary || null;
   const practiceDays = report?.training_plan.days ?? [];
+  const shouldShowPracticeCard = report
+    ? exerciseRecommendation?.should_display ?? practiceDays.length > 0
+    : false;
+  const practiceCardTitle =
+    exerciseRecommendation?.mode === 'setup_action'
+      ? 'Prochaine verification'
+      : 'Prochain exercice';
+  const practiceCardDescription =
+    exerciseRecommendation?.mode === 'setup_action'
+      ? 'Une verification simple a faire avant la prochaine prise.'
+      : 'Une action concrete a tester des la prochaine repetition.';
 
   const handleExportMarkdown = React.useCallback(async () => {
     if (!report || !sessionId) return;
@@ -500,6 +512,9 @@ export default function ReportPage() {
                         <ContextRow label="Debit (WPM)" value={`${report.metrics.wpm} mots/min (${formatPaceLabel(report.metrics.wpm)})`} />
                         <ContextRow label="Pauses (>0.5s)" value={`${report.metrics.pause_count}`} />
                         <ContextRow label="Hesitations" value={`${report.metrics.filler_count} detectees`} />
+                        {(report.metrics.stutter_count ?? 0) > 0 && (
+                          <ContextRow label="Repetitions" value={`${report.metrics.stutter_count} detectees`} />
+                        )}
                       </div>
                     </div>
 
@@ -525,45 +540,47 @@ export default function ReportPage() {
               </CardContent>
             </Card>
 
-            {/* Practice card */}
-            <Card className="print-card">
-              <CardHeader>
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <CardTitle>Prochain exercice</CardTitle>
-                    <CardDescription>
-                      Une action concrete a tester des la prochaine repetition.
-                    </CardDescription>
+            {shouldShowPracticeCard ? (
+              <Card className="print-card">
+                <CardHeader>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <CardTitle>{practiceCardTitle}</CardTitle>
+                      <CardDescription>
+                        {practiceCardDescription}
+                      </CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => fetchReport().catch(() => undefined)}>
+                      Recharger
+                    </Button>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => fetchReport().catch(() => undefined)}>
-                    Recharger
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {isEnrichmentRunning ? (
-                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
-                    L&apos;enrichissement IA est encore en cours. Nous preparons une reformulation plus claire et plus utile des conseils.
-                    Vous n&apos;avez rien a faire pour le moment.
-                  </div>
-                ) : hasEnrichmentFailed ? (
-                  <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
-                    Le coaching enrichi n&apos;a pas pu etre genere cette fois-ci. Vous pouvez conserver les mesures brutes de cette session
-                    et relancer une analyse plus tard.
-                  </div>
-                ) : isEnrichmentReadyForRefresh ? (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm leading-relaxed text-foreground">
-                    L&apos;enrichissement IA est termine. Veuillez actualiser la page pour afficher la version finale du coaching.
-                  </div>
-                ) : (
-                  <PracticeFocusCard
-                    primaryFocus={focusPrimary}
-                    secondaryFocus={focusSecondary}
-                    practiceDays={practiceDays}
-                  />
-                )}
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {isEnrichmentRunning ? (
+                    <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
+                      L&apos;enrichissement IA est encore en cours. Nous preparons une reformulation plus claire et plus utile des conseils.
+                      Vous n&apos;avez rien a faire pour le moment.
+                    </div>
+                  ) : hasEnrichmentFailed ? (
+                    <div className="rounded-xl border border-border/60 bg-secondary/40 p-4 text-sm leading-relaxed text-muted-foreground">
+                      Le coaching enrichi n&apos;a pas pu etre genere cette fois-ci. Vous pouvez conserver les mesures brutes de cette session
+                      et relancer une analyse plus tard.
+                    </div>
+                  ) : isEnrichmentReadyForRefresh ? (
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm leading-relaxed text-foreground">
+                      L&apos;enrichissement IA est termine. Veuillez actualiser la page pour afficher la version finale du coaching.
+                    </div>
+                  ) : (
+                    <PracticeFocusCard
+                      primaryFocus={focusPrimary}
+                      secondaryFocus={focusSecondary}
+                      practiceDays={practiceDays}
+                      exerciseRecommendation={exerciseRecommendation}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            ) : null}
           </section>
 {/* Visual Analytics */}
           {report.visuals && (
@@ -897,33 +914,63 @@ function PracticeFocusCard({
   primaryFocus,
   secondaryFocus,
   practiceDays,
+  exerciseRecommendation,
 }: {
   primaryFocus: string;
   secondaryFocus?: string | null;
   practiceDays: ReportResult['training_plan']['days'];
+  exerciseRecommendation?: ReportResult['exercise_recommendation'];
 }) {
+  const practiceMode = exerciseRecommendation?.mode ?? 'mini_plan_3_days';
+  const cardTitle =
+    practiceMode === 'light_tip'
+      ? 'Conseil de repetition'
+      : practiceMode === 'setup_action'
+        ? 'Verification avant la prochaine prise'
+      : practiceMode === 'single_exercise'
+        ? 'Exercice prioritaire'
+        : 'Plan de pratique';
+  const badgeLabel =
+    practiceMode === 'light_tip'
+      ? 'Conseil court'
+      : practiceMode === 'setup_action'
+        ? 'Verification'
+      : practiceMode === 'single_exercise'
+        ? 'Action concrete'
+        : 'Mini-plan 3 jours';
+  const shouldShowSecondaryFocus =
+    Boolean(secondaryFocus)
+    && (practiceMode === 'mini_plan_3_days' || practiceMode === 'setup_action')
+    && secondaryFocus !== primaryFocus;
+  const summary = exerciseRecommendation?.summary;
+  const steps = exerciseRecommendation?.steps ?? [];
+
   return (
     <div className="rounded-xl border border-border/60 bg-background/70 p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="font-display text-base font-medium text-foreground">
-          Exercice conseille
+          {cardTitle}
         </div>
         <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
-          Action concrete
+          {badgeLabel}
         </Badge>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <Badge variant="secondary" className="bg-secondary/70 text-foreground">
           Focus : {primaryFocus}
         </Badge>
-        {secondaryFocus ? (
+        {shouldShowSecondaryFocus ? (
           <Badge variant="secondary" className="bg-secondary/50 text-muted-foreground">
             Secondaire : {secondaryFocus}
           </Badge>
         ) : null}
       </div>
       <div className="mt-4 rounded-xl bg-secondary/50 p-4">
-        <div className="text-sm font-medium text-foreground">Plan de pratique</div>
+        {practiceMode === 'mini_plan_3_days' ? (
+          <div className="text-sm font-medium text-foreground">Les 3 etapes</div>
+        ) : practiceMode === 'setup_action' ? (
+          <div className="text-sm font-medium text-foreground">A verifier</div>
+        ) : null}
         {practiceDays.length > 0 ? (
           <div className="mt-3 space-y-4">
             <div className="rounded-xl border border-border/60 bg-background/70 p-4">
@@ -975,6 +1022,27 @@ function PracticeFocusCard({
               </details>
             ) : null}
           </div>
+        ) : summary ? (
+          <div className="mt-3 rounded-xl border border-border/60 bg-background/70 p-4">
+            <div className="text-sm leading-relaxed text-foreground">{summary}</div>
+            {steps.length > 0 ? (
+              <div className="mt-3 space-y-2.5">
+                {steps.map((step, stepIndex) => (
+                  <div
+                    key={`${exerciseRecommendation?.title || 'practice'}-${step}`}
+                    className={cn(
+                      'rounded-lg px-3.5 py-2.5 text-sm leading-relaxed',
+                      stepIndex === 0
+                        ? 'border border-primary/30 bg-primary/10 text-foreground'
+                        : 'bg-background/80 text-foreground'
+                    )}
+                  >
+                    {step}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         ) : (
           <div className="mt-3 rounded-lg bg-background/80 px-3.5 py-2.5 text-sm leading-relaxed text-muted-foreground">
             Relisez l'axe prioritaire puis refaites une courte prise de parole en vous concentrant uniquement sur ce point.
@@ -995,12 +1063,6 @@ function ContextRow({ label, value, mono = false }: { label: string; value: stri
     </div>
   );
 }
-
-
-
-
-
-
 
 
 

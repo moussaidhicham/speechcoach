@@ -87,6 +87,165 @@ def _extract_summary(content: str) -> str:
     return intro
 
 
+def _normalize_sentence(text: str) -> str:
+    cleaned = re.sub(r"\s+", " ", (text or "")).strip()
+    return cleaned.rstrip(". ")
+
+
+def _token_overlap(a: str, b: str) -> float:
+    tokens_a = {token for token in re.sub(r"[^a-z0-9\s]", " ", _normalize_sentence(a).lower()).split() if len(token) > 3}
+    tokens_b = {token for token in re.sub(r"[^a-z0-9\s]", " ", _normalize_sentence(b).lower()).split() if len(token) > 3}
+    if not tokens_a or not tokens_b:
+        return 0.0
+    return len(tokens_a & tokens_b) / max(len(tokens_a), 1)
+
+
+def _action_title_from_category(category: str) -> str:
+    category_lower = (category or "").lower()
+    if "regard" in category_lower or "presence" in category_lower:
+        return "Exercice regard camera"
+    if "voix" in category_lower and "debit" in category_lower:
+        return "Exercice rythme de parole"
+    if "voix" in category_lower and "fluidite" in category_lower:
+        return "Exercice fluidite"
+    if "gestuelle" in category_lower:
+        return "Exercice gestuelle"
+    if "cadre" in category_lower or "posture" in category_lower:
+        return "Exercice cadre et posture"
+    if "image" in category_lower or "lumiere" in category_lower or "nettete" in category_lower:
+        return "Verification video"
+    return "Exercice cible"
+
+
+def _practice_summary_from_category(category: str, actionable_tip: str) -> str:
+    category_lower = (category or "").lower()
+    if "regard" in category_lower or "presence" in category_lower:
+        return "Refaites une prise de parole courte en revenant a la camera sur chaque idee importante."
+    if "voix" in category_lower and "debit" in category_lower:
+        return "Refaites une prise de parole courte en ralentissant legerement et en marquant la fin de chaque phrase."
+    if "voix" in category_lower and "fluidite" in category_lower:
+        return "Refaites une prise de parole courte en remplacant les hesitations par un silence bref."
+    if "gestuelle" in category_lower:
+        return "Refaites une prise de parole courte avec une gestuelle plus visible et plus simple."
+    if "cadre" in category_lower or "posture" in category_lower:
+        return "Reprenez une video courte apres avoir stabilise le cadre et la posture."
+    if "image" in category_lower or "lumiere" in category_lower or "nettete" in category_lower:
+        return "Verifiez l'installation video puis refaites un essai court dans de meilleures conditions."
+    return actionable_tip or "Refaites une prise de parole courte en vous concentrant sur un seul point."
+
+
+def _practice_self_check_from_category(category: str) -> str:
+    category_lower = (category or "").lower()
+    if "regard" in category_lower or "presence" in category_lower:
+        return "Votre regard revient-il plus regulierement vers la camera ?"
+    if "voix" in category_lower and "debit" in category_lower:
+        return "Votre rythme parait-il plus pose sans perdre en clarte ?"
+    if "voix" in category_lower and "fluidite" in category_lower:
+        return "Avez-vous reduit les hesitations sur cette nouvelle repetition ?"
+    if "gestuelle" in category_lower:
+        return "Vos gestes accompagnent-ils mieux le message sans distraire ?"
+    if "cadre" in category_lower or "posture" in category_lower:
+        return "Le visage et les epaules restent-ils bien visibles du debut a la fin ?"
+    if "image" in category_lower or "lumiere" in category_lower or "nettete" in category_lower:
+        return "L'image parait-elle plus lisible et plus propre sur le nouvel essai ?"
+    return "Le point prioritaire est-il plus net sur le nouvel essai ?"
+
+
+def _build_light_tip(category: str, actionable_tip: str) -> str:
+    category_lower = (category or "").lower()
+    normalized_tip = _normalize_sentence(actionable_tip)
+    if "regard" in category_lower or "presence" in category_lower:
+        return "Refaites 45 secondes en revenant a la camera a chaque idee cle."
+    if "voix" in category_lower and "debit" in category_lower:
+        return "Refaites 45 secondes en marquant une pause nette a la fin de chaque phrase."
+    if "voix" in category_lower and "fluidite" in category_lower:
+        return "Refaites 45 secondes en remplacant chaque hesitation par un silence bref."
+    if "gestuelle" in category_lower:
+        return "Refaites 45 secondes en laissant apparaitre les mains sur vos idees importantes."
+    if "cadre" in category_lower or "posture" in category_lower:
+        return "Refaites une courte prise apres avoir stabilise le cadre du debut a la fin."
+    if "image" in category_lower or "lumiere" in category_lower or "nettete" in category_lower:
+        return "Refaites une courte prise apres avoir verifie la lumiere et la nettete."
+    return f"Refaites une courte prise en appliquant ce point: {normalized_tip.lower()}."
+
+
+def _practice_steps_from_category(category: str, actionable_tip: str, mode: str) -> List[str]:
+    category_lower = (category or "").lower()
+
+    if "regard" in category_lower or "presence" in category_lower:
+        steps = [
+            "Faites une prise de parole de 45 a 60 secondes en revenant a la camera sur chaque idee importante.",
+            "Refaites un second essai en gardant le meme message mais avec un regard plus regulier vers l'objectif.",
+            "Verifiez si les retours vers la camera sont plus frequents et plus naturels.",
+        ]
+    elif "voix" in category_lower and "debit" in category_lower:
+        steps = [
+            "Refaites une prise de parole courte en ralentissant legerement et en marquant la fin de chaque phrase.",
+            "Refaites un second essai de 45 a 60 secondes avec des pauses nettes sur les idees importantes.",
+            "Verifiez si le rythme parait plus pose et plus facile a suivre.",
+        ]
+    elif "voix" in category_lower and "fluidite" in category_lower:
+        steps = [
+            "Refaites une prise de parole courte en remplacant chaque hesitation par un silence bref.",
+            "Refaites un second essai en gardant un rythme simple et continu.",
+            "Verifiez si les hesitations sont moins presentes sur la nouvelle prise.",
+        ]
+    elif "gestuelle" in category_lower:
+        steps = [
+            "Refaites 45 secondes en simplifiant vos gestes et en laissant vos mains se poser entre deux idees.",
+            "Refaites un second essai avec un seul geste simple par idee importante.",
+            "Verifiez si la gestuelle accompagne mieux le message sans distraire.",
+        ]
+    elif "cadre" in category_lower or "posture" in category_lower:
+        steps = [
+            "Replacez la camera puis refaites une video courte avec le visage et les epaules bien visibles.",
+            "Refaites un second essai sans changer votre position pendant la prise.",
+            "Verifiez si le cadre reste stable du debut a la fin.",
+        ]
+    elif "image" in category_lower or "lumiere" in category_lower or "nettete" in category_lower:
+        steps = [
+            "Verifiez la lumiere et la mise au point puis refaites une prise courte.",
+            "Refaites un second essai dans les memes conditions pour confirmer l'amelioration.",
+            "Verifiez si l'image est plus nette et plus lisible.",
+        ]
+    else:
+        steps = [
+            f"{_normalize_sentence(actionable_tip)}.",
+            "Refaites une prise de parole courte en vous concentrant uniquement sur ce point.",
+            "Verifiez si ce point devient plus naturel sur le nouvel essai.",
+        ]
+
+    if mode == "single_exercise":
+        return steps[:2]
+    return steps[:3]
+
+
+def _dedupe_steps(steps: List[str], fallback: str) -> List[str]:
+    cleaned_steps: List[str] = []
+    seen: set[str] = set()
+    for step in steps:
+        normalized = _normalize_sentence(step)
+        if not normalized:
+            continue
+        key = normalized.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned_steps.append(f"{normalized}.")
+    if not cleaned_steps and fallback:
+        cleaned_steps.append(f"{_normalize_sentence(fallback)}.")
+    return cleaned_steps
+
+
+def _append_plan_line(lines: List[str], candidate: str) -> None:
+    normalized = _normalize_sentence(candidate)
+    if not normalized:
+        return
+    if any(_normalize_sentence(existing).lower() == normalized.lower() for existing in lines):
+        return
+    lines.append(f"{normalized}.")
+
+
 def _recommendation_axis(category: str) -> str:
     category_lower = (category or "").lower()
     if "voix" in category_lower:
@@ -148,19 +307,64 @@ def _presence_tie_break_priority(
     return base_priority
 
 
-def build_exercise_payload(recommendations: List[Recommendation]) -> Dict[str, Any]:
+def _severity_rank(severity: str) -> int:
+    normalized = (severity or "").strip().lower()
+    if normalized == "critical":
+        return 3
+    if normalized == "warning":
+        return 2
+    if normalized == "info":
+        return 1
+    return 0
+
+
+def _is_setup_category(category: str) -> bool:
+    category_lower = (category or "").lower()
+    return (
+        "image" in category_lower
+        or "lumiere" in category_lower
+        or "nettete" in category_lower
+        or "cadre" in category_lower
+    )
+
+
+def select_practice_mode(recommendations: List[Recommendation], scores: Scores) -> str:
+    primary = recommendations[0] if recommendations else None
+    if not primary or primary.category == "Maintien":
+        return "none"
+
+    overall_score = float(scores.overall_score or 0)
+    severity_rank = _severity_rank(primary.severity)
+    critical_count = sum(1 for recommendation in recommendations if _severity_rank(recommendation.severity) >= 3)
+    warning_count = sum(1 for recommendation in recommendations if _severity_rank(recommendation.severity) >= 2)
+
+    if overall_score >= 85 and critical_count == 0:
+        return "none"
+
+    if _is_setup_category(primary.category):
+        return "setup_action"
+
+    if overall_score >= 75 and severity_rank <= 2 and critical_count == 0:
+        return "light_tip"
+
+    if overall_score < 60 or severity_rank >= 3 or critical_count >= 2 or warning_count >= 2:
+        return "mini_plan_3_days"
+
+    return "single_exercise"
+
+
+def build_exercise_payload(recommendations: List[Recommendation], scores: Scores | None = None) -> Dict[str, Any]:
     primary = recommendations[0] if recommendations else None
     secondary = recommendations[1] if len(recommendations) > 1 else None
+    practice_mode = select_practice_mode(recommendations, scores or Scores())
 
     if not primary:
         return {
+            "mode": "none",
+            "should_display": False,
             "title": "Exercice cible",
             "summary": "Reprenez le point principal de la session avec un essai court et concentre.",
-            "steps": [
-                "Relisez la priorite de travail.",
-                "Refaites une prise de parole de 1 minute sur ce seul point.",
-                "Visionnez-la pour verifier si ce point progresse.",
-            ],
+            "steps": [],
             "goal": "Stabiliser le point principal avant d'elargir le travail.",
             "self_check": "Est-ce que le point prioritaire est plus net sur ce nouvel essai ?",
             "focus_primary": "Progression generale",
@@ -175,17 +379,73 @@ def build_exercise_payload(recommendations: List[Recommendation]) -> Dict[str, A
     primary_title = _extract_exercise_name(primary_doc["content"]) if primary_doc else primary.category
 
     secondary_title = _extract_exercise_name(secondary_doc["content"]) if secondary_doc else (secondary.category if secondary else "Consolidation")
+    actionable_summary = _practice_summary_from_category(primary.category, primary.actionable_tip)
+    cleaned_steps = _dedupe_steps(primary_steps, primary.actionable_tip)
+    custom_steps = _practice_steps_from_category(primary.category, primary.actionable_tip, practice_mode)
+    if len(cleaned_steps) > 3:
+        cleaned_steps = cleaned_steps[:3]
 
-    return {
-        "title": primary_title,
-        "summary": primary_summary or primary.message,
-        "steps": primary_steps or [primary.actionable_tip],
+    payload = {
+        "mode": practice_mode,
+        "should_display": practice_mode != "none",
+        "title": _action_title_from_category(primary.category) or primary_title,
+        "summary": actionable_summary or primary_summary or primary.message,
+        "steps": custom_steps or cleaned_steps,
         "goal": primary.actionable_tip,
-        "self_check": "Est-ce que ce point devient plus naturel et plus regulier sur la repetition suivante ?",
+        "self_check": _practice_self_check_from_category(primary.category),
         "focus_primary": primary.category.split(" & ")[0] if primary.category else "Progression generale",
         "focus_secondary": secondary.category.split(" & ")[0] if secondary else "Consolidation",
         "secondary_title": secondary_title,
     }
+
+    if practice_mode == "none":
+        payload.update(
+            {
+                "title": "Aucun exercice prioritaire",
+                "summary": "La session est deja solide. Continuez a garder ce niveau sur vos prochaines repetitions.",
+                "steps": [],
+                "goal": "Conserver la regularite deja installee.",
+                "focus_primary": "Consolidation",
+                "focus_secondary": "Maintien",
+            }
+        )
+        return payload
+
+    if practice_mode == "light_tip":
+        payload.update(
+            {
+                "title": "Conseil de repetition",
+                "summary": _build_light_tip(primary.category, primary.actionable_tip),
+                "steps": [],
+                "goal": "Verifier ce point sur une repetition courte sans alourdir la preparation.",
+            }
+        )
+        return payload
+
+    if practice_mode == "setup_action":
+        payload.update(
+            {
+                "title": "A verifier avant la prochaine prise",
+                "summary": _normalize_sentence(primary.actionable_tip) + ".",
+                "steps": _practice_steps_from_category(primary.category, primary.actionable_tip, practice_mode)[:2],
+                "goal": "Corriger l'installation avant d'enregistrer une nouvelle session.",
+            }
+        )
+        return payload
+
+    if practice_mode == "single_exercise":
+        payload.update(
+            {
+                "summary": actionable_summary,
+                "steps": custom_steps or [
+                    f"{_normalize_sentence(primary.actionable_tip)}.",
+                    "Refaites une prise de parole de 60 a 90 secondes pour verifier si ce point progresse.",
+                ],
+            }
+        )
+        return payload
+
+    return payload
 
 
 def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores: Scores) -> List[Recommendation]:
@@ -383,36 +643,85 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
     return top_3
 
 
-def generate_training_plan(recommendations: List[Recommendation]) -> str:
-    """Generate a more grounded practice schedule from the top recommendation fiche."""
-    exercise = build_exercise_payload(recommendations)
+def generate_training_plan(recommendations: List[Recommendation], scores: Scores | None = None) -> str:
+    """Generate a practice block adapted to the current session level."""
+    exercise = build_exercise_payload(recommendations, scores=scores)
+    mode = exercise.get("mode", "single_exercise")
+
+    if mode == "none":
+        return ""
+
     steps = exercise.get("steps") or []
     primary_step = steps[0] if len(steps) > 0 else "Relisez la priorite de travail."
-    second_step = steps[1] if len(steps) > 1 else exercise.get("goal", "Refaites une courte prise de parole.")
-    third_step = steps[2] if len(steps) > 2 else "Refaites un essai en conservant seulement l'essentiel."
+    second_step = steps[1] if len(steps) > 1 else "Refaites une prise de parole de 60 a 90 secondes pour verifier ce point."
+    third_step = steps[2] if len(steps) > 2 else exercise.get("self_check", "Verifiez si le point prioritaire progresse sur le nouvel essai.")
 
-    return f"""### Plan d'Entrainement sur 7 Jours
+    if mode == "light_tip":
+        return ""
+
+    if mode == "setup_action":
+        setup_lines: List[str] = []
+        _append_plan_line(setup_lines, exercise.get('summary', exercise.get('goal', 'Verifiez votre installation avant la prochaine prise.')))
+        for step in steps[:2]:
+            _append_plan_line(setup_lines, step)
+        setup_block = '\n'.join(f"  - {line}" for line in setup_lines)
+        return f"""### Verification avant la prochaine prise
 
 **Focus Principal :** {exercise.get('focus_primary', 'Progression generale')}
 **Focus Secondaire :** {exercise.get('focus_secondary', 'Consolidation')}
 
-* **Jour 1-2 : Exercice principal - {exercise.get('title', 'Exercice cible')}**
-  - {exercise.get('summary', 'Reprenez le point principal de la session avec un essai court et concentre.')}
-  - {primary_step}
+* **Action de preparation**
+{setup_block}
+"""
 
-* **Jour 3-4 : Mise en pratique**
-  - {second_step}
-  - Refaites 2 prises de parole courtes en gardant ce seul objectif.
+    if mode == "single_exercise":
+        single_lines: List[str] = []
+        _append_plan_line(single_lines, exercise.get('summary', 'Reprenez le point principal de la session avec un essai court et concentre.'))
+        _append_plan_line(single_lines, primary_step)
+        _append_plan_line(single_lines, second_step)
+        _append_plan_line(single_lines, exercise.get('self_check', 'Verifiez si le point prioritaire progresse sur le nouvel essai.'))
+        single_block = '\n'.join(f"  - {line}" for line in single_lines)
+        return f"""### Exercice prioritaire
 
-* **Jour 5 : Consolidation**
-  - {third_step}
-  - Cherchez un rendu plus naturel sans perdre la clarte du message.
+**Focus Principal :** {exercise.get('focus_primary', 'Progression generale')}
+**Focus Secondaire :** {exercise.get('focus_secondary', 'Consolidation')}
 
-* **Jour 6 : Verification**
-  - {exercise.get('self_check', 'Verifiez si le point prioritaire progresse sur le nouvel essai.')}
-  - Visionnez l'enregistrement et notez un seul point encore a corriger.
+* **Exercice principal - {exercise.get('title', 'Exercice cible')}**
+{single_block}
+"""
 
-* **Jour 7 : Repetition complete**
-  - Refaites une prise de parole plus longue en integrant le focus principal et le focus secondaire.
-  - Gardez en tete cet objectif : {exercise.get('goal', 'Stabiliser le point principal avant d elargir le travail.')}
+    day_1_lines: List[str] = []
+    summary_text = exercise.get('summary', 'Reprenez le point principal de la session avec un essai court et concentre.')
+    primary_text = primary_step
+    if (
+        _normalize_sentence(summary_text).lower() != _normalize_sentence(primary_text).lower()
+        and _token_overlap(summary_text, primary_text) < 0.55
+    ):
+        _append_plan_line(day_1_lines, summary_text)
+    _append_plan_line(day_1_lines, primary_text)
+
+    day_2_lines: List[str] = []
+    _append_plan_line(day_2_lines, second_step)
+
+    day_3_lines: List[str] = []
+    _append_plan_line(day_3_lines, third_step)
+    _append_plan_line(day_3_lines, exercise.get('goal', 'Stabiliser le point principal avant d elargir le travail.'))
+
+    day_1_block = '\n'.join(f"  - {line}" for line in day_1_lines)
+    day_2_block = '\n'.join(f"  - {line}" for line in day_2_lines)
+    day_3_block = '\n'.join(f"  - {line}" for line in day_3_lines)
+
+    return f"""### Mini-plan de progression sur 3 jours
+
+**Focus Principal :** {exercise.get('focus_primary', 'Progression generale')}
+**Focus Secondaire :** {exercise.get('focus_secondary', 'Consolidation')}
+
+* **Jour 1 : Exercice principal - {exercise.get('title', 'Exercice cible')}**
+{day_1_block}
+
+* **Jour 2 : Mise en pratique**
+{day_2_block}
+
+* **Jour 3 : Consolidation**
+{day_3_block}
 """

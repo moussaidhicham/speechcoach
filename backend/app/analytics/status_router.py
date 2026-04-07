@@ -118,7 +118,17 @@ def _serialize_session_history_item(
 def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]:
     strengths = report.get('strengths') or []
     training_plan = report.get('training_plan') or {}
+    exercise_recommendation = report.get('exercise_recommendation') or {}
     first_day = (training_plan.get('days') or [None])[0] or {}
+    next_practice_title = first_day.get('title')
+    next_practice_step = (first_day.get('items') or [None])[0]
+
+    if not exercise_recommendation.get('should_display', True):
+        next_practice_title = None
+        next_practice_step = None
+    elif not next_practice_title:
+        next_practice_title = exercise_recommendation.get('title')
+        next_practice_step = (exercise_recommendation.get('steps') or [None])[0] or exercise_recommendation.get('summary')
 
     return {
         'session_id': report.get('session', {}).get('id', ''),
@@ -130,8 +140,8 @@ def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]
         'encouragement': report.get('summary', {}).get('encouragement'),
         'primary_focus': training_plan.get('focus_primary') or report.get('summary', {}).get('priority_focus', 'Progression generale'),
         'first_strength': strengths[0] if strengths else None,
-        'next_practice_title': first_day.get('title'),
-        'next_practice_step': (first_day.get('items') or [None])[0],
+        'next_practice_title': next_practice_title,
+        'next_practice_step': next_practice_step,
     }
 
 

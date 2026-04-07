@@ -24,6 +24,25 @@ class ProfileUpdate(BaseModel):
 
 AVATAR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage/avatars'))
 os.makedirs(AVATAR_DIR, exist_ok=True)
+STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage'))
+
+
+def _delete_session_storage(video_url: Optional[str], session_id) -> None:
+    if video_url and video_url.startswith("/storage/"):
+        try:
+            rel_path = video_url.replace("/storage/", "")
+            abs_path = os.path.join(STORAGE_DIR, rel_path)
+            if os.path.exists(abs_path):
+                os.remove(abs_path)
+        except Exception:
+            print(f"Failed to delete video file for session {session_id}")
+
+    processing_dir = os.path.join(STORAGE_DIR, "processing", str(session_id))
+    if os.path.exists(processing_dir):
+        try:
+            shutil.rmtree(processing_dir)
+        except Exception:
+            print(f"Failed to delete processing dir for session {session_id}")
 
 @profile_router.get("/profile")
 async def get_my_profile(
@@ -153,6 +172,7 @@ async def delete_account(
     # 2. Delete VideoSessions and their results
     vid_sessions = await session.execute(select(VideoSession).where(VideoSession.user_id == user.id))
     for session_info in vid_sessions.scalars():
+        _delete_session_storage(session_info.video_url, session_info.id)
         results = await session.execute(select(AnalysisResult).where(AnalysisResult.video_session_id == session_info.id))
         analysis = results.scalar_one_or_none()
         if analysis:

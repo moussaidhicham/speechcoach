@@ -45,6 +45,7 @@ export interface ReportMetrics {
   wpm: number;
   pause_count: number;
   filler_count: number;
+  stutter_count?: number;
   pause_duration_total: number;
   face_presence_ratio: number;
   eye_contact_ratio: number;
@@ -65,6 +66,21 @@ export interface ReportTrainingPlan {
   days: ReportTrainingDay[];
 }
 
+export type PracticeMode = 'none' | 'light_tip' | 'setup_action' | 'single_exercise' | 'mini_plan_3_days';
+
+export interface ReportExerciseRecommendation {
+  mode: PracticeMode;
+  should_display: boolean;
+  title: string;
+  summary: string;
+  steps: string[];
+  goal: string;
+  self_check: string;
+  focus_primary: string;
+  focus_secondary: string;
+  secondary_title?: string;
+}
+
 export interface ReportTranscriptSegment {
   start: number;
   end: number;
@@ -79,6 +95,7 @@ export interface ReportResult {
   strengths: string[];
   weaknesses: string[];
   training_plan: ReportTrainingPlan;
+  exercise_recommendation?: ReportExerciseRecommendation;
   training_plan_markdown: string;
   transcript: ReportTranscriptSegment[];
   visuals?: {

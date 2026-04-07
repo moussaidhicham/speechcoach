@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import uuid as uuid_lib
 import logging
@@ -31,15 +32,18 @@ def update_session_status(session_id: str, status: str):
             db.commit()
             logger.info(f"Session {session_id} status updated to: {status}")
 
-def save_analysis_result(session_id: str, report_dict: dict, overall_score: int):
+def save_analysis_result(session_id: str, report_dict: dict, overall_score: int) -> bool:
     """Synchronous saving of analysis results."""
     with SessionLocal() as db:
         session = db.get(VideoSession, uuid_lib.UUID(session_id))
-        if session:
-            # Extract duration from metadata if present
-            duration = report_dict.get('metadata', {}).get('duration_seconds', 0)
-            session.duration_seconds = float(duration)
-            
+        if not session:
+            logger.warning(f"Session {session_id} no longer exists. Skipping analysis save.")
+            return False
+
+        # Extract duration from metadata if present
+        duration = report_dict.get('metadata', {}).get('duration_seconds', 0)
+        session.duration_seconds = float(duration)
+
         analysis = AnalysisResult(
             video_session_id=uuid_lib.UUID(session_id),
             overall_score=int(overall_score),
@@ -61,6 +65,7 @@ def save_analysis_result(session_id: str, report_dict: dict, overall_score: int)
             db.add(feedback)
             db.commit()
             logger.info(f"Coaching feedback saved for session {session_id}")
+        return True
 
 
 def update_analysis_enrichment(session_id: str, report_dict: Dict[str, Any]):
@@ -226,7 +231,15 @@ def process_video_task(self, session_id: str, video_path: str, output_dir: str):
             
         overall_score = report_dict.get('scores', {}).get('overall_score', 0)
         
-        save_analysis_result(session_id, report_dict, overall_score)
+        saved = save_analysis_result(session_id, report_dict, overall_score)
+        if not saved:
+            if os.path.exists(session_dir):
+                try:
+                    shutil.rmtree(session_dir)
+                except Exception:
+                    logger.exception(f"Failed to clean processing dir for deleted session {session_id}")
+            return {"session_id": session_id, "status": "deleted"}
+
         update_session_status(session_id, "completed")
         enrich_report_task.apply_async(args=[session_id, report_path], queue='ai_processing')
         logger.info(f"Task completed successfully for session: {session_id}")

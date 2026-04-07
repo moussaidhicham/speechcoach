@@ -23,6 +23,7 @@ class AudioMetrics:
     pause_count: int = 0
     pause_duration_total: float = 0.0
     filler_count: int = 0
+    stutter_count: int = 0
     total_duration: float = 0.0
     # Add prosody metrics later (pitch_mean, volume_mean)
 

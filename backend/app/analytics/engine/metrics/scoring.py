@@ -1,4 +1,4 @@
-﻿from typing import List, Tuple
+from typing import List, Tuple
 
 from app.analytics.engine.metrics.schema import AudioMetrics, Scores, VisionMetrics
 
@@ -30,7 +30,12 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     if pauses_per_min > 4:
         pause_penalty = min((pauses_per_min - 4) * 0.4, 2.5)
 
-    voice_score = max(0.0, min(10.0, wpm_score - filler_penalty - pause_penalty))
+    stutters_per_min = audio.stutter_count / estimated_mins
+    stutter_penalty = 0.0
+    if stutters_per_min > 1:
+        stutter_penalty = min((stutters_per_min - 1) * 0.4, 2.0)
+
+    voice_score = max(0.0, min(10.0, wpm_score - filler_penalty - pause_penalty - stutter_penalty))
     scores.voice_score = round(voice_score, 1)
 
     eye_score = (vision.eye_contact_ratio / 0.9) * 10.0
@@ -99,10 +104,15 @@ def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: Visio
     estimated_mins = audio.wpm / 140.0 if audio.wpm > 0.1 else 1.0
     fillers_per_min = audio.filler_count / estimated_mins
 
-    if audio.filler_count == 0:
-        strengths.append("Discours clair, sans tics de langage ('euh', 'hum').")
-    elif fillers_per_min > 3:
+    if audio.filler_count == 0 and audio.stutter_count == 0:
+        strengths.append("Discours clair, sans tics de langage ('euh', 'hum') ni repetitions.")
+    
+    if fillers_per_min > 3:
         add_weakness(70, f"Attention aux mots parasites ({audio.filler_count} detectes).")
+    
+    stutters_per_min = audio.stutter_count / estimated_mins
+    if stutters_per_min > 2:
+        add_weakness(65, f"Des repetitions de mots figees ({audio.stutter_count}) ont ete detectees. Travaillez votre fluidite.")
 
     eye_contact_percent = round(vision.eye_contact_ratio * 100)
     if vision.eye_contact_ratio >= 0.7:

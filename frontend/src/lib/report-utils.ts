@@ -158,19 +158,39 @@ export function buildMarkdownReport(report: ReportResult): string {
   }
   lines.push('');
 
-  lines.push('## Plan de pratique', '');
-  lines.push(`- Focus principal : ${report.training_plan.focus_primary || 'Progression generale'}`);
-  lines.push(`- Focus secondaire : ${report.training_plan.focus_secondary || 'Consolidation'}`);
-  lines.push('');
+  const practice = report.exercise_recommendation;
+  if (practice?.should_display ?? report.training_plan.days.length > 0) {
+    const sectionTitle =
+      practice?.mode === 'light_tip'
+        ? '## Conseil de repetition'
+        : practice?.mode === 'setup_action'
+          ? '## Verification avant la prochaine prise'
+        : practice?.mode === 'single_exercise'
+          ? '## Exercice prioritaire'
+          : '## Plan de pratique';
 
-  if (report.training_plan.days.length > 0) {
-    report.training_plan.days.forEach((day) => {
-      lines.push(`### ${day.title}`);
-      if (day.items.length > 0) {
-        day.items.forEach((item) => lines.push(`- ${item}`));
-      }
+    lines.push(sectionTitle, '');
+    lines.push(`- Focus principal : ${report.training_plan.focus_primary || practice?.focus_primary || 'Progression generale'}`);
+    lines.push(`- Focus secondaire : ${report.training_plan.focus_secondary || practice?.focus_secondary || 'Consolidation'}`);
+    lines.push('');
+
+    if (report.training_plan.days.length > 0) {
+      report.training_plan.days.forEach((day) => {
+        lines.push(`### ${day.title}`);
+        if (day.items.length > 0) {
+          day.items.forEach((item) => lines.push(`- ${item}`));
+        }
+        lines.push('');
+      });
+    } else if (practice?.summary) {
+      lines.push(`- ${practice.summary}`);
+      practice.steps.forEach((item) => {
+        if (item !== practice.summary) {
+          lines.push(`- ${item}`);
+        }
+      });
       lines.push('');
-    });
+    }
   }
 
   lines.push('## Details des mesures', '');
