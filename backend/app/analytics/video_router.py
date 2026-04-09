@@ -19,6 +19,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 async def upload_video(
     file: UploadFile = File(...),
     device_type: str = Form("unknown"),
+    language: str = Form("auto"),
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_session)
 ):
@@ -62,7 +63,7 @@ async def upload_video(
         os.makedirs(output_dir, exist_ok=True)
         
         # pass session ID as string because celery needs JSON primitives
-        process_video_task.delay(str(session.id), file_path, output_dir, device_type, filename)
+        process_video_task.delay(str(session.id), file_path, output_dir, device_type, filename, language)
     except Exception as e:
         # If celery fails to trigger (e.g., redis not running)
         session.status = "failed"

@@ -1,15 +1,17 @@
 import api from '@/lib/api';
-import { DashboardSummary, ReportResult, SessionHistory, SessionStatus } from '@/types/analytics';
+import { DashboardSummary, ReportResult, SessionHistory, SessionStatus, StatusResponse } from '@/types/analytics';
 
 export const videoService = {
   async uploadVideo(
     file: File,
     deviceType: 'unknown' | 'laptop_desktop' | 'tablet' | 'smartphone' = 'unknown',
+    language: string = 'auto',
     onProgress?: (percent: number) => void,
   ): Promise<{ session_id: string }> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('device_type', deviceType);
+    formData.append('language', language);
 
     const { data } = await api.post<{ session_id: string }>('/video/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -23,8 +25,8 @@ export const videoService = {
     return data;
   },
 
-  async getStatus(sessionId: string): Promise<{ status: SessionStatus }> {
-    const { data } = await api.get<{ status: SessionStatus }>(`/tracker/status/${sessionId}`);
+  async getStatus(sessionId: string): Promise<StatusResponse> {
+    const { data } = await api.get<StatusResponse>(`/tracker/status/${sessionId}`);
     return data;
   },
 

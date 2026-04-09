@@ -356,7 +356,7 @@ export function AppShell({
   }
  
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
       <a href="#main-content" className="skip-link">
         Aller au contenu principal
       </a>

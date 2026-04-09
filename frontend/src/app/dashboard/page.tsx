@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -56,11 +56,16 @@ interface StatCardProps {
 
 export default function DashboardPage() {
   const { user, token } = useAuth();
+  const [isMounted, setIsMounted] = React.useState(false);
   const [dashboardSummary, setDashboardSummary] = React.useState<DashboardSummary | null>(null);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isError, setIsError] = React.useState(false);
   const [showWizard, setShowWizard] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const fetchData = React.useCallback(async () => {
     setIsLoading(true);
@@ -102,7 +107,7 @@ export default function DashboardPage() {
   return (
     <AppShell
       title="Dashboard"
-      subtitle={`Bienvenue, ${profile?.full_name || user?.email || 'coach'}`}
+      subtitle={isMounted ? `Bienvenue, ${profile?.full_name || user?.email || 'coach'}` : 'Chargement...'}
       actions={
         <Link href="/studio" className={buttonVariants({ size: 'sm' })}>
           <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -111,6 +116,7 @@ export default function DashboardPage() {
       }
       maxWidth="7xl"
     >
+      <div suppressHydrationWarning className="w-full">
       <AnimatePresence>
         {showWizard ? <OnboardingWizard onComplete={handleWizardComplete} /> : null}
       </AnimatePresence>
@@ -285,6 +291,7 @@ export default function DashboardPage() {
           isLoading={isLoading}
         />
       </div>
+    </div>
     </AppShell>
   );
 }

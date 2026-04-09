@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
@@ -218,10 +219,16 @@ function ProductPreview() {
 
 export default function LandingPage() {
   const { token, user, logout } = useAuth();
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const isAuthenticated = Boolean(token);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
 
       {/* ── Header ────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-md">
@@ -243,34 +250,38 @@ export default function LandingPage() {
             )}
           </nav>
 
-          <div className="flex items-center gap-2.5">
-            {isAuthenticated ? (
+          <div className="flex items-center gap-2.5" suppressHydrationWarning>
+            {isMounted && (
               <>
-                <span className="hidden max-w-[160px] truncate text-sm text-muted-foreground lg:block">
-                  {user?.email}
-                </span>
-                <Link
-                  href="/dashboard"
-                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'hidden sm:inline-flex')}
-                >
-                  <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
-                  Dashboard
-                </Link>
-                <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Se deconnecter">
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden sm:inline-flex')}
-                >
-                  Connexion
-                </Link>
-                <Link href="/register" className={buttonVariants({ size: 'sm' })}>
-                  Creer un compte
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <span className="hidden max-w-[160px] truncate text-sm text-muted-foreground lg:block">
+                      {user?.email}
+                    </span>
+                    <Link
+                      href="/dashboard"
+                      className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'hidden sm:inline-flex')}
+                    >
+                      <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                      Dashboard
+                    </Link>
+                    <Button variant="ghost" size="icon-sm" onClick={logout} aria-label="Se deconnecter">
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden sm:inline-flex')}
+                    >
+                      Connexion
+                    </Link>
+                    <Link href="/register" className={buttonVariants({ size: 'sm' })}>
+                      Creer un compte
+                    </Link>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -301,10 +312,10 @@ export default function LandingPage() {
 
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
-                href={isAuthenticated ? '/studio' : '/register'}
+                href={isMounted && isAuthenticated ? '/studio' : '/register'}
                 className={cn(buttonVariants({ size: 'lg' }), 'px-6')}
               >
-                {isAuthenticated ? 'Nouvelle analyse' : 'Commencer'}
+                {isMounted && isAuthenticated ? 'Nouvelle analyse' : 'Commencer'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
               <Link
@@ -578,10 +589,10 @@ export default function LandingPage() {
               Avis utilisateurs
             </Link>
             <Link
-              href={isAuthenticated ? '/dashboard' : '/login'}
+              href={isMounted && isAuthenticated ? '/dashboard' : '/login'}
               className="transition-colors hover:text-foreground"
             >
-              {isAuthenticated ? 'Dashboard' : 'Connexion'}
+              {isMounted && isAuthenticated ? 'Dashboard' : 'Connexion'}
             </Link>
             <span className="text-muted-foreground/60">SpeechCoach 2026</span>
           </div>

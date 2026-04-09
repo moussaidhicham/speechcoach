@@ -1,4 +1,12 @@
 export type SessionStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export interface StatusResponse {
+  session_id: string;
+  status: SessionStatus;
+  current_step?: string | null;
+  progress_percent?: number | null;
+  duration_seconds?: number | null;
+  processing_started_at?: string | null;
+}
 
 export interface SessionHistory {
   session_id: string;

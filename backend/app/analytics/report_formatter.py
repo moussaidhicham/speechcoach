@@ -379,7 +379,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     resolution = _normalize_resolution(metadata.get('resolution'))
     language = str(metadata.get('detected_language') or 'unknown').strip() or 'unknown'
 
-    overall_score = int(analysis.overall_score)
+    overall_score = _safe_int(getattr(analysis, 'overall_score', 0))
     summary_narrative = str(llm_coaching.get('bilan_global') or '').strip() or _fallback_narrative(strengths, weaknesses)
     priority_focus = str(llm_coaching.get('point_prioritaire') or '').strip()
     if not priority_focus:

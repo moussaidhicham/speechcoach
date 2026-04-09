@@ -5,6 +5,7 @@ import uuid as uuid_lib
 import logging
 import json
 import time
+import datetime
 from typing import Any, Dict, List
 
 # Add backend/ folder to sys.path to allow imports from `ml` and `db` cleanly
@@ -23,14 +24,26 @@ from app.analytics.engine.metrics.schema import Recommendation, Scores
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def update_session_status(session_id: str, status: str):
+def update_session_status(
+    session_id: str, 
+    status: str, 
+    step: str | None = None, 
+    progress: float | None = None,
+    started_now: bool = False
+):
     """Synchronous status update for the Celery worker."""
     with SessionLocal() as db:
         session = db.get(VideoSession, uuid_lib.UUID(session_id))
         if session:
             session.status = status
+            if step is not None:
+                session.current_step = step
+            if progress is not None:
+                session.progress_percent = progress
+            if started_now:
+                session.processing_started_at = datetime.datetime.utcnow()
             db.commit()
-            logger.info(f"Session {session_id} status updated to: {status}")
+            logger.info(f"Session {session_id} [{status}] -> {step or 'no-step'} ({progress or 0}%)")
 
 def save_analysis_result(session_id: str, report_dict: dict, overall_score: int) -> bool:
     """Synchronous saving of analysis results."""
@@ -138,9 +151,11 @@ def _build_recommendations(metrics_json: Dict[str, Any]) -> List[Recommendation]
     return recommendations
 
 
-def run_report_enrichment(report_dict: Dict[str, Any]) -> Dict[str, Any]:
+def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Adds RAG + LLM coaching on top of an existing fast report payload."""
     started_at = time.perf_counter()
+    update_session_status(session_id, "completed", step="Intelligence Artificielle : Initialisation...", progress=78)
+    
     strengths = [str(item).strip() for item in (report_dict.get('strengths') or []) if str(item).strip()]
     weaknesses = [str(item).strip() for item in (report_dict.get('weaknesses') or []) if str(item).strip()]
     recommendations = _build_recommendations(report_dict)
@@ -158,6 +173,7 @@ def run_report_enrichment(report_dict: Dict[str, Any]) -> Dict[str, Any]:
         logger.warning("RAG Retriever could not be loaded during enrichment. Skipping RAG.")
 
     if rag_ready and recommendations:
+        update_session_status(session_id, "completed", step="Recherche de conseils personnalisés (RAG)...", progress=82)
         rag_started_at = time.perf_counter()
         top_rec = recommendations[0]
         query = f"{top_rec.category} {top_rec.message}"
@@ -166,6 +182,7 @@ def run_report_enrichment(report_dict: Dict[str, Any]) -> Dict[str, Any]:
         retriever.release()
         logger.info("RAG retrieval completed in %.2fs", time.perf_counter() - rag_started_at)
 
+    update_session_status(session_id, "completed", step="Génération du coaching IA en cours...", progress=90)
     from app.analytics.engine.agent.agent_coach import generate_coaching_text
 
     llm_started_at = time.perf_counter()
@@ -196,6 +213,7 @@ def process_video_task(
     output_dir: str,
     device_type: str = "unknown",
     source_name: str = "",
+    language: str = "auto"
 ):
     """
     Background worker: runs the full SpeechCoach analysis pipeline and saves results to DB.
@@ -203,13 +221,23 @@ def process_video_task(
     """
     logger.info(f"Task started for session: {session_id}")
     
-    update_session_status(session_id, "processing")
+    update_session_status(session_id, "processing", step="Démarrage...", progress=5, started_now=True)
     
-    # Get user preferred language
-    preferred_lang = get_user_preferences(session_id)
-    forced_language = preferred_lang if preferred_lang in {"fr", "en", "ar"} else None
+    # Precedence: 
+    # 1. Studio/API Choice (if not auto)
+    # 2. Profile Preference (if auto)
+    # 3. Automatic Detection (None)
+    forced_language = None
+    if language in {"fr", "en", "ar"}:
+        forced_language = language
+    else:
+        # Fallback to profile
+        preferred_lang = get_user_preferences(session_id)
+        if preferred_lang in {"fr", "en", "ar"}:
+            forced_language = preferred_lang
     
     try:
+        update_session_status(session_id, "processing", step="Préparation des fichiers...", progress=10)
         self.update_state(state='PROGRESS', meta={'step': 'Ingestion...'})
         
         from app.analytics.engine.process_video import process_video
@@ -217,6 +245,12 @@ def process_video_task(
         # Use session_id as the folder name instead of file_id for consistency
         session_dir = os.path.join(output_dir, session_id)
         
+        update_session_status(
+            session_id, 
+            "processing", 
+            step=f"Analyse Audio & Vision (L:{forced_language or 'auto'}, D:{device_type})...", 
+            progress=25
+        )
         self.update_state(state='PROGRESS', meta={'step': f'Analyzing Audio & Vision ({forced_language or "auto"})...'})
         
         # Full ML pipeline (Synchronous)
@@ -249,7 +283,7 @@ def process_video_task(
                     logger.exception(f"Failed to clean processing dir for deleted session {session_id}")
             return {"session_id": session_id, "status": "deleted"}
 
-        update_session_status(session_id, "completed")
+        update_session_status(session_id, "completed", step="Rapport prêt", progress=75)
         enrich_report_task.apply_async(args=[session_id, report_path], queue='ai_processing')
         logger.info(f"Task completed successfully for session: {session_id}")
         return {"session_id": session_id, "status": "completed"}
@@ -271,12 +305,15 @@ def enrich_report_task(self, session_id: str, report_path: str):
         with open(report_path, 'r', encoding='utf-8') as f:
             report_dict = json.load(f)
 
-        enriched_report = run_report_enrichment(report_dict)
+        update_session_status(session_id, "completed", step="Enrichissement IA (RAG & Analyse)...", progress=75)
+        enriched_report = run_report_enrichment(session_id, report_dict)
 
+        update_session_status(session_id, "completed", step="Finalisation du coaching...", progress=95)
         with open(report_path, 'w', encoding='utf-8') as f:
             json.dump(enriched_report, f, indent=2, ensure_ascii=False)
 
         update_analysis_enrichment(session_id, enriched_report)
+        update_session_status(session_id, "completed", step="Terminé", progress=100)
         logger.info(f"Enrichment task completed for session: {session_id}")
         return {"session_id": session_id, "status": enriched_report.get('enrichment_status', 'completed')}
     except Exception as e:

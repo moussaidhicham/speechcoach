@@ -37,8 +37,12 @@ type DeviceType = 'unknown' | 'laptop_desktop' | 'tablet' | 'smartphone';
 type PermissionStatus = 'prompt' | 'granted' | 'denied' | 'error';
 
 interface SessionInfo {
-  id:     string;
-  status: SessionStatus;
+  id:                  string;
+  status:              SessionStatus;
+  currentStep?:        string | null;
+  progressPercent?:    number;
+  durationSeconds?:    number | null;
+  processingStartedAt?: string | null;
 }
 
 interface SelectionModeProps {
@@ -52,6 +56,9 @@ interface UploadModeProps {
   deviceType:  DeviceType;
   defaultDeviceType: DeviceType;
   onDeviceTypeChange: (value: DeviceType) => void;
+  language:    string;
+  defaultLanguage: string;
+  onLanguageChange: (value: string) => void;
   isUploading: boolean;
   progress:    number;
   onCancel:    () => void;
@@ -77,6 +84,8 @@ interface RecordModeProps {
 interface ProcessingModeProps {
   sessionInfo:   SessionInfo;
   statusMessage: string;
+  displayProgress: number;
+  estimatedSeconds: number | null;
   onRetry:       () => void;
 }
 
@@ -96,10 +105,14 @@ export default function StudioPage() {
   const [file, setFile] = React.useState<File | null>(null);
   const [deviceType, setDeviceType] = React.useState<DeviceType>('unknown');
   const [defaultDeviceType, setDefaultDeviceType] = React.useState<DeviceType>('unknown');
+  const [language, setLanguage] = React.useState<string>('auto');
+  const [defaultLanguage, setDefaultLanguage] = React.useState<string>('auto');
   const [isUploading, setIsUploading] = React.useState(false);
   const [sessionInfo, setSessionInfo] = React.useState<SessionInfo | null>(null);
   const [statusMessage, setStatusMessage] = React.useState('Téléversement préparé');
   const [progress, setProgress] = React.useState(0);
+  const [displayProgress, setDisplayProgress] = React.useState(0);
+  const [estimatedSeconds, setEstimatedSeconds] = React.useState<number | null>(null);
   const [recordingState, setRecordingState] = React.useState<RecordingState>('idle');
   const [recordedChunks, setRecordedChunks] = React.useState<Blob[]>([]);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
@@ -168,6 +181,10 @@ export default function StudioPage() {
             : 'unknown';
         setDefaultDeviceType(resolvedDefault);
         setDeviceType(resolvedDefault);
+        
+        const prefLang = profile.preferred_language || 'auto';
+        setDefaultLanguage(prefLang);
+        setLanguage(prefLang);
       })
       .catch(() => undefined);
     return () => {
@@ -217,34 +234,143 @@ export default function StudioPage() {
     clearPolling();
     pollingRef.current = window.setInterval(async () => {
       try {
-        const { status } = await videoService.getStatus(sessionId);
-        setSessionInfo({ id: sessionId, status });
+        const data = await videoService.getStatus(sessionId);
+        setSessionInfo({ 
+          id: sessionId, 
+          status: data.status,
+          currentStep: data.current_step,
+          progressPercent: data.progress_percent || 0,
+          durationSeconds: data.duration_seconds,
+          processingStartedAt: data.processing_started_at
+        });
+        
+        // Initial estimate logic based on logs
+        setEstimatedSeconds((prev) => {
+          if (prev !== null) return prev;
+          const dur = data.duration_seconds || 30;
+          // Look for "L:en" or "L:fr" instead of "auto"
+          const isForcedLang = data.current_step?.includes('L:') && !data.current_step?.includes('L:auto');
+          const rtf = isForcedLang ? 2.2 : 3.0;
+          const loadingOverhead = 20;
+          return Math.round(dur * rtf + 55 + loadingOverhead);
+        });
+
         setStatusMessage(
-          status === 'pending'    ? "Fichier reçu. Mise en file d'attente de l'analyse." :
-          status === 'processing' ? 'Analyse audio, vidéo et recommandations en cours.' :
-          status === 'completed'  ? 'Rapport finalisé et prêt à être consulté.' :
-                                    'Le traitement a rencontré une erreur.'
+          data.status === 'pending'    ? "Fichier reçu. Mise en file d'attente..." :
+          data.status === 'processing' ? (data.current_step || 'Analyse en cours...') :
+          data.status === 'completed'  ? (data.progress_percent && data.progress_percent < 100 ? data.current_step || 'Enrichissement IA en cours...' : 'Prêt !') :
+                                         'Une erreur est survenue.'
         );
-        if (status === 'completed' || status === 'failed') {
+
+        if ((data.status === 'completed' && (!data.progress_percent || data.progress_percent >= 100)) || data.status === 'failed') {
           clearPolling();
-          if (status === 'completed') toast.success('Analyse terminée.');
+          if (data.status === 'completed') {
+            toast.success('Analyse et enrichissement terminés.');
+            setDisplayProgress(100);
+            setEstimatedSeconds(0);
+          }
           else toast.error("L'analyse a échoué.");
         }
       } catch (err) { console.error('Polling failed:', err); }
     }, 2000);
   }, [clearPolling]);
 
+  // Progressive "fake" movement to avoid stagnation
+  React.useEffect(() => {
+    if (mode !== 'processing' || !sessionInfo || (sessionInfo.status !== 'processing' && sessionInfo.status !== 'pending' && !(sessionInfo.status === 'completed' && sessionInfo.progressPercent && sessionInfo.progressPercent < 100))) {
+        if (sessionInfo?.status === 'completed' && (!sessionInfo?.progressPercent || sessionInfo?.progressPercent >= 100)) {
+            setDisplayProgress(100);
+        }
+        return;
+    };
+    
+    const interval = window.setInterval(() => {
+      setDisplayProgress((prev) => {
+        const target = sessionInfo.progressPercent || 0;
+        // If we lag behind the real progress, catch up
+        if (prev < target) return prev + Math.max(0.2, (target - prev) * 0.1); 
+        
+        // Dynamic "Glide" limit: 
+        // Allow the bar to move further if we are in the later stages
+        const glideBuffer = target >= 75 ? 23 : 8; // LLM phase allows more gliding
+        const maxGlide = Math.min(99, target + glideBuffer);
+
+        if (prev < maxGlide) {
+            // Slower movement as we reach the end of the phase
+            const step = target >= 75 ? 0.04 : 0.08;
+            return prev + step;
+        }
+        return prev;
+      });
+      
+      setEstimatedSeconds((prev) => {
+        if (prev === null || prev <= 0) return prev;
+        
+        // Adaptive Calibration: Recalculate remaining based on elapsed time
+        if (sessionInfo.processingStartedAt && sessionInfo.progressPercent && sessionInfo.progressPercent > 5) {
+            const start = new Date(sessionInfo.processingStartedAt).getTime();
+            const now = Date.now();
+            const elapsed = (now - start) / 1000;
+            const progress = sessionInfo.progressPercent;
+            
+            // Total estimated work remaining
+            let computedRemaining = prev;
+            
+            // Only calibrate if we have enough progress to be statistically semi-reliable (e.g. > 5%)
+            if (progress > 5 && progress < 100) {
+                const start = new Date(sessionInfo.processingStartedAt).getTime();
+                const now = Date.now();
+                const elapsed = (now - start) / 1000;
+
+                // Sanity check on elapsed: if it's negative or huge, skip
+                if (elapsed > 0 && elapsed < 3600) {
+                    if (progress < 75) {
+                        const velocity = elapsed / progress; // seconds per percentage point
+                        // Cap velocity to a reasonable range (e.g. max 10s per %)
+                        const safeVelocity = Math.min(10, velocity);
+                        computedRemaining = safeVelocity * (75 - progress) + 55;
+                    } else {
+                        const aiProgress = (progress - 75) / 25;
+                        computedRemaining = Math.max(5, 55 * (1 - aiProgress));
+                    }
+                }
+            }
+
+            // Smoothing: blend the computed value with current display value (EMA)
+            // But also cap the maximum possible value to avoid 4000s+ spikes
+            const rawSmoothed = Math.round(prev * 0.8 + computedRemaining * 0.2);
+            const smoothed = Math.min(600, rawSmoothed); // Max 10mn cap as safety
+            
+            // Time Stretching: ensure we don't hit 0 too early
+            if (smoothed < 10 && displayProgress < 95) {
+                return Math.random() > 0.66 ? prev - 1 : prev;
+            }
+            return smoothed;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+    
+    return () => window.clearInterval(interval);
+  }, [mode, sessionInfo]);
+
   const handleUpload = async () => {
     if (!file) return;
     setIsUploading(true);
     setStatusMessage('Envoi du fichier en cours');
     try {
-      const { session_id } = await videoService.uploadVideo(file, deviceType, (v) => setProgress(v));
-      setSessionInfo({ id: session_id, status: 'pending' });
+      const res = await videoService.uploadVideo(
+        file, 
+        deviceType === 'unknown' ? 'laptop_desktop' : deviceType,
+        language,
+        (p) => setProgress(p)
+      );
+      setSessionInfo({ id: res.session_id, status: 'pending' });
       setStatusMessage('Fichier reçu. Analyse lancée.');
       setMode('processing');
       toast.success('Vidéo envoyée, analyse lancée.');
-      startPolling(session_id);
+      startPolling(res.session_id);
     } catch (err) {
       console.error(err);
       toast.error("Échec de l'envoi.");
@@ -431,6 +557,9 @@ export default function StudioPage() {
                 deviceType={deviceType}
                 defaultDeviceType={defaultDeviceType}
                 onDeviceTypeChange={setDeviceType}
+                language={language}
+                defaultLanguage={defaultLanguage}
+                onLanguageChange={setLanguage}
                 isUploading={isUploading}
                 progress={progress}
                 onCancel={() => {
@@ -463,11 +592,15 @@ export default function StudioPage() {
               <ProcessingMode
                 sessionInfo={sessionInfo}
                 statusMessage={statusMessage}
+                displayProgress={displayProgress}
+                estimatedSeconds={estimatedSeconds}
                 onRetry={() => {
                   clearPolling();
                   setSessionInfo(null);
                   setFile(null);
                   setProgress(0);
+                  setDisplayProgress(0);
+                  setEstimatedSeconds(null);
                   setStatusMessage('Téléversement préparé');
                   setMode('selection');
                 }}
@@ -546,6 +679,9 @@ function UploadMode({
   deviceType,
   defaultDeviceType,
   onDeviceTypeChange,
+  language,
+  defaultLanguage,
+  onLanguageChange,
   isUploading,
   progress,
   onCancel,
@@ -580,25 +716,48 @@ function UploadMode({
             </p>
           </div>
 
-          <div className="space-y-2 rounded-2xl border border-border/60 bg-background/70 p-5">
-            <label htmlFor="device-type" className="text-sm font-medium">
-              Type d'appareil
-            </label>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Ce choix aide l'analyse du regard caméra.
-              {defaultDeviceType !== 'unknown' ? ` Valeur par défaut : ${defaultDeviceType}.` : ''}
-            </p>
-            <select
-              id="device-type"
-              value={deviceType}
-              onChange={(e) => onDeviceTypeChange(e.target.value as DeviceType)}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            >
-              <option value="unknown">Inconnu</option>
-              <option value="laptop_desktop">Laptop / Desktop</option>
-              <option value="tablet">Tablet</option>
-              <option value="smartphone">Smartphone</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Device Type Selection */}
+            <div className="group space-y-2 rounded-2xl border border-border/60 bg-background/70 p-5 transition-colors hover:border-primary/20">
+              <label htmlFor="device-type" className="text-sm font-medium tracking-tight opacity-90">
+                Configuration de capture
+              </label>
+              <p className="text-[10px] leading-relaxed text-muted-foreground/80">
+                Calibre l'IA pour la détection du regard, de la posture et des gestes selon votre appareil.
+              </p>
+              <select
+                id="device-type"
+                value={deviceType}
+                onChange={(e) => onDeviceTypeChange(e.target.value as DeviceType)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="unknown">Indéterminé</option>
+                <option value="laptop_desktop">Laptop / Desktop</option>
+                <option value="tablet">Tablette</option>
+                <option value="smartphone">Smartphone / Portrait</option>
+              </select>
+            </div>
+
+            {/* Language Selection */}
+            <div className="group space-y-2 rounded-2xl border border-border/60 bg-background/70 p-5 transition-colors hover:border-primary/20">
+              <label htmlFor="language-choice" className="text-sm font-medium tracking-tight opacity-90">
+                Langue du discours
+              </label>
+              <p className="text-[10px] leading-relaxed text-muted-foreground/80">
+                Choisir la langue permet d'accélérer l'analyse en sautant l'étape de détection automatique.
+              </p>
+              <select
+                id="language-choice"
+                value={language}
+                onChange={(e) => onLanguageChange(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="auto">Auto (Détection)</option>
+                <option value="fr">Français</option>
+                <option value="en">English</option>
+                <option value="ar">Arabe</option>
+              </select>
+            </div>
           </div>
 
           {!isUploading ? (
@@ -819,64 +978,136 @@ function RecordMode({
 
 /* ─── ProcessingMode ─────────────────────────────────────────────────── */
 
-function ProcessingMode({ sessionInfo, statusMessage, onRetry }: ProcessingModeProps) {
-  const isDone    = sessionInfo.status === 'completed';
+function ProcessingMode({ 
+  sessionInfo, 
+  statusMessage, 
+  displayProgress, 
+  estimatedSeconds, 
+  onRetry 
+}: ProcessingModeProps) {
+  const isDone    = sessionInfo.status === 'completed' && (sessionInfo.progressPercent === 100 || !sessionInfo.progressPercent);
   const isFailed  = sessionInfo.status === 'failed';
-  const isPending = sessionInfo.status === 'pending';
+  const realProgress = sessionInfo.progressPercent || 0;
+  
+  const isReportReady = sessionInfo.status === 'completed' || realProgress >= 75;
+
+  const stages = [
+    { id: 'audio', label: 'Audio & Transcription', threshold: 0 },
+    { id: 'vision', label: 'Analyse Visuelle', threshold: 30 },
+    { id: 'llm',    label: 'Synthèse Intelligente', threshold: 75 },
+  ];
 
   return (
-    <motion.div
-      key="processing"
-      {...panelAnim}
-      className="mx-auto max-w-xl"
-    >
-      <Card>
-        <CardContent className="space-y-7 py-14 text-center" aria-live="polite">
-          {/* Status icon */}
-          <div className={cn(
-            'mx-auto flex h-20 w-20 items-center justify-center rounded-3xl',
-            isDone   ? 'bg-primary/10 text-primary'     :
-            isFailed ? 'bg-destructive/10 text-destructive' :
-                       'bg-primary/10 text-primary'
-          )}>
-            {isDone   && <Check      className="h-9 w-9" />}
-            {isFailed && <X          className="h-9 w-9" />}
-            {!isDone && !isFailed && <RefreshCw className="h-9 w-9 animate-spin" />}
-          </div>
+    <motion.div key="processing" {...panelAnim} className="mx-auto max-w-2xl">
+      <Card className="overflow-hidden border-border/50 bg-card/50 shadow-xl backdrop-blur-md">
+        <CardContent className="p-0">
+          <div className="flex flex-col md:flex-row">
+            
+            {/* Left: Progressive Scanner */}
+            <div className="flex flex-col items-center justify-center border-b border-border/40 p-10 md:w-[280px] md:border-b-0 md:border-r">
+              <div className="relative mb-6 h-32 w-32">
+                {/* Clean Track */}
+                <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" strokeWidth="2" className="text-secondary/20" />
+                  <motion.circle
+                    cx="50" cy="50" r="46"
+                    fill="transparent"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeDasharray="289"
+                    animate={{ strokeDashoffset: 289 - (289 * displayProgress) / 100 }}
+                    transition={{ duration: 0.5, ease: "linear" }}
+                    className={cn("transition-colors duration-500", isDone ? "text-emerald-500" : "text-primary")}
+                    style={{ strokeLinecap: 'round' }}
+                  />
+                </svg>
 
-          {/* Title + description */}
-          <div className="space-y-2">
-            <h2 className="font-display text-2xl font-medium">
-              {isDone   ? 'Rapport prêt'          :
-               isFailed ? 'Analyse interrompue'   :
-                          'Analyse en cours'}
-            </h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {isDone   ? 'Votre session a été analysée. Vous pouvez ouvrir le rapport.'             :
-               isFailed ? "Une erreur est survenue. Vous pouvez relancer l'opération."               :
-               isPending ? 'Le fichier a été reçu. Le traitement va commencer.'                      :
-                           'Audio, vision et synthèse de coaching sont en cours.'}
-            </p>
-            <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-              {statusMessage}
-            </p>
-          </div>
+                {/* Surgical Scanner (Thin spinning line) */}
+                {!isDone && !isFailed && (
+                  <motion.div
+                    className="absolute inset-0 origin-center p-1"
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                  >
+                    <div className="h-1/2 w-[1px] bg-gradient-to-t from-primary/60 to-transparent" />
+                  </motion.div>
+                )}
 
-          {/* Actions */}
-          {isDone && (
-            <Link
-              href={`/report/${sessionInfo.id}`}
-              className={cn(buttonVariants({ size: 'default' }), 'mx-auto')}
-            >
-              Voir le rapport
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          )}
-          {isFailed && (
-            <Button variant="outline" onClick={onRetry}>
-              Réessayer
-            </Button>
-          )}
+                {/* Center Value */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                   {isDone ? (
+                     <Check className="h-8 w-8 text-emerald-500" />
+                   ) : isFailed ? (
+                     <X className="h-8 w-8 text-destructive" />
+                   ) : (
+                     <span className="text-2xl font-semibold tracking-tight">{Math.round(displayProgress)}%</span>
+                   )}
+                </div>
+              </div>
+
+              {/* Estimate */}
+              {!isDone && !isFailed && estimatedSeconds !== null && estimatedSeconds > 0 && (
+                <div className="text-[10px] font-medium uppercase tracking-[0.15em] text-muted-foreground/60">
+                   Environ {estimatedSeconds}s restantes
+                </div>
+              )}
+            </div>
+
+            {/* Right: Pipeline Details */}
+            <div className="flex-1 space-y-8 p-8 md:p-10">
+              <div className="space-y-1">
+                <h3 className="text-xl font-medium">Traitement en cours</h3>
+                <p className="text-sm text-muted-foreground">{statusMessage}</p>
+              </div>
+
+              <div className="space-y-6">
+                {stages.map((stage, idx) => {
+                  const isActive = realProgress >= stage.threshold && realProgress < (stages[idx + 1]?.threshold || 101) && !isDone;
+                  const isCompleted = isDone || realProgress >= (stages[idx + 1]?.threshold || 101);
+                  
+                  return (
+                    <div key={stage.id} className="flex items-center gap-4">
+                      <div className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold transition-all duration-500",
+                        isCompleted ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600" :
+                        isActive    ? "border-primary bg-primary text-primary-foreground shadow-[0_0_10px_rgba(var(--primary),0.3)]" :
+                                      "border-border bg-secondary/50 text-muted-foreground"
+                      )}>
+                        {isCompleted ? <Check className="h-3 w-3" /> : idx + 1}
+                      </div>
+                      <div className={cn("transition-opacity duration-500", !isActive && !isCompleted && "opacity-40")}>
+                        <div className="text-sm font-medium">{stage.label}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Actions */}
+              <div className="pt-4">
+                {isReportReady && !isFailed ? (
+                  <Link
+                    href={`/report/${sessionInfo.id}`}
+                    className={cn(buttonVariants({ size: 'default' }), "w-full shadow-lg shadow-primary/10")}
+                  >
+                    Voir le rapport
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                ) : isFailed ? (
+                  <Button variant="outline" className="w-full" onClick={onRetry}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Réessayer
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+                     <span className="flex h-1 w-1 animate-ping rounded-full bg-primary" />
+                     Analyse des paramètres vocaux et visuels...
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
         </CardContent>
       </Card>
     </motion.div>

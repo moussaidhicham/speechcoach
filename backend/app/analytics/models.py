@@ -11,9 +11,12 @@ class VideoSession(SQLModel, table=True):
     user_id: uuid.UUID = Field(foreign_key="user.id")
     video_url: str
     status: str = Field(default="pending") # pending, processing, completed, failed
+    current_step: Optional[str] = Field(default=None)
+    progress_percent: float = Field(default=0.0)
     duration_seconds: float = Field(default=0.0)
     title: Optional[str] = Field(default=None)
     created_at: datetime.datetime = Field(default_factory=datetime.datetime.utcnow)
+    processing_started_at: Optional[datetime.datetime] = Field(default=None)
     
     user: Optional["User"] = Relationship(back_populates="video_sessions")
     analysis_result: Optional["AnalysisResult"] = Relationship(back_populates="video_session")

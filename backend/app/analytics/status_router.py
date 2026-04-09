@@ -97,10 +97,14 @@ def _serialize_session_history_item(
 
     if analysis and analysis.metrics_json:
         metrics = analysis.metrics_json
-        session_data['overall_score'] = int(analysis.overall_score)
+        # Safely get overall_score from DB or default to 0
+        raw_score = getattr(analysis, 'overall_score', 0)
+        session_data['overall_score'] = int(raw_score) if raw_score is not None else 0
+        
         session_data['wpm'] = round(metrics.get('audio_metrics', {}).get('wpm', 0))
-        session_data['voice_score'] = round(metrics.get('scores', {}).get('voice_score', 0) * 10)
-        session_data['body_language_score'] = round(metrics.get('scores', {}).get('body_language_score', 0) * 10)
+        scores_metrics = metrics.get('scores', {})
+        session_data['voice_score'] = round((scores_metrics.get('voice_score') or 0) * 10)
+        session_data['body_language_score'] = round((scores_metrics.get('body_language_score') or 0) * 10)
 
         if not session_data['duration'] or session_data['duration'] == 0:
             session_data['duration'] = (
@@ -207,6 +211,10 @@ async def get_session_status(
     return {
         'session_id': str(session.id),
         'status': session.status,
+        'current_step': session.current_step,
+        'progress_percent': session.progress_percent,
+        'duration_seconds': session.duration_seconds,
+        'processing_started_at': (session.processing_started_at.isoformat() + 'Z') if session.processing_started_at else None,
     }
 
 

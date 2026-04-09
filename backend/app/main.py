@@ -58,10 +58,23 @@ app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
+    import traceback
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    
+    # Manually add CORS headers
+    origin = request.headers.get("origin")
+    headers = {}
+    if origin:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+        
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error. Please check the backend logs."},
+        content={
+            "detail": str(exc),
+            "traceback": traceback.format_exc()
+        },
+        headers=headers
     )
 
 # --- Authentication Routers ---
