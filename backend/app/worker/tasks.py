@@ -189,7 +189,14 @@ def run_report_enrichment(report_dict: Dict[str, Any]) -> Dict[str, Any]:
     return report_dict
 
 @celery_app.task(bind=True, name="process_video_task")
-def process_video_task(self, session_id: str, video_path: str, output_dir: str):
+def process_video_task(
+    self,
+    session_id: str,
+    video_path: str,
+    output_dir: str,
+    device_type: str = "unknown",
+    source_name: str = "",
+):
     """
     Background worker: runs the full SpeechCoach analysis pipeline and saves results to DB.
     Uses synchronous DB calls to avoid asyncio/proactor issues on Windows.
@@ -219,6 +226,8 @@ def process_video_task(self, session_id: str, video_path: str, output_dir: str):
             forced_language=forced_language,
             include_enrichment=False,
             custom_session_id=session_id,
+            device_type=device_type,
+            source_name=source_name,
         )
         
         # Read generated report

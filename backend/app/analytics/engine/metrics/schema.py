@@ -8,6 +8,7 @@ class VideoMetadata:
     fps: float
     resolution: tuple[int, int]
     detected_language: str = "unknown"
+    device_type: str = "unknown"
 
 @dataclass
 class Scores:

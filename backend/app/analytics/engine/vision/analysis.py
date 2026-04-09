@@ -5,12 +5,43 @@ import logging
 import numpy as np
 import mediapipe as mp
 from app.analytics.engine.metrics.schema import VisionMetrics
+from typing import Tuple, List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 # MediaPipe solutions aliases
 mp_face_mesh = mp.solutions.face_mesh
 mp_hands = mp.solutions.hands
+
+DEVICE_GAZE_PROFILES = {
+    "unknown": {"pitch_min": -30.0, "pitch_max": 10.0, "yaw_abs": 15.0},
+    "laptop_desktop": {"pitch_min": -32.0, "pitch_max": 8.0, "yaw_abs": 15.0},
+    "tablet": {"pitch_min": -25.0, "pitch_max": 12.0, "yaw_abs": 25.0},
+    "smartphone": {"pitch_min": -18.0, "pitch_max": 18.0, "yaw_abs": 18.0},
+}
+
+
+def normalize_device_type(device_type: Optional[str]) -> str:
+    if not device_type:
+        return "unknown"
+    value = str(device_type).strip().lower()
+    aliases = {
+        "laptop": "laptop_desktop",
+        "desktop": "laptop_desktop",
+        "pc": "laptop_desktop",
+        "tablet_landscape": "tablet",
+        "phone": "smartphone",
+        "mobile": "smartphone",
+    }
+    return aliases.get(value, value if value in DEVICE_GAZE_PROFILES else "unknown")
+
+
+def is_eye_contact(pitch: float, yaw: float, device_type: str) -> bool:
+    profile = DEVICE_GAZE_PROFILES.get(device_type, DEVICE_GAZE_PROFILES["unknown"])
+    return (
+        profile["pitch_min"] < pitch < profile["pitch_max"]
+        and -profile["yaw_abs"] < yaw < profile["yaw_abs"]
+    )
 
 
 def get_head_pose(landmarks, image_shape):
@@ -82,9 +113,7 @@ def get_head_pose(landmarks, image_shape):
 
     return pitch, yaw, roll
 
-from typing import Tuple, List, Dict, Any
-
-def analyze_frames(frames_dir: str) -> Tuple[VisionMetrics, List[Dict[str, Any]]]:
+def analyze_frames(frames_dir: str, device_type: Optional[str] = None) -> Tuple[VisionMetrics, List[Dict[str, Any]]]:
     """
     Analyzes all images in the frames directory.
     Returns:
@@ -101,7 +130,8 @@ def analyze_frames(frames_dir: str) -> Tuple[VisionMetrics, List[Dict[str, Any]]
         logger.warning("No frames found to analyze.")
         return VisionMetrics()
 
-    logger.info(f"Analyzing vision on {total_frames} frames...")
+    normalized_device_type = normalize_device_type(device_type)
+    logger.info(f"Analyzing vision on {total_frames} frames (device_type={normalized_device_type})...")
 
     # Initialize MediaPipe in the worker thread scope
     with mp_face_mesh.FaceMesh(
@@ -186,11 +216,7 @@ def analyze_frames(frames_dir: str) -> Tuple[VisionMetrics, List[Dict[str, Any]]
                     frame_stats["pitch"] = pitch
                     frame_stats["yaw"] = yaw
                     
-                    # Heuristic for Eye Contact
-                    # Looking at camera ~ Pitch [-10, 10] and Yaw [-10, 10]
-                    # BUT: Laptop screen is below camera -> Pitch is often negative (-15 to -20).
-                    # Adjusting for PC screen usage:
-                    if -30 < pitch < 10 and -15 < yaw < 15:
+                    if is_eye_contact(pitch, yaw, normalized_device_type):
                         eye_contact_count += 1
                         frame_stats["eye_contact"] = True
 
@@ -254,7 +280,10 @@ def analyze_frames(frames_dir: str) -> Tuple[VisionMetrics, List[Dict[str, Any]]
     # Tuned factor: 100 instead of 200 to avoid saturation
     hands_activity_score = min(avg_movement_per_frame * 100, 10.0) # Scale to 0-10 roughly
     
-    logger.info(f"Vision Analysis - Face: {face_presence_ratio:.0%}, Eye Contact: {eye_contact_ratio:.0%} (Avg Pitch={avg_pitch:.1f}, Avg Yaw={avg_yaw:.1f})")
+    logger.info(
+        f"Vision Analysis - Face: {face_presence_ratio:.0%}, Eye Contact: {eye_contact_ratio:.0%} "
+        f"(Device={normalized_device_type}, Avg Pitch={avg_pitch:.1f}, Avg Yaw={avg_yaw:.1f})"
+    )
     logger.info(f"Hand Analysis - Visibility: {hands_visibility_ratio:.0%}, Activity Score: {hands_activity_score:.1f}/10")
 
     metrics = VisionMetrics(

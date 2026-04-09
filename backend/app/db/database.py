@@ -48,7 +48,36 @@ async def init_db():
                     )
                 )
 
+        def ensure_profile_preferences(sync_conn):
+            inspector = inspect(sync_conn)
+            if "profile" not in inspector.get_table_names():
+                return
+
+            columns = {column["name"] for column in inspector.get_columns("profile")}
+            if "preferred_device_type" not in columns:
+                sync_conn.execute(
+                    text(
+                        "ALTER TABLE profile "
+                        "ADD COLUMN preferred_device_type VARCHAR(32) NULL DEFAULT 'auto'"
+                    )
+                )
+            if "avatar_offset_y" not in columns:
+                sync_conn.execute(
+                    text(
+                        "ALTER TABLE profile "
+                        "ADD COLUMN avatar_offset_y FLOAT NULL DEFAULT 50.0"
+                    )
+                )
+            if "avatar_scale" not in columns:
+                sync_conn.execute(
+                    text(
+                        "ALTER TABLE profile "
+                        "ADD COLUMN avatar_scale FLOAT NULL DEFAULT 1.0"
+                    )
+                )
+
         await conn.run_sync(ensure_feedback_created_at)
+        await conn.run_sync(ensure_profile_preferences)
 
 async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:

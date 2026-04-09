@@ -4,7 +4,12 @@ import logging
 import json
 import time
 from typing import Optional, List, Dict, Any, Tuple
-from app.analytics.engine.ingest.ffmpeg_wrapper import extract_audio, extract_frames, get_video_metadata
+from app.analytics.engine.ingest.ffmpeg_wrapper import (
+    extract_audio,
+    extract_frames,
+    get_video_metadata,
+    infer_device_type,
+)
 from app.analytics.engine.metrics.schema import SpeechCoachReport, VideoMetadata
 
 # Setup logging
@@ -17,6 +22,8 @@ def process_video(
     forced_language: Optional[str] = None,
     include_enrichment: bool = False,
     custom_session_id: Optional[str] = None,
+    device_type: Optional[str] = None,
+    source_name: Optional[str] = None,
 ):
     """
     Main orchestration function.
@@ -24,6 +31,7 @@ def process_video(
     start_time = time.time()
     video_path = os.path.abspath(video_path)
     output_dir = os.path.abspath(output_dir)
+    normalized_device_type = "unknown"
     
     # 0. Setup
     video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -41,6 +49,22 @@ def process_video(
 
     # 1. Ingest (FFmpeg)
     logger.info("Step 1: Ingestion...")
+    from app.analytics.engine.vision.analysis import normalize_device_type
+    normalized_device_type = normalize_device_type(device_type)
+    if normalized_device_type == "unknown":
+        inferred_device = infer_device_type(video_path, source_name=source_name)
+        inferred_type = normalize_device_type(inferred_device.get("device_type"))
+        if inferred_type != "unknown":
+            normalized_device_type = inferred_type
+            logger.info(
+                "Unknown device_type auto-resolved to '%s' via %s.",
+                normalized_device_type,
+                inferred_device.get("source", "inference"),
+            )
+        else:
+            logger.info("Unknown device_type could not be inferred. Keeping fallback profile.")
+    target_frame_fps = 2.0 if normalized_device_type == "smartphone" else 1.0
+
     if os.path.exists(audio_path):
         logger.info(f"Audio file already exists: {audio_path}")
     else:
@@ -56,17 +80,19 @@ def process_video(
         expected_frames = int(video_meta['duration'])
         actual_frames = len([f for f in os.listdir(frames_dir) if f.endswith('.jpg')])
         
-        if actual_frames > expected_frames * 1.5:
+        expected_frames = max(1, int(video_meta['duration'] * target_frame_fps))
+
+        if actual_frames > expected_frames * 1.5 or actual_frames < max(1, int(expected_frames * 0.6)):
             logger.info("Found old unoptimized frames (too many). Deleting and re-extracting...")
             for f in os.listdir(frames_dir):
                 os.remove(os.path.join(frames_dir, f))
-            if not extract_frames(video_path, frames_dir, fps=1.0):
+            if not extract_frames(video_path, frames_dir, fps=target_frame_fps, device_type=normalized_device_type):
                 logger.error("Frame extraction failed. Aborting.")
                 return
         else:
-            logger.info("Optimized Frames (1 FPS) already exist, skipping extraction.")
+            logger.info("Optimized frames already exist, skipping extraction.")
     else:
-        if not extract_frames(video_path, frames_dir, fps=1.0):
+        if not extract_frames(video_path, frames_dir, fps=target_frame_fps, device_type=normalized_device_type):
             logger.error("Frame extraction failed. Aborting.")
             return
 
@@ -101,7 +127,7 @@ def process_video(
 
     def run_vision_pipeline():
         logger.info("Starting Vision Pipeline...")
-        return analyze_frames(frames_dir)
+        return analyze_frames(frames_dir, device_type=normalized_device_type)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_audio = executor.submit(run_audio_pipeline)
@@ -109,6 +135,8 @@ def process_video(
         
         transcript_segments, language, audio_metrics, energy_curve = future_audio.result()
         vision_metrics, frame_data_list = future_vision.result()
+
+    resolved_device_type = normalized_device_type
     
     # Calculate Scores and Feedback
     scores = calculate_scores(audio_metrics, vision_metrics)
@@ -168,7 +196,8 @@ def process_video(
         duration_seconds=duration,
         fps=fps,
         resolution=resolution,
-        detected_language=language
+        detected_language=language,
+        device_type=resolved_device_type,
     )
     
     report = SpeechCoachReport(
@@ -279,7 +308,7 @@ def process_video(
         f.write((f"**Langue détectée** : {language.upper()}\n"))
         f.write((f"**Durée** : {duration:.2f} secondes\n"))
         f.write((f"**Vidéo Originale** : {resolution[0]}x{resolution[1]} @ {fps:.2f} fps\n"))
-        f.write((f"**Traitement Audio** : Whisper Small (INT8) @ 16kHz Mono\n"))
+        f.write((f"**Traitement Audio** : Whisper Medium (INT8) @ 16kHz Mono\n"))
         f.write((f"**Traitement Vision** : 640x360 @ 1.00 fps\n"))
         
         # Calculate Execution Time & RTF
@@ -399,6 +428,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SpeechCoach - AI Video Coaching")
     parser.add_argument("video_path", help="Path to the input MP4 video")
     parser.add_argument("--output", default="./outputs", help="Directory where results will be saved")
+    parser.add_argument("--device-type", default="unknown", help="Device context: unknown, laptop_desktop, tablet, smartphone")
     
     args = parser.parse_args()
     
@@ -406,4 +436,4 @@ if __name__ == "__main__":
         print(f"Error: Video file not found: {args.video_path}")
         exit(1)
         
-    process_video(args.video_path, args.output)
+    process_video(args.video_path, args.output, device_type=args.device_type)

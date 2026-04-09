@@ -3,17 +3,22 @@
 import React from 'react';
 import {
   Camera,
+  Eye,
+  EyeOff,
   Globe,
   Lock,
   MessageCircle,
+  MonitorSmartphone,
   RefreshCw,
   Save,
   Target,
   TrendingUp,
   Trash2,
   User,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -50,9 +55,16 @@ interface ProfileSectionProps {
   setProfile:        React.Dispatch<React.SetStateAction<UserProfile | null>>;
   onSave:            () => Promise<void>;
   isSaving:          boolean;
-  onAvatarUpload:    (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onAvatarSelect:    (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onAvatarApply:     () => Promise<void>;
+  onAvatarCancel:    () => void;
   onAvatarDelete:    () => Promise<void>;
   isUploadingAvatar: boolean;
+  pendingAvatarPreview: string | null;
+  pendingAvatarOffsetY: number;
+  pendingAvatarScale: number;
+  setPendingAvatarOffsetY: React.Dispatch<React.SetStateAction<number>>;
+  setPendingAvatarScale: React.Dispatch<React.SetStateAction<number>>;
 }
 
 interface SecuritySectionProps {
@@ -65,6 +77,10 @@ interface SecuritySectionProps {
   isSaving:        boolean;
   isDeleting:      boolean;
   onDeleteAccount: () => Promise<void>;
+  showNewPassword: boolean;
+  showConfirmPassword: boolean;
+  onToggleNewPassword: () => void;
+  onToggleConfirmPassword: () => void;
 }
 
 /* Section */
@@ -78,6 +94,13 @@ export default function SettingsPage() {
   const [isSaving,          setIsSaving]          = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = React.useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = React.useState<File | null>(null);
+  const [pendingAvatarPreview, setPendingAvatarPreview] = React.useState<string | null>(null);
+  const [pendingAvatarOffsetY, setPendingAvatarOffsetY] = React.useState(50);
+  const [pendingAvatarScale, setPendingAvatarScale] = React.useState(1);
+  const [showNewPassword, setShowNewPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [isAvatarEditorOpen, setIsAvatarEditorOpen] = React.useState(false);
   const [passwordData,      setPasswordData]      = React.useState({
     current_password: '', new_password: '', confirm_password: '',
   });
@@ -117,23 +140,65 @@ export default function SettingsPage() {
     } finally { setIsSaving(false); }
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { toast.error('Veuillez selectionner une image.'); return; }
+    if (pendingAvatarPreview) {
+      URL.revokeObjectURL(pendingAvatarPreview);
+    }
+    setPendingAvatarFile(file);
+    setPendingAvatarPreview(URL.createObjectURL(file));
+    setPendingAvatarOffsetY(profile?.avatar_offset_y ?? 50);
+    setPendingAvatarScale(profile?.avatar_scale ?? 1);
+    setIsAvatarEditorOpen(true);
+    e.target.value = '';
+  };
+
+  const handleAvatarApply = async () => {
+    if (!pendingAvatarFile) return;
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', pendingAvatarFile);
     setIsUploadingAvatar(true);
     try {
       const res = await api.post('/user/profile/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setProfile((p) => p ? { ...p, avatar_url: res.data.avatar_url } : p);
+      const updated = await authService.updateProfile({
+        avatar_offset_y: pendingAvatarOffsetY,
+        avatar_scale: pendingAvatarScale,
+      });
+      setProfile((p) => p ? {
+        ...p,
+        ...updated,
+        avatar_url: res.data.avatar_url,
+        avatar_offset_y: pendingAvatarOffsetY,
+        avatar_scale: pendingAvatarScale,
+      } : p);
+      if (pendingAvatarPreview) {
+        URL.revokeObjectURL(pendingAvatarPreview);
+      }
+      setPendingAvatarFile(null);
+      setPendingAvatarPreview(null);
       toast.success('Photo de profil mise a jour.');
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors de l'envoi de l'image.");
-    } finally { setIsUploadingAvatar(false); e.target.value = ''; }
+    } finally { 
+      setIsUploadingAvatar(false); 
+      setIsAvatarEditorOpen(false);
+    }
+  };
+
+  const handleAvatarCancel = () => {
+    if (pendingAvatarPreview) {
+      URL.revokeObjectURL(pendingAvatarPreview);
+    }
+    setPendingAvatarFile(null);
+    setPendingAvatarPreview(null);
+    setPendingAvatarOffsetY(profile?.avatar_offset_y ?? 50);
+    setPendingAvatarScale(profile?.avatar_scale ?? 1);
+    setIsAvatarEditorOpen(false);
   };
 
   const handleAvatarDelete = async () => {
@@ -248,9 +313,16 @@ export default function SettingsPage() {
               setProfile={setProfile}
               onSave={handleProfileSave}
               isSaving={isSaving}
-              onAvatarUpload={handleAvatarUpload}
+              onAvatarSelect={handleAvatarSelect}
+              onAvatarApply={handleAvatarApply}
+              onAvatarCancel={handleAvatarCancel}
               onAvatarDelete={handleAvatarDelete}
               isUploadingAvatar={isUploadingAvatar}
+              pendingAvatarPreview={pendingAvatarPreview}
+              pendingAvatarOffsetY={pendingAvatarOffsetY}
+              pendingAvatarScale={pendingAvatarScale}
+              setPendingAvatarOffsetY={setPendingAvatarOffsetY}
+              setPendingAvatarScale={setPendingAvatarScale}
             />
           </TabsContent>
 
@@ -263,6 +335,10 @@ export default function SettingsPage() {
               isSaving={isSaving}
               isDeleting={isDeletingAccount}
               onDeleteAccount={handleDeleteAccount}
+              showNewPassword={showNewPassword}
+              showConfirmPassword={showConfirmPassword}
+              onToggleNewPassword={() => setShowNewPassword((value) => !value)}
+              onToggleConfirmPassword={() => setShowConfirmPassword((value) => !value)}
             />
           </TabsContent>
 
@@ -277,6 +353,23 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Profile Photo Editor Modal */}
+      <AnimatePresence>
+        {isAvatarEditorOpen && pendingAvatarPreview && (
+          <AvatarEditorModal
+            preview={pendingAvatarPreview}
+            name={profile?.full_name}
+            offsetY={pendingAvatarOffsetY}
+            scale={pendingAvatarScale}
+            setOffsetY={setPendingAvatarOffsetY}
+            setScale={setPendingAvatarScale}
+            onCancel={handleAvatarCancel}
+            onApply={handleAvatarApply}
+            isUploading={isUploadingAvatar}
+          />
+        )}
+      </AnimatePresence>
     </AppShell>
   );
 }
@@ -288,9 +381,16 @@ function ProfileSection({
   setProfile,
   onSave,
   isSaving,
-  onAvatarUpload,
+  onAvatarSelect,
+  onAvatarApply,
+  onAvatarCancel,
   onAvatarDelete,
   isUploadingAvatar,
+  pendingAvatarPreview,
+  pendingAvatarOffsetY,
+  pendingAvatarScale,
+  setPendingAvatarOffsetY,
+  setPendingAvatarScale,
 }: ProfileSectionProps) {
   return (
     <Card>
@@ -307,9 +407,11 @@ function ProfileSection({
           <div className="flex items-center gap-4">
             <div className="relative">
               <AvatarCustom
-                src={profile.avatar_url}
+                src={pendingAvatarPreview || profile.avatar_url}
                 name={profile.full_name}
                 size="xl"
+                imagePositionY={pendingAvatarPreview ? pendingAvatarOffsetY : profile.avatar_offset_y}
+                imageScale={pendingAvatarPreview ? pendingAvatarScale : profile.avatar_scale}
               />
               {isUploadingAvatar && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/70">
@@ -336,7 +438,7 @@ function ProfileSection({
                 className="hidden"
                 accept="image/*"
                 aria-label="Choisir une nouvelle photo de profil"
-                onChange={onAvatarUpload}
+                onChange={onAvatarSelect}
               />
             </label>
             {profile.avatar_url && (
@@ -370,7 +472,7 @@ function ProfileSection({
 
           {/* Language */}
           <div className="space-y-1.5">
-            <Label>Langue preferee</Label>
+            <Label>Langue principale des videos</Label>
             <Select
               value={profile.preferred_language || 'auto'}
               onValueChange={(v) =>
@@ -382,12 +484,39 @@ function ProfileSection({
                 <SelectValue placeholder="Choisir une langue" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Auto</SelectItem>
+                <SelectItem value="auto">Automatique</SelectItem>
                 <SelectItem value="fr">Francais</SelectItem>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="ar">Arabe</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Ce réglage correspond à la langue parlée dans vos vidéos. Le choisir manuellement évite la détection automatique et accélère l'analyse.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Appareil principal</Label>
+            <Select
+              value={(profile.preferred_device_type || 'auto') as DevicePreference}
+              onValueChange={(v: DevicePreference) =>
+                setProfile((p) => p ? { ...p, preferred_device_type: v } : p)
+              }
+            >
+              <SelectTrigger aria-label="Choisir l'appareil principal">
+                <MonitorSmartphone className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue placeholder="Choisir l'appareil principal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Aucun, je choisis a chaque fois</SelectItem>
+                <SelectItem value="laptop_desktop">Laptop / Desktop</SelectItem>
+                <SelectItem value="tablet">Tablette</SelectItem>
+                <SelectItem value="smartphone">Smartphone</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Si vous utilisez presque toujours le même appareil, ce choix deviendra la valeur par défaut dans le Studio. Vous pourrez toujours le modifier pour une vidéo précise.
+            </p>
           </div>
 
           {/* Goal */}
@@ -480,7 +609,12 @@ function SecuritySection({
   isSaving,
   isDeleting,
   onDeleteAccount,
+  showNewPassword,
+  showConfirmPassword,
+  onToggleNewPassword,
+  onToggleConfirmPassword,
 }: SecuritySectionProps) {
+  const strength = passwordStrength(passwordData.new_password);
   return (
     <Card>
       <CardHeader>
@@ -501,27 +635,57 @@ function SecuritySection({
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="newpass">Nouveau mot de passe</Label>
-            <Input
-              id="newpass"
-              type="password"
-              autoComplete="new-password"
-              value={passwordData.new_password}
-              onChange={(e) =>
-                setPasswordData((p) => ({ ...p, new_password: e.target.value }))
-              }
-            />
+            <div className="relative">
+              <Input
+                id="newpass"
+                type={showNewPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={passwordData.new_password}
+                onChange={(e) =>
+                  setPasswordData((p) => ({ ...p, new_password: e.target.value }))
+                }
+                className="pr-12"
+              />
+              <button
+                type="button"
+                onClick={onToggleNewPassword}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                aria-label={showNewPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+            {passwordData.new_password && (
+              <div className="space-y-1.5">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className={cn('h-full transition-all', strength.color)} style={{ width: strength.width }} />
+                </div>
+                <p className="text-xs text-muted-foreground">Solidité actuelle : {strength.label}</p>
+              </div>
+            )}
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="confpass">Confirmer le mot de passe</Label>
-            <Input
-              id="confpass"
-              type="password"
-              autoComplete="new-password"
-              value={passwordData.confirm_password}
-              onChange={(e) =>
-                setPasswordData((p) => ({ ...p, confirm_password: e.target.value }))
-              }
-            />
+            <div className="relative">
+              <Input
+                id="confpass"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                value={passwordData.confirm_password}
+                onChange={(e) =>
+                  setPasswordData((p) => ({ ...p, confirm_password: e.target.value }))
+                }
+                className="pr-12"
+              />
+              <button
+                type="button"
+                onClick={onToggleConfirmPassword}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -567,6 +731,164 @@ function SecuritySection({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+type DevicePreference = 'auto' | 'laptop_desktop' | 'tablet' | 'smartphone';
+
+function passwordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (!password) return { label: 'Vide', color: 'bg-border', width: '0%' };
+  if (score <= 1) return { label: 'Faible', color: 'bg-destructive', width: '33%' };
+  if (score <= 3) return { label: 'Moyen', color: 'bg-amber-500', width: '66%' };
+  return { label: 'Fort', color: 'bg-emerald-500', width: '100%' };
+}
+
+function deviceLabel(value: DevicePreference | 'unknown') {
+  switch (value) {
+    case 'laptop_desktop':
+      return 'Laptop / Desktop';
+    case 'tablet':
+      return 'Tablette';
+    case 'smartphone':
+      return 'Smartphone';
+    default:
+      return 'Auto';
+  }
+}
+
+/* ─── Avatar Editor Modal ────────────────────────────────────────────── */
+
+interface AvatarEditorModalProps {
+  preview:     string;
+  name?:       string | null;
+  offsetY:     number;
+  scale:       number;
+  setOffsetY:  (val: number) => void;
+  setScale:    (val: number) => void;
+  onCancel:    () => void;
+  onApply:     () => Promise<void>;
+  isUploading: boolean;
+}
+
+function AvatarEditorModal({
+  preview,
+  name,
+  offsetY,
+  scale,
+  setOffsetY,
+  setScale,
+  onCancel,
+  onApply,
+  isUploading,
+}: AvatarEditorModalProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl"
+      >
+        <div className="flex items-center justify-between border-b border-border/60 px-6 py-5">
+          <div className="font-display text-lg font-medium">Ajuster la photo</div>
+          <button
+            onClick={onCancel}
+            className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            disabled={isUploading}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-8 p-10">
+          {/* Centered Large Preview */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <AvatarCustom
+                src={preview}
+                name={name}
+                size="xl"
+                imagePositionY={offsetY}
+                imageScale={scale}
+                className="h-32 w-32 ring-4 ring-primary/10 shadow-lg"
+              />
+              <div className="absolute -inset-4 rounded-full border border-dashed border-primary/20 pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Position verticale</Label>
+                <span className="text-xs font-mono text-muted-foreground/60">{offsetY}%</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="1"
+                value={offsetY}
+                onChange={(e) => setOffsetY(Number(e.target.value))}
+                className="w-full cursor-pointer accent-primary"
+                disabled={isUploading}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Zoom</Label>
+                <span className="text-xs font-mono text-muted-foreground/60">x{scale}</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="1.8"
+                step="0.05"
+                value={scale}
+                onChange={(e) => setScale(Number(e.target.value))}
+                className="w-full cursor-pointer accent-primary"
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 bg-secondary/30 p-6 sm:flex-row sm:justify-end">
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            disabled={isUploading}
+            className="rounded-xl"
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={onApply}
+            disabled={isUploading}
+            className="rounded-xl shadow-md px-8"
+          >
+            {isUploading ? (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Appliquer et enregistrer
+          </Button>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

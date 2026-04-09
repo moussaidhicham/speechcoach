@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+﻿\documentclass[12pt,a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -34,7 +34,7 @@
     \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
     \vspace{0.5cm}
     \huge \textbf{Rapport d'État d'Avancement n°4}\\
-    \large \textit{Itérations sur le bloc d'exercices et sur la couche ASR}
+    \large \textit{Itérations sur le bloc d'exercices, la couche ASR et l'analyse visuelle device-aware}
 }
 \author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
 \date{Période : après la dernière réunion de suivi}
@@ -182,6 +182,87 @@ La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade
 
 À l'inverse, \texttt{medium + beam size 5} est plus coûteuse, mais elle stabilise mieux le comptage des hésitations et des répétitions. C'est donc la configuration la plus adaptée à l'objectif du projet.
 
+\section{Travail sur le regard caméra selon le type d'appareil}
+
+\subsection{Problème observé}
+Après stabilisation du bloc d'exercices et de la couche ASR, le point le plus fragile restait l'analyse visuelle, en particulier le regard caméra. Une même logique générique était appliquée à tous les cas, alors que les conditions de capture changent fortement entre :
+\begin{itemize}
+    \item un ordinateur portable ou une webcam intégrée ;
+    \item un smartphone en mode portrait ;
+    \item une tablette utilisée en mode selfie.
+\end{itemize}
+
+Les premiers essais ont montré que cette hypothèse unique pénalisait surtout les vidéos smartphone. Dans un cas de test où le visage était centré, les mains visibles et le regard dirigé vers la caméra, le système produisait pourtant des valeurs très faibles pour la présence, le contact visuel et la visibilité des mains. Le problème ne venait donc pas seulement du seuil regard, mais plus globalement du pipeline vision appliqué aux vidéos mobiles.
+
+\subsection{Première version : profils par appareil}
+Une première amélioration a consisté à introduire un contexte d'appareil dans le pipeline :
+\begin{itemize}
+    \item \texttt{laptop\_desktop} ;
+    \item \texttt{tablet} ;
+    \item \texttt{smartphone} ;
+    \item \texttt{unknown}.
+\end{itemize}
+
+Le choix a été propagé depuis le studio jusqu'au traitement backend afin que l'analyse visuelle puisse adapter ses seuils. Le principe retenu est volontairement simple :
+\begin{itemize}
+    \item \texttt{laptop\_desktop} conserve un comportement proche du réglage initial ;
+    \item \texttt{tablet} tolère davantage certains décalages latéraux ;
+    \item \texttt{smartphone} est traité à part, car c'est le cas où la géométrie et le cadrage diffèrent le plus.
+\end{itemize}
+
+\subsection{Correctifs spécifiques smartphone}
+Le travail sur smartphone a montré que le problème n'était pas uniquement un problème de seuils. Trois ajustements ont été nécessaires :
+\begin{itemize}
+    \item conservation du format portrait lors de l'extraction des frames, au lieu de forcer un redimensionnement trop proche d'un format paysage ;
+    \item augmentation de la fréquence d'échantillonnage des frames pour smartphone ;
+    \item assouplissement des tolérances de regard pour ce mode.
+\end{itemize}
+
+Ces ajustements ont permis de faire évoluer un cas de test smartphone d'un résultat incohérent à un résultat crédible. Après correctif, le même clip a produit :
+\begin{itemize}
+    \item \textbf{Présence visage} : de 71\% vers 100\% ;
+    \item \textbf{Contact visuel} : de 10\% vers plus de 80\% ;
+    \item \textbf{Mains visibles} : de 7\% vers plus de 60\%.
+\end{itemize}
+
+\subsection{Résultats sur laptop et tablette}
+Les tests laptop et tablette se sont révélés plus stables que le smartphone :
+\begin{itemize}
+    \item sur laptop, les résultats explicites en mode \texttt{laptop\_desktop} étaient déjà cohérents et ont confirmé que le réglage initial était proche du bon comportement ;
+    \item sur tablette, le regard et la présence ont également donné des résultats crédibles, même dans un cadrage selfie où les mains n'étaient presque jamais visibles ;
+    \item l'interprétation posture/gestes reste néanmoins à affiner plus tard pour éviter de sanctionner trop fortement les plans serrés où les mains sont naturellement hors cadre.
+\end{itemize}
+
+Une dernière passe d'ajustement a ensuite été appliquée pour mieux fermer cette phase :
+\begin{itemize}
+    \item assouplissement supplémentaire des seuils tablette afin de mieux couvrir les usages réels en paysage ;
+    \item ajout d'une heuristique géométrique finale permettant de faire basculer certains formats paysage standards vers le profil \texttt{laptop\_desktop} lorsque les indices tablette ou smartphone sont absents.
+\end{itemize}
+
+\subsection{Mode \texttt{unknown}}
+Une seconde itération a consisté à rendre le mode \texttt{unknown} plus intelligent, afin de ne pas dépendre uniquement d'une sélection manuelle côté utilisateur.
+
+La stratégie retenue est hiérarchique :
+\begin{itemize}
+    \item lecture des métadonnées vidéo et des tags via \texttt{ffprobe} ;
+    \item prise en compte de la rotation réelle de la vidéo ;
+    \item utilisation du nom d'origine du fichier comme indice supplémentaire ;
+    \item recours à une heuristique géométrique simple pour les cas paysage les plus standards ;
+    \item repli sur le profil \texttt{unknown} si aucun indice n'est suffisamment fiable.
+\end{itemize}
+
+Les résultats finaux obtenus montrent que :
+\begin{itemize}
+    \item le smartphone peut désormais être auto-détecté via les métadonnées et la rotation ;
+    \item la tablette peut également être reconnue lorsqu'un indice matériel est disponible dans les métadonnées ou dans le nom du fichier ;
+    \item le laptop/desktop peut être déduit proprement par heuristique dans les formats paysage standards lorsqu'aucun marqueur smartphone ou tablette n'est présent ;
+    \item les tests menés en fin de phase ont permis de valider un cas fonctionnel dans les trois situations : smartphone, tablette et laptop.
+\end{itemize}
+
+En pratique, cela signifie que le mode \texttt{unknown} n'est plus uniquement un profil de secours : il devient un mode de détection automatique exploitable dans les cas les plus courants.
+
+Plus explicitement, si l'appareil est détecté correctement, le pipeline bascule directement vers le profil déjà défini correspondant : \texttt{smartphone}, \texttt{tablet} ou \texttt{laptop\_desktop}. Si aucun indice n'est jugé suffisamment fiable, le système ne force pas une classe ; il conserve alors le profil \texttt{unknown}, qui joue le rôle de fallback générique avec des seuils neutres et un traitement non spécialisé.
+
 \section{Synthèse}
 \begin{table}[H]
     \centering
@@ -195,6 +276,8 @@ La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade
         Hésitations multilingues & Améliorées & Travail itératif sur prompts, regex et fallback acoustique. \\
         Répétitions & Améliorées & Détection plus robuste des répétitions simples et redémarrages. \\
         Configuration ASR retenue & Validée & Retour à \texttt{medium + beam size 5}. \\
+        Regard caméra par appareil & Implémenté & Profils distincts pour laptop, smartphone et tablette. \\
+        Mode \texttt{unknown} & Validé & Auto-détection fonctionnelle par métadonnées, rotation, nom du fichier et heuristique paysage. \\
         \bottomrule
     \end{tabularx}
     \caption{Résumé des travaux de cette phase.}
@@ -202,8 +285,8 @@ La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade
 
 \section{Prochaines étapes}
 \begin{itemize}
-    \item rétablir officiellement la configuration \texttt{medium + beam size 5} ;
-    \item poursuivre le travail sur le regard caméra selon le type d'appareil ;
+    \item consolider l'interprétation posture/gestes sur les plans serrés smartphone et tablette ;
+    \item continuer à tester le mode \texttt{unknown} sur davantage de cas réels ;
     \item continuer à documenter les résultats backend afin de mieux valoriser la contribution de recherche.
 \end{itemize}
 
@@ -213,3 +296,5 @@ La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade
 \bibliography{references}
 
 \end{document}
+
+

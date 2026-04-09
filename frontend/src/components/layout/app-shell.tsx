@@ -343,8 +343,14 @@ export function AppShell({
   /* Auth redirect loading state */
   if (requireAuth && (isLoading || !token)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+      <div
+        className="flex min-h-screen items-center justify-center bg-background"
+        suppressHydrationWarning
+      >
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
+          suppressHydrationWarning
+        />
       </div>
     );
   }

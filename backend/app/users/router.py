@@ -17,10 +17,13 @@ profile_router = APIRouter()
 class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     preferred_language: Optional[str] = None
+    preferred_device_type: Optional[str] = None
     experience_level: Optional[str] = None
     current_goal: Optional[str] = None
     weak_points: Optional[str] = None
     avatar_url: Optional[str] = None
+    avatar_offset_y: Optional[float] = None
+    avatar_scale: Optional[float] = None
 
 AVATAR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage/avatars'))
 os.makedirs(AVATAR_DIR, exist_ok=True)

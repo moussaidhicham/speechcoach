@@ -10,6 +10,8 @@ interface AvatarCustomProps {
   name?: string | null;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  imagePositionY?: number | null;
+  imageScale?: number | null;
 }
  
 /*
@@ -55,17 +57,28 @@ const sizeClasses = {
  
 const imageDimensions = { sm: 28, md: 36, lg: 56, xl: 80 } as const;
  
-export function AvatarCustom({ src, name, size = 'md', className }: AvatarCustomProps) {
+export function AvatarCustom({
+  src,
+  name,
+  size = 'md',
+  className,
+  imagePositionY,
+  imageScale,
+}: AvatarCustomProps) {
   const [hasImageError, setHasImageError] = React.useState(false);
  
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
   const fullSrc =
     src && !hasImageError
-      ? src.startsWith('http') ? src : `${apiUrl}${src}`
+      ? (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))
+        ? src
+        : `${apiUrl}${src}`
       : null;
  
   const [bg, fg] = getPalette(name);
   const initials = getInitials(name);
+  const safePositionY = typeof imagePositionY === 'number' ? imagePositionY : 50;
+  const safeScale = typeof imageScale === 'number' ? imageScale : 1;
  
   return (
     <div
@@ -83,6 +96,10 @@ export function AvatarCustom({ src, name, size = 'md', className }: AvatarCustom
           width={imageDimensions[size]}
           height={imageDimensions[size]}
           className="h-full w-full object-cover"
+          style={{
+            objectPosition: `center ${safePositionY}%`,
+            transform: `scale(${safeScale})`,
+          }}
           loader={({ src: s }) => s}
           unoptimized
           onError={() => setHasImageError(true)}

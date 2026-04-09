@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, Loader2, Mic, Target, Video } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, Mic, Target, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -47,16 +47,33 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay },
 });
 
+function passwordStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  if (!password) return { label: 'Vide', color: 'bg-border', width: '0%' };
+  if (score <= 1) return { label: 'Faible', color: 'bg-destructive', width: '33%' };
+  if (score <= 3) return { label: 'Moyen', color: 'bg-amber-500', width: '66%' };
+  return { label: 'Fort', color: 'bg-emerald-500', width: '100%' };
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────── */
 
 export default function RegisterPage() {
   const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: { email: '', password: '', confirmPassword: '' },
   });
+  const watchedPassword = form.watch('password');
+  const strength = passwordStrength(watchedPassword);
 
   async function onSubmit(data: RegisterFormValues) {
     setIsSubmitting(true);
@@ -69,9 +86,7 @@ export default function RegisterPage() {
 
       const { access_token } = await authService.login(params);
       localStorage.setItem('token', access_token);
-
-      const currentUser = await authService.getCurrentUser();
-      login(access_token, { id: currentUser.id, email: currentUser.email });
+      login(access_token, { id: 'temp-session', email: data.email });
       toast.success('Compte créé avec succès.');
     } catch (error: unknown) {
       console.error(error);
@@ -132,36 +147,60 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Password */}
-                <div className="space-y-1.5">
+                <div className="relative space-y-1.5">
                   <Label htmlFor="password">Mot de passe</Label>
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     aria-invalid={Boolean(form.formState.errors.password)}
                     aria-describedby={form.formState.errors.password ? 'register-password-error' : undefined}
                     {...form.register('password')}
-                    className={form.formState.errors.password ? 'border-destructive' : ''}
+                    className={form.formState.errors.password ? 'border-destructive pr-12' : 'pr-12'}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-[29px] flex h-10 items-center px-3 text-muted-foreground"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                   {form.formState.errors.password && (
                     <p id="register-password-error" className="text-xs text-destructive">
                       {form.formState.errors.password.message}
                     </p>
                   )}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
+                      <div className={`${strength.color} h-full transition-all`} style={{ width: strength.width }} />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Solidité du mot de passe : {strength.label}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Confirm password */}
-                <div className="space-y-1.5">
+                <div className="relative space-y-1.5">
                   <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
                   <Input
                     id="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     aria-invalid={Boolean(form.formState.errors.confirmPassword)}
                     aria-describedby={form.formState.errors.confirmPassword ? 'register-confirm-error' : undefined}
                     {...form.register('confirmPassword')}
-                    className={form.formState.errors.confirmPassword ? 'border-destructive' : ''}
+                    className={form.formState.errors.confirmPassword ? 'border-destructive pr-12' : 'pr-12'}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-[29px] flex h-10 items-center px-3 text-muted-foreground"
+                    onClick={() => setShowConfirmPassword((value) => !value)}
+                    aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                   {form.formState.errors.confirmPassword && (
                     <p id="register-confirm-error" className="text-xs text-destructive">
                       {form.formState.errors.confirmPassword.message}

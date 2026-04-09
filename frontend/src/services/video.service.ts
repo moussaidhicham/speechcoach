@@ -2,9 +2,14 @@ import api from '@/lib/api';
 import { DashboardSummary, ReportResult, SessionHistory, SessionStatus } from '@/types/analytics';
 
 export const videoService = {
-  async uploadVideo(file: File, onProgress?: (percent: number) => void): Promise<{ session_id: string }> {
+  async uploadVideo(
+    file: File,
+    deviceType: 'unknown' | 'laptop_desktop' | 'tablet' | 'smartphone' = 'unknown',
+    onProgress?: (percent: number) => void,
+  ): Promise<{ session_id: string }> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('device_type', deviceType);
 
     const { data } = await api.post<{ session_id: string }>('/video/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

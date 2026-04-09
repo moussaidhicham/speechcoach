@@ -25,6 +25,9 @@ class Profile(SQLModel, table=True):
     full_name: Optional[str] = None
     avatar_url: Optional[str] = None
     preferred_language: Optional[str] = Field(default="auto") # auto, fr, en, ar
+    preferred_device_type: Optional[str] = Field(default="auto") # auto, laptop_desktop, tablet, smartphone
+    avatar_offset_y: float = Field(default=50.0)
+    avatar_scale: float = Field(default=1.0)
     experience_level: Optional[str] = None # Beginner, Intermediate, Advanced
     current_goal: Optional[str] = None # Interview, PFE, Pitch, General
     weak_points: Optional[str] = None # JSON string or comma-separated

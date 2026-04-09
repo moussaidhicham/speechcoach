@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, Mic, ShieldCheck, Sparkles, Video } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2, Mic, ShieldCheck, Sparkles, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,7 @@ const fadeUp = (delay = 0) => ({
 export default function LoginPage() {
   const { login } = useAuth();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -61,9 +62,7 @@ export default function LoginPage() {
 
       const { access_token } = await authService.login(params);
       localStorage.setItem('token', access_token);
-
-      const currentUser = await authService.getCurrentUser();
-      login(access_token, { id: currentUser.id, email: currentUser.email });
+      login(access_token, { id: 'temp-session', email: data.email });
       toast.success('Bon retour parmi nous.');
     } catch (error: unknown) {
       console.error(error);
@@ -143,7 +142,7 @@ export default function LoginPage() {
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <CardContent className="space-y-5 px-7 py-6">
                 {/* Email */}
-                <div className="space-y-1.5">
+                <div className="relative space-y-1.5">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
@@ -172,13 +171,21 @@ export default function LoginPage() {
                   </div>
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     autoComplete="current-password"
                     aria-invalid={Boolean(form.formState.errors.password)}
                     aria-describedby={form.formState.errors.password ? 'login-password-error' : undefined}
                     {...form.register('password')}
-                    className={form.formState.errors.password ? 'border-destructive' : ''}
+                    className={form.formState.errors.password ? 'border-destructive pr-12' : 'pr-12'}
                   />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-[29px] flex h-10 items-center px-3 text-muted-foreground"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                   {form.formState.errors.password && (
                     <p id="login-password-error" className="text-xs text-destructive">
                       {form.formState.errors.password.message}

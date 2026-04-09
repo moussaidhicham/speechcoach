@@ -2,10 +2,26 @@ import ffmpeg
 import os
 import sys
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Dict, List
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+SMARTPHONE_KEYWORDS = (
+    "iphone", "android", "smartphone", "phone", "pixel", "oneplus", "redmi",
+    "xiaomi", "oppo", "vivo", "huawei", "honor", "moto", "motorola", "sm-g",
+    "galaxy s", "galaxy a", "galaxy note",
+)
+
+TABLET_KEYWORDS = (
+    "ipad", "tablet", "galaxy tab", "tab s", "tab a", "sm-t", "lenovo tab",
+    "mediapad", "matepad", "surface go", "mi pad", "xiaoxin pad",
+)
+
+LAPTOP_KEYWORDS = (
+    "webcam", "integrated camera", "facetime hd", "easycamera", "wide vision",
+    "surface camera", "uvc camera", "hd user facing", "front camera desktop",
+)
 
 
 def _safe_int(value: Any) -> Optional[int]:
@@ -38,6 +54,107 @@ def _parse_frame_rate(value: Any) -> float:
     parsed = _safe_float(value)
     return parsed if 0 < parsed <= 240 else 0.0
 
+
+def _flatten_probe_strings(value: Any) -> List[str]:
+    strings: List[str] = []
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            strings.append(str(key).lower())
+            strings.extend(_flatten_probe_strings(nested))
+    elif isinstance(value, list):
+        for nested in value:
+            strings.extend(_flatten_probe_strings(nested))
+    elif value not in (None, ""):
+        strings.append(str(value).lower())
+    return strings
+
+
+def _extract_rotation(video_stream: Dict[str, Any]) -> int:
+    side_data_list = video_stream.get("side_data_list") or []
+    for item in side_data_list:
+        try:
+            rotation = int(item.get("rotation"))
+        except (TypeError, ValueError):
+            continue
+        normalized = rotation % 360
+        if normalized in {90, 180, 270}:
+            return normalized
+
+    tags = video_stream.get("tags") or {}
+    try:
+        rotation = int(tags.get("rotate"))
+    except (TypeError, ValueError):
+        return 0
+    normalized = rotation % 360
+    return normalized if normalized in {90, 180, 270} else 0
+
+
+def _detect_device_from_text(strings: List[str]) -> Optional[str]:
+    haystack = " | ".join(strings)
+    if any(keyword in haystack for keyword in TABLET_KEYWORDS):
+        return "tablet"
+    if any(keyword in haystack for keyword in SMARTPHONE_KEYWORDS):
+        return "smartphone"
+    if any(keyword in haystack for keyword in LAPTOP_KEYWORDS):
+        return "laptop_desktop"
+    return None
+
+
+def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dict[str, str]:
+    """
+    Best-effort device inference for unknown mode.
+
+    Order:
+    1. Metadata / ffprobe tags / filename keywords
+    2. Conservative geometry heuristics
+    """
+    result = {"device_type": "unknown", "source": "fallback"}
+
+    try:
+        probe = ffmpeg.probe(video_path)
+    except Exception as e:
+        logger.warning(f"Could not probe video for device inference: {e}")
+        return result
+
+    probe_strings = _flatten_probe_strings(probe)
+    probe_strings.append(os.path.basename(video_path).lower())
+    if source_name:
+        probe_strings.append(os.path.basename(str(source_name)).lower())
+
+    detected_from_text = _detect_device_from_text(probe_strings)
+    if detected_from_text:
+        return {"device_type": detected_from_text, "source": "metadata"}
+
+    video_streams = [stream for stream in probe.get('streams', []) if stream.get('codec_type') == 'video']
+    video_stream = video_streams[0] if video_streams else {}
+    rotation = _extract_rotation(video_stream)
+
+    meta = get_video_metadata(video_path)
+    width, height = meta.get("resolution", (0, 0))
+    if width <= 0 or height <= 0:
+        return result
+
+    long_side = max(width, height)
+    short_side = min(width, height)
+    aspect_ratio = (long_side / short_side) if short_side else 0.0
+
+    if rotation in {90, 270} and aspect_ratio >= 1.55:
+        return {"device_type": "smartphone", "source": "heuristic_rotation"}
+
+    # Strong signal: portrait selfie videos are overwhelmingly phone footage.
+    if height > width and aspect_ratio >= 1.55:
+        return {"device_type": "smartphone", "source": "heuristic_portrait"}
+
+    # Conservative guess for landscape clips that resemble handheld tablets.
+    if width > height and 1.2 <= aspect_ratio <= 1.55 and long_side <= 2800:
+        return {"device_type": "tablet", "source": "heuristic_aspect"}
+
+    # Final fallback for standard landscape: if it's wider than a tablet, it's a laptop/desktop.
+    if width > height and aspect_ratio >= 1.55:
+        return {"device_type": "laptop_desktop", "source": "heuristic_aspect"}
+
+    return result
+
 def extract_audio(video_path: str, output_wav_path: str) -> bool:
     """
     Extracts audio from video and converts it to 16kHz mono WAV (Whisper friendly).
@@ -61,7 +178,7 @@ def extract_audio(video_path: str, output_wav_path: str) -> bool:
         logger.error(f"FFmpeg error extracting audio: {e.stderr.decode('utf8') if e.stderr else str(e)}")
         return False
 
-def extract_frames(video_path: str, output_dir: str, fps: float = 1.0) -> bool:
+def extract_frames(video_path: str, output_dir: str, fps: float = 1.0, device_type: str = "unknown") -> bool:
     """
     Extract frames from video at a specified frame rate.
     """
@@ -78,11 +195,16 @@ def extract_frames(video_path: str, output_dir: str, fps: float = 1.0) -> bool:
         # Pattern: frame_0001.jpg
         output_pattern = os.path.join(output_dir, "frame_%04d.jpg")
         
+        stream = ffmpeg.input(video_path).filter('fps', fps=fps)
+        if str(device_type).strip().lower() == "smartphone":
+            # Preserve portrait aspect ratio for phone videos.
+            stream = stream.filter('scale', -2, 640)
+        else:
+            # Preserve aspect ratio while bounding the longest side near 640px.
+            stream = stream.filter('scale', 640, -2)
+
         (
-            ffmpeg
-            .input(video_path)
-            .filter('fps', fps=fps)
-            .filter('scale', 640, 360) # Downscale for faster MediaPipe processing
+            stream
             .output(output_pattern, qscale=2, preset='ultrafast')
             .overwrite_output()
             .run(quiet=True)
@@ -120,6 +242,9 @@ def get_video_metadata(video_path: str) -> dict:
 
         width = _safe_int(video_stream.get('width')) or 0
         height = _safe_int(video_stream.get('height')) or 0
+        rotation = _extract_rotation(video_stream)
+        if rotation in {90, 270}:
+            width, height = height, width
         
         fps = _parse_frame_rate(video_stream.get('avg_frame_rate')) or _parse_frame_rate(video_stream.get('r_frame_rate'))
             

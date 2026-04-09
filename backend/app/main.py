@@ -44,8 +44,9 @@ app.add_middleware(
         "http://[::1]:3000",
         "http://[::1]:3001",
         "http://[::1]:3002",
+        "http://192.168.1.2:3000",  # Added for mobile/LAN access
     ],
-    allow_origin_regex=r"^https?://([a-zA-Z0-9-]+)(:\d+)?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -4,10 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  AlertCircle,
   ArrowRight,
   Camera,
   Check,
+  Lock,
   RefreshCw,
+  ShieldCheck,
   StopCircle,
   Upload,
   Video,
@@ -21,6 +24,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { authService } from '@/services/auth.service';
 import { videoService } from '@/services/video.service';
 import { SessionStatus } from '@/types/analytics';
 import { cn } from '@/lib/utils';
@@ -29,6 +33,8 @@ import { cn } from '@/lib/utils';
 
 type StudioMode     = 'selection' | 'upload' | 'record' | 'processing';
 type RecordingState = 'idle' | 'capturing' | 'review';
+type DeviceType = 'unknown' | 'laptop_desktop' | 'tablet' | 'smartphone';
+type PermissionStatus = 'prompt' | 'granted' | 'denied' | 'error';
 
 interface SessionInfo {
   id:     string;
@@ -43,6 +49,9 @@ interface SelectionModeProps {
 
 interface UploadModeProps {
   file:        File;
+  deviceType:  DeviceType;
+  defaultDeviceType: DeviceType;
+  onDeviceTypeChange: (value: DeviceType) => void;
   isUploading: boolean;
   progress:    number;
   onCancel:    () => void;
@@ -50,16 +59,19 @@ interface UploadModeProps {
 }
 
 interface RecordModeProps {
-  recordingState: RecordingState;
-  videoRef:       React.RefObject<HTMLVideoElement | null>;
-  timer:          number;
-  formatTime:     (seconds: number) => string;
-  previewUrl:     string | null;
-  onStart:        () => Promise<void>;
-  onStop:         () => void;
-  onReview:       () => void;
-  onRetry:        () => void;
-  onCancel:       () => void;
+  recordingState:   RecordingState;
+  permissionStatus: PermissionStatus;
+  isSecure:         boolean;
+  videoRef:         React.RefObject<HTMLVideoElement | null>;
+  timer:            number;
+  formatTime:       (seconds: number) => string;
+  previewUrl:       string | null;
+  onStart:          () => Promise<void>;
+  onStop:           () => void;
+  onReview:         () => void;
+  onRetry:          () => void;
+  onCancel:         () => void;
+  onRequestAccess:  () => Promise<void>;
 }
 
 interface ProcessingModeProps {
@@ -74,7 +86,7 @@ const panelAnim = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
   exit:    { opacity: 0, y: -12 },
-  transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as any },
 };
 
 /* ─── Page ───────────────────────────────────────────────────────────── */
@@ -82,6 +94,8 @@ const panelAnim = {
 export default function StudioPage() {
   const [mode, setMode] = React.useState<StudioMode>('selection');
   const [file, setFile] = React.useState<File | null>(null);
+  const [deviceType, setDeviceType] = React.useState<DeviceType>('unknown');
+  const [defaultDeviceType, setDefaultDeviceType] = React.useState<DeviceType>('unknown');
   const [isUploading, setIsUploading] = React.useState(false);
   const [sessionInfo, setSessionInfo] = React.useState<SessionInfo | null>(null);
   const [statusMessage, setStatusMessage] = React.useState('Téléversement préparé');
@@ -90,6 +104,8 @@ export default function StudioPage() {
   const [recordedChunks, setRecordedChunks] = React.useState<Blob[]>([]);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [timer, setTimer] = React.useState(0);
+  const [permissionStatus, setPermissionStatus] = React.useState<PermissionStatus>('prompt');
+  const [isSecure, setIsSecure] = React.useState(true);
 
   const videoRef           = React.useRef<HTMLVideoElement>(null);
   const mediaRecorderRef   = React.useRef<MediaRecorder | null>(null);
@@ -140,6 +156,43 @@ export default function StudioPage() {
   }, [clearPolling, previewUrl, stopLiveStream]);
 
   React.useEffect(() => {
+    let mounted = true;
+    authService
+      .getProfile()
+      .then((profile) => {
+        if (!mounted) return;
+        const preferred = profile.preferred_device_type;
+        const resolvedDefault: DeviceType =
+          preferred && preferred !== 'auto' && preferred !== 'unknown'
+            ? preferred
+            : 'unknown';
+        setDefaultDeviceType(resolvedDefault);
+        setDeviceType(resolvedDefault);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsSecure(window.isSecureContext);
+      
+      // Attempt to check if permission was already granted (if supported)
+      if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'camera' as any })
+          .then((result) => {
+            if (result.state === 'granted') {
+              setPermissionStatus('granted');
+            }
+          })
+          .catch(() => undefined);
+      }
+    }
+  }, []);
+
+  React.useEffect(() => {
     if (recordingState === 'review' && recordedChunks.length > 0) {
       setPreviewUrl(URL.createObjectURL(new Blob(recordedChunks, { type: 'video/webm' })));
     }
@@ -186,7 +239,7 @@ export default function StudioPage() {
     setIsUploading(true);
     setStatusMessage('Envoi du fichier en cours');
     try {
-      const { session_id } = await videoService.uploadVideo(file, (v) => setProgress(v));
+      const { session_id } = await videoService.uploadVideo(file, deviceType, (v) => setProgress(v));
       setSessionInfo({ id: session_id, status: 'pending' });
       setStatusMessage('Fichier reçu. Analyse lancée.');
       setMode('processing');
@@ -199,18 +252,59 @@ export default function StudioPage() {
     } finally { setIsUploading(false); }
   };
 
+  const requestPermissions = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setPermissionStatus('error');
+        toast.error("Capacités média non supportées sur ce navigateur/contexte.");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: true,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setPermissionStatus('granted');
+      toast.success('Caméra et micro activés.');
+    } catch (err: any) {
+      console.error('Permission request failed:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setPermissionStatus('denied');
+        toast.error('Accès refusé par le navigateur.');
+      } else {
+        setPermissionStatus('error');
+        toast.error('Erreur d\'accès média.');
+      }
+    }
+  };
+
   const startRecording = async () => {
     try {
       revokePreview();
       setRecordedChunks([]);
       setTimer(0);
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 }, audio: true,
-      });
-      streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; await videoRef.current.play(); }
+
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720 }, audio: true,
+        });
+        streamRef.current = stream;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
       const mimeType = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
         .find((v) => MediaRecorder.isTypeSupported(v)) || '';
+      
       const rec = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = rec;
       rec.ondataavailable = (e) => { if (e.data?.size > 0) setRecordedChunks((p) => [...p, e.data]); };
@@ -222,10 +316,9 @@ export default function StudioPage() {
       rec.start(1000);
       setRecordingState('capturing');
     } catch (err) {
-      console.error('Camera access failed:', err);
-      toast.error('Caméra ou micro non accessibles.');
-      setMode('selection');
-      stopLiveStream();
+      console.error('Recording start failed:', err);
+      toast.error('Impossible de démarrer l\'enregistrement.');
+      setPermissionStatus('error');
     }
   };
 
@@ -244,7 +337,14 @@ export default function StudioPage() {
     setMode('selection');
   };
 
-  const retryRecording = () => { shouldOpenReviewRef.current = false; resetRecording(); };
+  const retryRecording = () => { 
+    shouldOpenReviewRef.current = false; 
+    resetRecording(); 
+    // If we have permission, restart the stream for preview
+    if (permissionStatus === 'granted') {
+      requestPermissions().catch(() => undefined);
+    }
+  };
 
   const saveRecording = () => {
     if (!recordedChunks.length) return;
@@ -328,6 +428,9 @@ export default function StudioPage() {
             {mode === 'upload' && file && (
               <UploadMode
                 file={file}
+                deviceType={deviceType}
+                defaultDeviceType={defaultDeviceType}
+                onDeviceTypeChange={setDeviceType}
                 isUploading={isUploading}
                 progress={progress}
                 onCancel={() => {
@@ -342,6 +445,8 @@ export default function StudioPage() {
             {mode === 'record' && (
               <RecordMode
                 recordingState={recordingState}
+                permissionStatus={permissionStatus}
+                isSecure={isSecure}
                 videoRef={videoRef}
                 timer={timer}
                 formatTime={formatTime}
@@ -351,6 +456,7 @@ export default function StudioPage() {
                 onReview={saveRecording}
                 onRetry={retryRecording}
                 onCancel={cancelRecording}
+                onRequestAccess={requestPermissions}
               />
             )}
             {mode === 'processing' && sessionInfo && (
@@ -435,7 +541,16 @@ function SelectionMode({ onUpload, onRecord, onFileChange }: SelectionModeProps)
 
 /* ─── UploadMode ─────────────────────────────────────────────────────── */
 
-function UploadMode({ file, isUploading, progress, onCancel, onStart }: UploadModeProps) {
+function UploadMode({
+  file,
+  deviceType,
+  defaultDeviceType,
+  onDeviceTypeChange,
+  isUploading,
+  progress,
+  onCancel,
+  onStart,
+}: UploadModeProps) {
   return (
     <motion.div
       key="upload"
@@ -463,6 +578,27 @@ function UploadMode({ file, isUploading, progress, onCancel, onStart }: UploadMo
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Assurez-vous que la vidéo montre clairement votre visage, vos épaules et votre voix.
             </p>
+          </div>
+
+          <div className="space-y-2 rounded-2xl border border-border/60 bg-background/70 p-5">
+            <label htmlFor="device-type" className="text-sm font-medium">
+              Type d'appareil
+            </label>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Ce choix aide l'analyse du regard caméra.
+              {defaultDeviceType !== 'unknown' ? ` Valeur par défaut : ${defaultDeviceType}.` : ''}
+            </p>
+            <select
+              id="device-type"
+              value={deviceType}
+              onChange={(e) => onDeviceTypeChange(e.target.value as DeviceType)}
+              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            >
+              <option value="unknown">Inconnu</option>
+              <option value="laptop_desktop">Laptop / Desktop</option>
+              <option value="tablet">Tablet</option>
+              <option value="smartphone">Smartphone</option>
+            </select>
           </div>
 
           {!isUploading ? (
@@ -493,6 +629,8 @@ function UploadMode({ file, isUploading, progress, onCancel, onStart }: UploadMo
 
 function RecordMode({
   recordingState,
+  permissionStatus,
+  isSecure,
   videoRef,
   timer,
   formatTime,
@@ -502,7 +640,12 @@ function RecordMode({
   onReview,
   onRetry,
   onCancel,
+  onRequestAccess,
 }: RecordModeProps) {
+  const isPrompt  = permissionStatus === 'prompt';
+  const isDenied  = permissionStatus === 'denied';
+  const isGranted = permissionStatus === 'granted';
+
   return (
     <motion.div
       key="record"
@@ -512,24 +655,100 @@ function RecordMode({
       {/* Video viewport */}
       <Card className="overflow-hidden border-border/60 bg-transparent">
         <CardContent className="relative aspect-video p-0">
-          {recordingState !== 'review' ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="h-full w-full object-contain"
-              aria-label="Aperçu caméra en direct"
-            />
-          ) : previewUrl ? (
-            <video
-              src={previewUrl}
-              autoPlay
-              controls
-              className="h-full w-full object-contain"
-              aria-label="Aperçu de la vidéo enregistrée"
-            />
-          ) : null}
+          {isGranted ? (
+            <>
+              {recordingState !== 'review' ? (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="h-full w-full object-contain"
+                  aria-label="Aperçu caméra en direct"
+                />
+              ) : previewUrl ? (
+                <video
+                  src={previewUrl}
+                  autoPlay
+                  controls
+                  className="h-full w-full object-contain"
+                  aria-label="Aperçu de la vidéo enregistrée"
+                />
+              ) : null}
+            </>
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center bg-secondary/20 p-8 text-center">
+              {isPrompt && (
+                <div className="max-w-xs space-y-6">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <Camera className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-display text-xl font-medium">Caméra et micro</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      SpeechCoach a besoin d'accéder à votre matériel pour enregistrer votre prise de parole.
+                    </p>
+                  </div>
+                  {!isSecure && (
+                    <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-left text-xs leading-relaxed text-amber-600 dark:text-amber-500">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>
+                        HTTPS requis : l'accès caméra est souvent bloqué en HTTP sur mobile. 
+                        Utilisez <strong>localhost</strong> ou <strong>HTTPS</strong>.
+                      </span>
+                    </div>
+                  )}
+                  <Button onClick={onRequestAccess} className="w-full">
+                    Autoriser l'accès
+                  </Button>
+                </div>
+              )}
+
+              {isDenied && (
+                <div className="max-w-xs space-y-5">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                    <Lock className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-display text-xl font-medium text-destructive">Accès restreint</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      L'accès à la caméra a été refusé. Veuillez le réactiver dans les paramètres de votre navigateur.
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => window.location.reload()} className="w-full">
+                    Réactualiser la page
+                  </Button>
+                </div>
+              )}
+
+              {permissionStatus === 'error' && (
+                <div className="max-w-xs space-y-5">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+                    <AlertCircle className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-display text-xl font-medium text-destructive">Erreur d'accès</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      Impossible d'activer la caméra. {!isSecure ? "Le navigateur bloque l'accès car vous êtes sur une connexion non-sécurisée (HTTP)." : "Vérifiez vos paramètres matériel."}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" onClick={onRequestAccess} className="w-full text-xs">
+                      Réessayer
+                    </Button>
+                    <Button variant="secondary" onClick={onCancel} className="w-full text-xs">
+                      Retour à la sélection (Import fichier)
+                    </Button>
+                  </div>
+                  {!isSecure && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Conseil : Pour utiliser la caméra sur mobile, utilisez HTTPS ou une adresse localhost.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* REC indicator */}
           {recordingState === 'capturing' && (
@@ -555,35 +774,40 @@ function RecordMode({
           <div>
             <div className="text-sm font-medium">État de capture</div>
             <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">
-              {recordingState === 'idle'      && 'Lancez la webcam pour commencer.'}
-              {recordingState === 'capturing' && 'Enregistrement en cours. Gardez le regard vers la caméra.'}
-              {recordingState === 'review'    && 'Relisez la capture ou sauvegardez-la pour analyse.'}
+              {!isGranted                     && 'En attente des permissions...'}
+              {isGranted && recordingState === 'idle'      && 'Vérifiez votre cadre puis commencez.'}
+              {isGranted && recordingState === 'capturing' && 'Enregistrement en cours. Gardez le regard vers la caméra.'}
+              {isGranted && recordingState === 'review'    && 'Relisez la capture ou sauvegardez-la pour analyse.'}
             </p>
           </div>
 
           <div className="flex shrink-0 gap-3">
-            {recordingState === 'idle' && (
-              <Button size="default" onClick={onStart}>
-                <Camera className="mr-1.5 h-4 w-4" />
-                Démarrer
-              </Button>
-            )}
-            {recordingState === 'capturing' && (
-              <Button size="default" variant="destructive" onClick={onStop}>
-                <StopCircle className="mr-1.5 h-4 w-4" />
-                Arrêter
-              </Button>
-            )}
-            {recordingState === 'review' && (
+            {isGranted && (
               <>
-                <Button variant="outline" onClick={onRetry}>
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  Refaire
-                </Button>
-                <Button onClick={onReview}>
-                  Analyser
-                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                </Button>
+                {recordingState === 'idle' && (
+                  <Button size="default" onClick={onStart}>
+                    <Video className="mr-1.5 h-4 w-4" />
+                    Démarrer
+                  </Button>
+                )}
+                {recordingState === 'capturing' && (
+                  <Button size="default" variant="destructive" onClick={onStop}>
+                    <StopCircle className="mr-1.5 h-4 w-4" />
+                    Arrêter
+                  </Button>
+                )}
+                {recordingState === 'review' && (
+                  <>
+                    <Button variant="outline" onClick={onRetry}>
+                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                      Refaire
+                    </Button>
+                    <Button onClick={onReview}>
+                      Analyser
+                      <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>
