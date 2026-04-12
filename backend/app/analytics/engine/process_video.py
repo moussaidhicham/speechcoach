@@ -24,6 +24,8 @@ def process_video(
     custom_session_id: Optional[str] = None,
     device_type: Optional[str] = None,
     source_name: Optional[str] = None,
+    experience_level: Optional[str] = None,
+    current_goal: Optional[str] = None,
 ):
     """
     Main orchestration function.
@@ -44,8 +46,8 @@ def process_video(
     frames_dir = os.path.join(session_dir, "frames")
     report_path = os.path.join(session_dir, "report.json")
     
-    logger.info(f"Starting analysis for: {video_name}")
-    logger.info(f"Session directory: {session_dir}")
+    # logger.info(f"Starting analysis for: {video_name}")
+    # logger.info(f"Session directory: {session_dir}")
 
     # 1. Ingest (FFmpeg)
     logger.info("Step 1: Ingestion...")
@@ -66,10 +68,10 @@ def process_video(
     target_frame_fps = 2.0 if normalized_device_type == "smartphone" else 1.0
 
     if os.path.exists(audio_path):
-        logger.info(f"Audio file already exists: {audio_path}")
+        pass
     else:
         if not extract_audio(video_path, audio_path):
-            logger.error("Audio extraction failed. Aborting.")
+            logger.error("Audio extraction failed.")
             return
 
     
@@ -177,6 +179,8 @@ def process_video(
             fetched_docs=fetched_docs,
             language=language,
             model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
+            experience_level=experience_level,
+            current_goal=current_goal,
         )
         if llm_coaching:
             logger.info("Coach text generated successfully.")
@@ -198,6 +202,8 @@ def process_video(
         resolution=resolution,
         detected_language=language,
         device_type=resolved_device_type,
+        experience_level=experience_level,
+        current_goal=current_goal,
     )
     
     report = SpeechCoachReport(
@@ -420,9 +426,7 @@ def process_video(
         for seg in transcript_segments:
             f.write((f"- **[{seg.start:.1f}s - {seg.end:.1f}s]** : {seg.text}\n"))
             
-    logger.info(f"Done! Report saved to: {report_path}")
-    logger.info(f"Transcript exported to: {transcript_txt_path}")
-    logger.info(f"Readable report: {md_report_path}")
+    logger.info("Step 3: Output Generated.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SpeechCoach - AI Video Coaching")

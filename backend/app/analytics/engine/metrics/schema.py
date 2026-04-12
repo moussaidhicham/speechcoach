@@ -9,6 +9,8 @@ class VideoMetadata:
     resolution: tuple[int, int]
     detected_language: str = "unknown"
     device_type: str = "unknown"
+    experience_level: Optional[str] = None
+    current_goal: Optional[str] = None
 
 @dataclass
 class Scores:
@@ -33,7 +35,7 @@ class VisionMetrics:
     face_presence_ratio: float = 0.0
     eye_contact_ratio: float = 0.0
     hands_visibility_ratio: float = 0.0
-    hands_activity_score: float = 0.0 # 0.0 (static) to 1.0 (very active)
+    hands_activity_score: float = 0.0  # /10, where 0 = very static and 10 = very agitated
     avg_brightness: float = 0.0
     avg_blur: float = 0.0
 

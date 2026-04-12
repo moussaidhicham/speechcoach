@@ -2,11 +2,21 @@ import os
 import shutil
 import sys
 import uuid as uuid_lib
-import logging
 import json
 import time
 import datetime
 from typing import Any, Dict, List
+
+# Silence noisy libraries BEFORE they are imported anywhere else
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['ABSL_LOGGING_LEVEL'] = 'error'
+
+import logging
+# Set external libraries to WARNING level
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("whisper").setLevel(logging.WARNING)
 
 # Add backend/ folder to sys.path to allow imports from `ml` and `db` cleanly
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
@@ -111,15 +121,19 @@ def update_analysis_enrichment(session_id: str, report_dict: Dict[str, Any]):
 
 
 def get_user_preferences(session_id: str):
-    """Fetches user preferred language from profile."""
+    """Fetches user preference fields from profile."""
     with SessionLocal() as db:
         session = db.get(VideoSession, uuid_lib.UUID(session_id))
         if session and session.user_id:
             statement = select(Profile).where(Profile.user_id == session.user_id)
             profile = db.execute(statement).scalar_one_or_none()
             if profile:
-                return profile.preferred_language
-    return None
+                return {
+                    "preferred_language": profile.preferred_language,
+                    "experience_level": profile.experience_level,
+                    "current_goal": profile.current_goal,
+                }
+    return {}
 
 
 def _build_scores(metrics_json: Dict[str, Any]) -> Scores:
@@ -162,6 +176,8 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
     scores = _build_scores(report_dict)
     metadata = report_dict.get('metadata') or {}
     language = str(metadata.get('detected_language') or 'unknown').strip() or 'unknown'
+    experience_level = metadata.get('experience_level')
+    current_goal = metadata.get('current_goal')
 
     fetched_docs: List[Dict[str, Any]] = []
     rag_ready = False
@@ -194,6 +210,8 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
         fetched_docs=fetched_docs,
         language=language,
         model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
+        experience_level=experience_level,
+        current_goal=current_goal,
     )
     logger.info("LLM coaching generation completed in %.2fs", time.perf_counter() - llm_started_at)
 
@@ -217,9 +235,9 @@ def process_video_task(
 ):
     """
     Background worker: runs the full SpeechCoach analysis pipeline and saves results to DB.
-    Uses synchronous DB calls to avoid asyncio/proactor issues on Windows.
     """
-    logger.info(f"Task started for session: {session_id}")
+    # Clean terminal start
+    print(f"\n--- [START] Session {session_id[:8]} ({source_name or 'upload'}) ---")
     
     update_session_status(session_id, "processing", step="Démarrage...", progress=5, started_now=True)
     
@@ -227,12 +245,12 @@ def process_video_task(
     # 1. Studio/API Choice (if not auto)
     # 2. Profile Preference (if auto)
     # 3. Automatic Detection (None)
+    user_preferences = get_user_preferences(session_id)
     forced_language = None
     if language in {"fr", "en", "ar"}:
         forced_language = language
     else:
-        # Fallback to profile
-        preferred_lang = get_user_preferences(session_id)
+        preferred_lang = user_preferences.get("preferred_language")
         if preferred_lang in {"fr", "en", "ar"}:
             forced_language = preferred_lang
     
@@ -262,6 +280,8 @@ def process_video_task(
             custom_session_id=session_id,
             device_type=device_type,
             source_name=source_name,
+            experience_level=user_preferences.get("experience_level"),
+            current_goal=user_preferences.get("current_goal"),
         )
         
         # Read generated report

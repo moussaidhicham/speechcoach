@@ -13,6 +13,12 @@ logger = logging.getLogger(__name__)
 mp_face_mesh = mp.solutions.face_mesh
 mp_hands = mp.solutions.hands
 
+# Heuristic calibration for wrist movement:
+# - movement is measured from normalized wrist deltas between consecutive analyzed frames
+# - we map that average movement to a pedagogical 0-10 agitation scale
+# - 0 = very static hands, 10 = very agitated hands
+HAND_ACTIVITY_NORMALIZATION_FACTOR = 100.0
+
 DEVICE_GAZE_PROFILES = {
     "unknown": {"pitch_min": -30.0, "pitch_max": 10.0, "yaw_abs": 15.0},
     "laptop_desktop": {"pitch_min": -32.0, "pitch_max": 8.0, "yaw_abs": 15.0},
@@ -272,13 +278,10 @@ def analyze_frames(frames_dir: str, device_type: Optional[str] = None) -> Tuple[
     
     # Hand metrics
     hands_visibility_ratio = hands_detected_count / total_frames if total_frames > 0 else 0.0
-    # Normalize movement score (heuristic normalization)
-    # A distinct movement is usually > 0.05 units per frame. 
-    # Let's say avg movement of 0.05 is "High Intensity" (10/10).
-    # total_movement is sum of deltas. Average delta per frame with hands:
+    # Normalize movement score on a 0-10 pedagogical scale.
+    # We use the average normalized wrist displacement per analyzed frame with visible hands.
     avg_movement_per_frame = total_movement / hands_detected_count if hands_detected_count > 0 else 0
-    # Tuned factor: 100 instead of 200 to avoid saturation
-    hands_activity_score = min(avg_movement_per_frame * 100, 10.0) # Scale to 0-10 roughly
+    hands_activity_score = min(avg_movement_per_frame * HAND_ACTIVITY_NORMALIZATION_FACTOR, 10.0)
     
     logger.info(
         f"Vision Analysis - Face: {face_presence_ratio:.0%}, Eye Contact: {eye_contact_ratio:.0%} "

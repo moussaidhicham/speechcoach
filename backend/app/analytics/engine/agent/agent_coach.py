@@ -60,6 +60,57 @@ def call_ollama_safe(model: str, system: str, user: str, temp: float = 0.2, limi
         return ""
 
 
+def call_groq_safe(model: str, system: str, user: str, temp: float = 0.2, limit: int = 220) -> str:
+    import requests
+    import os
+    
+    # Bypass cache by reading .env directly
+    try:
+        from dotenv import dotenv_values
+        config = dotenv_values(".env")
+        api_key = config.get("GROQ_API_KEY")
+    except Exception:
+        api_key = os.environ.get("GROQ_API_KEY")
+
+    if not api_key:
+        logger.error("GROQ_API_KEY not found in environment.")
+        return ""
+
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "User-Agent": "SpeechCoach-App/1.0"
+    }
+    
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user}
+        ],
+        "temperature": temp,
+        "max_tokens": limit,
+        "response_format": {"type": "json_object"}
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=20)
+        if response.status_code != 200:
+            print(f"\n[GROQ API ERROR] Status {response.status_code}: {response.text}\n")
+            logger.error("Groq API error: %s", response.text)
+            return ""
+            
+        result = response.json()
+        content = result["choices"][0]["message"]["content"].strip()
+        logger.info("Groq coaching output (%s): %s", model, content.replace("\n", " | "))
+        return clean_llm_output(content)
+    except Exception as error:
+        print(f"\n[GROQ CONNECTION ERROR] {error}\n")
+        logger.error("Groq call failed: %s", error)
+        return ""
+
+
 def _top_strength(strengths: List[str]) -> str:
     return strengths[0] if strengths else "la clarte generale du discours"
 
@@ -195,7 +246,8 @@ def _needs_more_specific_bilan(text: str) -> bool:
 def _is_bad_bilan(text: str) -> bool:
     if not text or len(text) < 30:
         return True
-    return _sentence_count(text) != 2
+    sentence_count = _sentence_count(text)
+    return sentence_count < 2 or sentence_count > 4
 
 
 def _is_bad_priority(text: str, tip_seed: str) -> bool:
@@ -277,6 +329,8 @@ def _build_prompt_payload(
     weaknesses: List[str],
     recommendations: List[Recommendation],
     fetched_docs: List[Dict[str, Any]],
+    experience_level: Optional[str] = None,
+    current_goal: Optional[str] = None,
 ) -> Tuple[str, str]:
     top_category, top_message, top_tip = _top_recommendation(recommendations, weaknesses)
     strengths_text = " | ".join(strengths[:3]) if strengths else "Aucun point fort explicite."
@@ -284,23 +338,26 @@ def _build_prompt_payload(
     pedagogical_source = ""
     if fetched_docs:
         pedagogical_source = str(fetched_docs[0].get("content", "")).strip()[:240]
+    normalized_level = (experience_level or "non renseigne").strip()
+    normalized_goal = (current_goal or "general").strip()
 
     system = (
-        "Tu es un coach de prise de parole. "
-        "Tu dois repondre uniquement en JSON valide. "
+        "Tu es un coach expert en art oratoire et prise de parole en public. "
+        "Tu dois repondre uniquement au format JSON valide strict. "
         "Tu dois toujours utiliser exactement ces 3 cles : "
         "bilan_global, point_prioritaire, encouragement. "
-        "N'utilise jamais d'autres cles. "
-        "Ne rajoute aucun texte avant ou apres le JSON. "
-        "bilan_global doit contenir exactement 2 phrases courtes. "
-        "point_prioritaire doit contenir exactement 1 phrase courte. "
-        "encouragement doit contenir exactement 1 phrase courte. "
-        "Tu reponds en francais simple, professionnel, toujours avec 'vous'. "
-        "Tu restes concret, sobre et directement lie aux signaux fournis. "
-        "Tu n'utilises jamais de formulations lyriques, generiques ou grandiloquentes."
+        "N'ajoute absolument aucun texte avant ou apres le bloc JSON. "
+        "Directives redactionnelles : "
+        "1. bilan_global (2-3 phrases) : Analyse fluide, engageante et tres humaine. Donne le score, celebre avec naturel les points forts, puis pointe doucement ce qui peche. "
+        "2. point_prioritaire (1 phrase) : Donne un seul conseil tres specifique et actionnable pour le defaut principal. "
+        "3. encouragement (1 phrase) : Une chute motivante, pragmatique, basee sur le futur resultat escompte. "
+        "Directives de style CRITIQUES : "
+        "Sois direct et professionnel (vouvoie toujours). "
+        "Reformule completement les termes techniques comme un vrai coach humain le ferait a l'oral. "
+        "Bannis totalement les expressions de robot (ex: 'Voici votre compte-rendu', 'Vous avez recu un message', 'Le systeme indique')."
     )
     user = (
-        f"Score global: {scores.overall_score}\n"
+        f"Score global: {int(round(scores.overall_score))}\n"
         f"Voix: {scores.voice_score}/10\n"
         f"Presence: {scores.presence_score}/10\n"
         f"Corps: {scores.body_language_score}/10\n"
@@ -310,6 +367,8 @@ def _build_prompt_payload(
         f"Top recommandation: {top_category}\n"
         f"Message: {top_message}\n"
         f"Conseil actionnable: {top_tip}\n"
+        f"Niveau utilisateur: {normalized_level}\n"
+        f"Objectif utilisateur: {normalized_goal}\n"
         f"Source pedagogique: {pedagogical_source or 'Non fournie'}"
     )
     return system, user
@@ -317,7 +376,12 @@ def _build_prompt_payload(
 
 def _generate_with_model(system: str, user: str, model_name: str) -> str:
     backend = _resolve_backend()
-    if backend != "ollama":
+    
+    print(f"[AI ENGINE] {backend.upper()} | {model_name}")
+
+    if backend == "groq":
+        return call_groq_safe(model_name, system, user, temp=0.2, limit=220)
+    elif backend != "ollama":
         logger.warning("Unsupported coaching backend '%s'. Falling back to Ollama.", backend)
     return call_ollama_safe(model_name, system, user, temp=0.2, limit=220)
 
@@ -331,6 +395,8 @@ def generate_coaching_text(
     language: str,
     model: str = "",
     speaker_name: Optional[str] = None,
+    experience_level: Optional[str] = None,
+    current_goal: Optional[str] = None,
 ) -> Optional[Dict[str, str]]:
     del language, speaker_name
 
@@ -342,7 +408,15 @@ def generate_coaching_text(
     fallback_priority = build_priority(recommendations, weaknesses)
     fallback_encouragement = build_encouragement(strengths, recommendations, weaknesses)
 
-    system, user = _build_prompt_payload(scores, strengths, weaknesses, recommendations, fetched_docs)
+    system, user = _build_prompt_payload(
+        scores,
+        strengths,
+        weaknesses,
+        recommendations,
+        fetched_docs,
+        experience_level=experience_level,
+        current_goal=current_goal,
+    )
 
     try:
         raw_output = _generate_with_model(system, user, model_name)

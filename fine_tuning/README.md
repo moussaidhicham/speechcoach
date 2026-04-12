@@ -1,30 +1,49 @@
-# Fine-Tuning Seed Dataset
+# Fine-Tuning Workspace
 
-This folder is the starting point for a clean supervised fine-tuning dataset.
+This folder now contains all fine-tuning work in one place.
 
-## Files
+## Structure
 
-- `coach_dataset_seed.jsonl`: curated source dataset in `input/target` format
-- `convert_seed_to_messages.py`: converter from source format to chat format
-- `train_qwen25_lora.py`: first LoRA fine-tuning script for Qwen 2.5 3B
+- `docs/`
+  - `STEP1_engine_contract.md`
+  - `STEP2_seed_dataset_spec.md`
+  - `STEP2_batch1_curation.md`
+- `scripts/`
+  - `extract_seed_inputs.py`
+  - `build_seed_v2_batch1.py`
+- `data/intermediate/`
+  - `seed_inputs_from_real_sessions.jsonl`
+- `data/seed/`
+  - `coach_dataset_seed_v2.jsonl`
+- `data/legacy/`
+  - old dataset files kept only for reference
+- `notebooks/`
+  - `qwen25_qlora_colab.ipynb`
 
-## Next steps
+## Important rule
 
-1. Keep targets short, sober, and always in `vous`.
-2. Avoid using old bad `llm_coaching` outputs as targets.
-3. Refresh `coach_dataset_train.jsonl` whenever `coach_dataset_seed.jsonl` changes.
-4. Use the train/validation split files for the first fine-tuning runs.
+The seed dataset must match the real runtime LLM payload.
 
-## Target style rules
+At inference time, the coaching model currently sees:
+- `session_context`
+- `scores`
+- `strengths`
+- `weaknesses`
+- `top_recommendation`
+- `pedagogical_source`
 
-- `bilan_global`
-  - 2 short sentences
-  - one strength
-  - one main issue
-- `point_prioritaire`
-  - 1 concrete action sentence
-  - based directly on the top actionable tip
-- `encouragement`
-  - 1 short sentence
-  - specific to the session
-  - no generic motivation
+It does **not** directly see raw:
+- `audio_metrics`
+- `vision_metrics`
+- `exercise_recommendation`
+
+So these fields should not be part of the supervised seed input.
+
+## Current workflow
+
+1. Extract real sessions into `data/intermediate/`
+2. Curate a batch
+3. Build `data/seed/coach_dataset_seed_v2.jsonl`
+4. Write targets manually
+5. Review style and consistency
+6. Only then expand / clean / split / train

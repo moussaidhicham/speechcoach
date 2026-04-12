@@ -42,3 +42,8 @@ brain/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# === Secrets ===
+.env
+.env.*
+!.env.example

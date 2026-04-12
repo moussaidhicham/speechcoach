@@ -1,8 +1,10 @@
-﻿\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper]{article}
 
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[french]{babel}
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{french}
+\setotherlanguage{arabic}
+\newfontfamily\arabicfont[Script=Arabic]{Amiri}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
 \usepackage{hyperref}
@@ -22,26 +24,28 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{Rapport d'Avancement n°4 - SpeechCoach}
+\lhead{Rapport d'Avancement n\textdegree4 - SpeechCoach}
 \rhead{Master SIE - 2026}
 \cfoot{\thepage}
 
 \titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
 \titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
 
-\title{
-    \vspace{-2cm}
-    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
-    \vspace{0.5cm}
-    \huge \textbf{Rapport d'État d'Avancement n°4}\\
-    \large \textit{Itérations sur le bloc d'exercices, la couche ASR et l'analyse visuelle device-aware}
-}
-\author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
-\date{Période : après la dernière réunion de suivi}
-
 \begin{document}
+\begin{center}
+    {\Large Master Systèmes Intelligents pour l'Éducation (SIE)\par}
+    \vspace{0.5cm}
+    {\huge \textbf{Rapport d'État d'Avancement n\textdegree4}\par}
+    \vspace{0.3cm}
+    {\large \textit{Itérations sur le bloc d'exercices, la couche ASR et l'analyse visuelle device-aware}\par}
+    \vspace{0.8cm}
+    {\normalsize \textbf{Étudiant :} Hicham Moussaid\par}
+    {\normalsize \textbf{Encadrant :} Pr. Abdelaaziz Hessane\par}
+    \vspace{0.2cm}
+    {\normalsize Période : après la dernière réunion de suivi\par}
+\end{center}
 
-\maketitle
+\vspace{0.8cm}
 
 \section{Objectif de la phase}
 Cette phase avait deux objectifs :
@@ -106,7 +110,7 @@ L'analyse détaillée a montré que le problème venait de plusieurs sources :
     \item certaines chaînes arabes dans les prompts et les regex étaient corrompues ;
     \item le prompt multilingue de secours favorisait les hallucinations ;
     \item certaines listes de fillers étaient incomplètes ou mal calibrées ;
-    \item Faster-Whisper lissait encore une partie des sons nasaux de type \textit{mm}, \textit{mmm}, \textit{همم} ;
+    \item Faster-Whisper lissait encore une partie des sons nasaux de type \textit{mm}, \textit{mmm}, \textarabic{همم} ;
     \item les répétitions simples et les redémarrages n'étaient pas assez bien modélisés.
 \end{itemize}
 
@@ -123,7 +127,7 @@ Le correctif final est le résultat de plusieurs itérations :
     \item amélioration des listes de fillers en anglais, français et arabe ;
     \item exclusion de certains marqueurs discursifs trop généraux, par exemple \textit{like} et \textit{you know} en anglais, ou \textit{donc}, \textit{du coup}, \textit{en fait}, \textit{enfin} en français ;
     \item conservation de certains fillers jugés pédagogiquement pertinents, comme \textit{ben} en français ;
-    \item ajout d'un détecteur acoustique léger pour les fillers nasaux de type \textit{hum}, \textit{hmm}, \textit{mm}, \textit{mmm}, \textit{مم}, \textit{همم}, à partir de caractéristiques extraites avec \texttt{librosa} \cite{mcfee2015librosa} ;
+    \item ajout d'un détecteur acoustique léger pour les fillers nasaux de type \textit{hum}, \textit{hmm}, \textit{mm}, \textit{mmm}, \textarabic{مم}, \textarabic{همم}, à partir de caractéristiques extraites avec \texttt{librosa} \cite{mcfee2015librosa} ;
     \item amélioration du comptage des répétitions via un détecteur spécifique de redémarrages et répétitions simples.
 \end{itemize}
 
@@ -147,8 +151,8 @@ Le correctif final est le résultat de plusieurs itérations :
 \textbf{Arabe}
 \begin{itemize}
     \item l'arabe restait le cas le plus difficile ;
-    \item les fillers textuels comme \textit{يعني}, \textit{آه}, \textit{ام} sont mieux récupérés ;
-    \item les formes nasales comme \textit{مم} ou \textit{همم} ne sont pas toujours transcrites ;
+    \item les fillers textuels comme \textarabic{يعني}, \textarabic{آه}, \textarabic{ام} sont mieux récupérés ;
+    \item les formes nasales comme \textarabic{مم} ou \textarabic{همم} ne sont pas toujours transcrites ;
     \item le détecteur acoustique permet néanmoins de récupérer une partie de ces cas même lorsqu'ils n'apparaissent pas dans le texte.
 \end{itemize}
 
@@ -192,7 +196,7 @@ Après stabilisation du bloc d'exercices et de la couche ASR, le point le plus f
     \item une tablette utilisée en mode selfie.
 \end{itemize}
 
-Les premiers essais ont montré que cette hypothèse unique pénalisait surtout les vidéos smartphone. Dans un cas de test où le visage était centré, les mains visibles et le regard dirigé vers la caméra, le système produisait pourtant des valeurs très faibles pour la présence, le contact visuel et la visibilité des mains. Le problème ne venait donc pas seulement du seuil regard, mais plus globalement du pipeline vision appliqué aux vidéos mobiles.
+Les premiers essais ont montré que cette hypothèse unique pénalisait surtout les vidéos smartphone. Dans un cas de test où le visage était centré, les mains visibles et le regard dirigé vers la caméra, le système produisait pourtant des valeurs très faibles pour la présence, le contact visuel et la visibilité des mains. Le problème ne venait donc pas seulement du seuil regard, mais plus globalement du pipeline vision appliqué aux vidéos mobiles, construit autour des briques MediaPipe et OpenCV déjà utilisées dans le projet \cite{mediapipe2023,opencv_library}.
 
 \subsection{Première version : profils par appareil}
 Une première amélioration a consisté à introduire un contexte d'appareil dans le pipeline :
@@ -244,7 +248,7 @@ Une seconde itération a consisté à rendre le mode \texttt{unknown} plus intel
 
 La stratégie retenue est hiérarchique :
 \begin{itemize}
-    \item lecture des métadonnées vidéo et des tags via \texttt{ffprobe} ;
+    \item lecture des métadonnées vidéo et des tags via \texttt{ffprobe} \cite{ffmpeg} ;
     \item prise en compte de la rotation réelle de la vidéo ;
     \item utilisation du nom d'origine du fichier comme indice supplémentaire ;
     \item recours à une heuristique géométrique simple pour les cas paysage les plus standards ;
@@ -263,6 +267,62 @@ En pratique, cela signifie que le mode \texttt{unknown} n'est plus uniquement un
 
 Plus explicitement, si l'appareil est détecté correctement, le pipeline bascule directement vers le profil déjà défini correspondant : \texttt{smartphone}, \texttt{tablet} ou \texttt{laptop\_desktop}. Si aucun indice n'est jugé suffisamment fiable, le système ne force pas une classe ; il conserve alors le profil \texttt{unknown}, qui joue le rôle de fallback générique avec des seuils neutres et un traitement non spécialisé.
 
+\section{Spécialisation du Coaching LLM par Fine-Tuning}
+
+L'une des contributions majeures de cette phase a été la mise en place d'un pipeline de \textit{Fine-Tuning} spécialisé pour la couche de coaching. L'objectif était de passer d'un modèle générique (souvent trop poli ou imprécis) à un modèle expert, fidèle aux calculs mathématiques de notre moteur.
+
+\subsection{Problématique et Motivation}
+Les modèles de langage (LLM) standards présentent un biais de politesse qui les pousse à minimiser les erreurs. Plus grave encore, une génération de données purement synthétique risque de créer une contradiction entre le score calculé par le moteur (ex: 40/100) et le texte produit par l'IA (ex: "Bravo, c'est excellent"). 
+
+Pour résoudre cela, nous avons adopté une approche \textbf{Engine-Centric} (centrée sur le moteur) garantissant une loyauté totale entre les chiffres et le texte.
+
+\subsection{Méthodologie de génération : l'approche par Sondage}
+Le jeu de données "Gold Standard" (v2) a été construit en quatre phases :
+\begin{enumerate}
+    \item \textbf{Phase Seed (Données Réelles)} : Utilisation de 14 sessions réelles annotées manuellement pour servir d'ancrage de vérité.
+    \item \textbf{Phase d'Expansion par Archétypes} : Définition de 15 modèles types (archétypes) couvrant tout le spectre pédagogique, du \textit{"Total Disaster"} (multi-erreurs) au \textit{"High Mastery"} (maîtrise totale).
+    \item \textbf{Phase de Sondage (Engine Probing)} : Génération de 144 scénarios synthétiques par un \textbf{échantillonnage stratifié} du domaine de définition des métriques. \textbf{Crucialement}, les sorties de ces scénarios ont été étiquetées par les classes réelles du moteur de scoring (\texttt{calculate\_scores}, \texttt{generate\_recommendations}). Cette approche traite le moteur comme une \textbf{fonction déterministe} $y = f(x)$, garantissant une cohérence mathématique de 100\% là où un échantillonnage aléatoire aurait introduit du bruit.
+    \item \textbf{Distillation (Teacher-Student)} : Utilisation d'un modèle "Enseignant" (\textit{Llama-3.3-70B} via l'API Groq) pour transformer ces scores bruts en coaching textuel. Cette technique de \textit{Knowledge Distillation} permet au modèle final d'hériter de la qualité rédactionnelle d'un modèle massif tout en restant localement efficace.
+\end{enumerate}
+
+\subsection{Protocole Technique et Entraînement}
+Le modèle retenu est \textbf{Qwen-2.5 1.5B}, choisi pour son excellent rapport performance/poids. L'entraînement a été réalisé sur Google Colab (GPU T4) selon le protocole suivant :
+\begin{itemize}
+    \item \textbf{Méthode} : QLoRA (Quantized LoRA) en 4-bits.
+    \item \textbf{Optimisation} : 100 étapes (steps) avec un planificateur de taux d'apprentissage \textit{cosine}.
+    \item \textbf{Format} : ChatML pour une structure de dialogue robuste.
+\end{itemize}
+
+\subsection{Résultats et Limites du Modèle Local}
+L'intégration du modèle \textbf{Qwen-2.5 1.5B} via Ollama a permis de valider le pipeline technique en mode 100\% local. Cependant, les tests en conditions réelles ont mis en évidence certaines limites intrinsèques à la taille réduite du modèle (1.5B) :
+\begin{itemize}
+    \item \textbf{Richesse sémantique} : les formulations peuvent parfois paraître répétitives ou "robotiques" sur plusieurs analyses consécutives.
+    \item \textbf{Nuance pédagogique} : la capacité du modèle à reformuler les conseils techniques de manière douce et humaine (ton coach) est limitée par son faible nombre de paramètres.
+    \item \textbf{Sensibilité au format} : le respect strict du JSON nécessite une température très basse, ce qui réduit encore la créativité du modèle local.
+\end{itemize}
+
+Le modèle local reste une solution de secours (\textit{fallback}) robuste, mais pour une expérience utilisateur premium, une montée en gamme s'est avérée nécessaire.
+
+\subsection{Pivot vers une architecture hybride : API Groq \& Llama-3.3}
+Afin de garantir des résultats "parfaits" pour la version finale du projet, nous avons fait évoluer le backend vers une architecture modulaire permettant d'utiliser l'API \textbf{Groq Cloud}.
+
+\begin{itemize}
+    \item \textbf{Puissance de raisonnement} : Le passage au modèle \textbf{Llama-3.3-70B} (70 milliards de paramètres) offre une profondeur d'analyse incomparablement supérieure. Le coaching devient plus humain, plus précis et capable de synthétiser des conseils complexes sans aucune erreur de syntaxe.
+    \item \textbf{Performance (LPPS)} : L'architecture LPU de Groq permet des vitesses d'inférence quasi-instantanées, supprimant toute attente supplémentaire par rapport au modèle local.
+    \item \textbf{Modularité stratégique} : Le système est désormais capable de basculer dynamiquement entre le moteur local (Ollama) et le moteur Cloud (Groq) via une simple configuration dans le fichier \texttt{.env}, offrant une flexibilité totale lors de la présentation finale.
+\end{itemize}
+
+\section{Optimisations techniques et calibration}
+
+\subsection{Intelligence temporelle}
+Mise en place d'un moteur de calibration dynamique sur le client. Le système calcule en temps réel la \textbf{vélocité de traitement} du serveur pour ajuster le compte à rebours. Cette approche remplace les estimations fixes par un suivi basé sur le \textit{Real-Time Factor} (RTF) constaté, garantissant une synchronisation plus crédible entre l'interface et le backend.
+
+\subsection{Optimisation du pipeline ASR}
+Introduction d'un système de surcharge linguistique (\textit{override}). En permettant de spécifier la langue dès le départ, le pipeline effectue un \textbf{bypass de l'étape de détection automatique} de Whisper. Cela réduit la latence de démarrage et fiabilise la transcription pour les cas multilingues (français, anglais, arabe).
+
+\subsection{Granularité du suivi IA}
+Décomposition modulaire de la phase finale d'enrichissement en sous-étapes distinctes (\textit{retrieval} et \textit{generation}). Cette granularité permet un monitoring plus précis des temps de réponse de chaque couche d'intelligence et assure un feedback visuel continu à l'utilisateur pendant les phases de calcul plus lourdes.
+
 \section{Synthèse}
 \begin{table}[H]
     \centering
@@ -278,6 +338,12 @@ Plus explicitement, si l'appareil est détecté correctement, le pipeline bascul
         Configuration ASR retenue & Validée & Retour à \texttt{medium + beam size 5}. \\
         Regard caméra par appareil & Implémenté & Profils distincts pour laptop, smartphone et tablette. \\
         Mode \texttt{unknown} & Validé & Auto-détection fonctionnelle par métadonnées, rotation, nom du fichier et heuristique paysage. \\
+        Calibration adaptative & Implémentée & Décompte basé sur la vélocité réelle observée côté traitement. \\
+        Override linguistique & Implémenté & Possibilité d'éviter la détection automatique pour accélérer et stabiliser l'ASR. \\
+        Granularité IA & Implémentée & Séparation plus claire entre récupération documentaire et génération finale. \\
+        \midrule
+        Coaching LLM (V1 Local) & Implémenté & Validé comme solution de repli (Ollama), mais limité en nuances sémantiques. \\
+        Coaching LLM (V2 Groq) & Implémenté & Utilisation de Llama-3.3-70B pour une qualité de coaching "humaine" et experte. \\
         \bottomrule
     \end{tabularx}
     \caption{Résumé des travaux de cette phase.}
@@ -286,15 +352,14 @@ Plus explicitement, si l'appareil est détecté correctement, le pipeline bascul
 \section{Prochaines étapes}
 \begin{itemize}
     \item consolider l'interprétation posture/gestes sur les plans serrés smartphone et tablette ;
-    \item continuer à tester le mode \texttt{unknown} sur davantage de cas réels ;
+    \item stabiliser la connexion Groq API et affiner le \textit{system prompt} pour exploiter la puissance des 70B paramètres ;
+    \item mener des tests de montée en charge pour vérifier la stabilité du moteur de calibration sous CPU plus sollicité ;
+    \item finaliser les supports de présentation visuels (slides) pour mettre en valeur la modularité Local vs Cloud ;
     \item continuer à documenter les résultats backend afin de mieux valoriser la contribution de recherche.
 \end{itemize}
 
-\section{Références Bibliographiques}
-\nocite{*}
+\section{Références bibliographiques}
 \bibliographystyle{ieeetr}
 \bibliography{references}
 
 \end{document}
-
-

@@ -1,4 +1,4 @@
-FROM "./models/speechcoach_qwen25-1_5b-Q4_K_M.gguf"
+FROM "./models/SpeechCoach_Qwen2.5_1.5B_Q4KM.gguf"
 
 # Qwen2.5 automatically handles ChatML, but we can enforce parameters and templates.
 TEMPLATE """{{ if .System }}<|im_start|>system

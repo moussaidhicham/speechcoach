@@ -45,6 +45,7 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
     presence = min(10.0, eye_score * vision.face_presence_ratio)
     scores.presence_score = round(presence, 1)
 
+    # hands_activity_score is a pedagogical agitation score on a 0-10 scale.
     body_score = 4.0
     if vision.hands_visibility_ratio > 0.6:
         body_score += 3.0

@@ -510,7 +510,7 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
                     category="Voix & Fluidite",
                     severity="Warning",
                     message=f"Trop de mots parasites detectes ({audio.filler_count} 'euh', 'hum').",
-                    actionable_tip="Remplacez les hesitations par un silence bref et assume lorsque vous cherchez votre idee suivante.",
+                    actionable_tip="Remplacez les hesitations par un silence bref et assumez ce temps de recherche avant l'idee suivante.",
                     exercise_key="fiche-voix-003",
                 ),
             )

@@ -60,16 +60,25 @@ class RAGRetriever:
             logger.warning("Knowledge base is empty.")
             return
 
+        # Silence huggingface and urllib3 logs
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+        
         logger.info("Loading SentenceTransformer model: %s", self.model_name)
         self.model = SentenceTransformer(self.model_name)
 
         texts_to_embed: List[str] = []
         for doc in self.documents:
-            text = f"{doc['title']} " + " ".join(doc.get("problem_keywords", []))
-            texts_to_embed.append(text)
+            text_parts = [
+                str(doc.get("category", "")),
+                str(doc.get("title", "")),
+                " ".join(doc.get("problem_keywords", [])),
+                str(doc.get("content", "")),
+            ]
+            texts_to_embed.append(" ".join(part for part in text_parts if part).strip())
 
         logger.info("Generating embeddings for %s documents...", len(texts_to_embed))
-        embeddings = self.model.encode(texts_to_embed, convert_to_numpy=True)
+        embeddings = self.model.encode(texts_to_embed, convert_to_numpy=True, show_progress_bar=False)
         faiss.normalize_L2(embeddings)
 
         dim = embeddings.shape[1]
@@ -88,7 +97,7 @@ class RAGRetriever:
             logger.warning("RAG Retriever not properly initialized.")
             return []
 
-        query_emb = self.model.encode([query], convert_to_numpy=True)
+        query_emb = self.model.encode([query], convert_to_numpy=True, show_progress_bar=False)
         faiss.normalize_L2(query_emb)
 
         distances, indices = self.index.search(query_emb, top_k)

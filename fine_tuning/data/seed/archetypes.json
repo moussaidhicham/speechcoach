@@ -1,0 +1,4370 @@
+[
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 67.4,
+      "voice_score": 2.9,
+      "presence_score": 9.6,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 63.5,
+      "voice_score": 4.1,
+      "presence_score": 7.0,
+      "body_language_score": 6.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 54.3,
+      "voice_score": 6.2,
+      "presence_score": 0.7,
+      "body_language_score": 6.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 67.4,
+      "voice_score": 8.7,
+      "presence_score": 6.6,
+      "body_language_score": 3.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 63.9,
+      "voice_score": 7.5,
+      "presence_score": 7.2,
+      "body_language_score": 2.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 76.7,
+      "voice_score": 9.4,
+      "presence_score": 6.5,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 76.0,
+      "voice_score": 7.9,
+      "presence_score": 7.8,
+      "body_language_score": 6.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 62.0,
+      "voice_score": 8.3,
+      "presence_score": 3.5,
+      "body_language_score": 5.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 58.8,
+      "voice_score": 4.0,
+      "presence_score": 6.0,
+      "body_language_score": 5.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 55.2,
+      "voice_score": 4.3,
+      "presence_score": 5.1,
+      "body_language_score": 4.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 74.2,
+      "voice_score": 7.6,
+      "presence_score": 7.0,
+      "body_language_score": 7.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 59.2,
+      "voice_score": 6.9,
+      "presence_score": 3.2,
+      "body_language_score": 5.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 56.0,
+      "voice_score": 6.3,
+      "presence_score": 4.8,
+      "body_language_score": 3.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 91.3,
+      "voice_score": 9.2,
+      "presence_score": 10.0,
+      "body_language_score": 9.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 69.1,
+      "voice_score": 4.1,
+      "presence_score": 7.7,
+      "body_language_score": 7.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 58.7,
+      "voice_score": 3.0,
+      "presence_score": 7.0,
+      "body_language_score": 5.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 57.1,
+      "voice_score": 7.3,
+      "presence_score": 1.6,
+      "body_language_score": 5.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 60.2,
+      "voice_score": 7.3,
+      "presence_score": 7.1,
+      "body_language_score": 1.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 62.8,
+      "voice_score": 7.0,
+      "presence_score": 7.4,
+      "body_language_score": 2.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 74.8,
+      "voice_score": 9.3,
+      "presence_score": 5.4,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 71.5,
+      "voice_score": 8.9,
+      "presence_score": 6.4,
+      "body_language_score": 5.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 55.9,
+      "voice_score": 6.7,
+      "presence_score": 3.3,
+      "body_language_score": 4.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 65.9,
+      "voice_score": 3.7,
+      "presence_score": 7.5,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 57.4,
+      "voice_score": 5.2,
+      "presence_score": 4.9,
+      "body_language_score": 4.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 76.5,
+      "voice_score": 7.2,
+      "presence_score": 8.2,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 61.5,
+      "voice_score": 7.1,
+      "presence_score": 2.8,
+      "body_language_score": 6.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 60.6,
+      "voice_score": 7.9,
+      "presence_score": 5.1,
+      "body_language_score": 3.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 85.8,
+      "voice_score": 9.2,
+      "presence_score": 8.3,
+      "body_language_score": 8.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 61.0,
+      "voice_score": 1.9,
+      "presence_score": 8.3,
+      "body_language_score": 6.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 71.5,
+      "voice_score": 4.8,
+      "presence_score": 8.6,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 59.9,
+      "voice_score": 7.9,
+      "presence_score": 1.7,
+      "body_language_score": 6.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 67.2,
+      "voice_score": 8.3,
+      "presence_score": 7.7,
+      "body_language_score": 2.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 68.2,
+      "voice_score": 6.9,
+      "presence_score": 8.0,
+      "body_language_score": 4.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 81.1,
+      "voice_score": 9.5,
+      "presence_score": 6.8,
+      "body_language_score": 8.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 73.9,
+      "voice_score": 9.1,
+      "presence_score": 7.2,
+      "body_language_score": 5.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 54.7,
+      "voice_score": 7.1,
+      "presence_score": 2.6,
+      "body_language_score": 4.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 63.0,
+      "voice_score": 4.3,
+      "presence_score": 5.9,
+      "body_language_score": 6.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 61.7,
+      "voice_score": 6.0,
+      "presence_score": 5.9,
+      "body_language_score": 4.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 74.4,
+      "voice_score": 6.7,
+      "presence_score": 8.0,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 64.8,
+      "voice_score": 7.2,
+      "presence_score": 4.2,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 57.0,
+      "voice_score": 6.8,
+      "presence_score": 4.0,
+      "body_language_score": 3.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 89.0,
+      "voice_score": 8.7,
+      "presence_score": 9.8,
+      "body_language_score": 9.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 65.4,
+      "voice_score": 2.3,
+      "presence_score": 8.1,
+      "body_language_score": 7.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 62.9,
+      "voice_score": 3.3,
+      "presence_score": 6.7,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 58.7,
+      "voice_score": 6.3,
+      "presence_score": 2.1,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 68.8,
+      "voice_score": 8.8,
+      "presence_score": 7.3,
+      "body_language_score": 3.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 67.8,
+      "voice_score": 6.8,
+      "presence_score": 8.8,
+      "body_language_score": 3.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 75.7,
+      "voice_score": 9.5,
+      "presence_score": 7.0,
+      "body_language_score": 5.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 72.4,
+      "voice_score": 7.1,
+      "presence_score": 7.8,
+      "body_language_score": 6.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 60.7,
+      "voice_score": 9.0,
+      "presence_score": 2.7,
+      "body_language_score": 4.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 59.8,
+      "voice_score": 4.3,
+      "presence_score": 6.3,
+      "body_language_score": 5.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 63.0,
+      "voice_score": 4.4,
+      "presence_score": 6.9,
+      "body_language_score": 5.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 78.6,
+      "voice_score": 7.6,
+      "presence_score": 7.7,
+      "body_language_score": 8.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 66.9,
+      "voice_score": 8.0,
+      "presence_score": 4.3,
+      "body_language_score": 6.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 57.1,
+      "voice_score": 7.9,
+      "presence_score": 4.5,
+      "body_language_score": 2.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "beginner",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 90.0,
+      "voice_score": 9.4,
+      "presence_score": 8.7,
+      "body_language_score": 9.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 66.8,
+      "voice_score": 2.9,
+      "presence_score": 9.2,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 71.3,
+      "voice_score": 5.1,
+      "presence_score": 8.6,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 53.1,
+      "voice_score": 6.0,
+      "presence_score": 1.5,
+      "body_language_score": 5.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 68.5,
+      "voice_score": 8.9,
+      "presence_score": 8.0,
+      "body_language_score": 2.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 72.7,
+      "voice_score": 8.2,
+      "presence_score": 8.9,
+      "body_language_score": 4.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 73.1,
+      "voice_score": 8.4,
+      "presence_score": 5.5,
+      "body_language_score": 7.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 72.1,
+      "voice_score": 8.5,
+      "presence_score": 7.1,
+      "body_language_score": 5.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 54.1,
+      "voice_score": 6.9,
+      "presence_score": 2.6,
+      "body_language_score": 4.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 62.6,
+      "voice_score": 5.4,
+      "presence_score": 6.0,
+      "body_language_score": 5.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 55.7,
+      "voice_score": 4.0,
+      "presence_score": 6.2,
+      "body_language_score": 4.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 74.0,
+      "voice_score": 6.9,
+      "presence_score": 6.8,
+      "body_language_score": 7.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 61.3,
+      "voice_score": 6.7,
+      "presence_score": 4.6,
+      "body_language_score": 5.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 59.6,
+      "voice_score": 8.0,
+      "presence_score": 4.1,
+      "body_language_score": 3.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 89.8,
+      "voice_score": 10.0,
+      "presence_score": 10.0,
+      "body_language_score": 7.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 64.4,
+      "voice_score": 3.3,
+      "presence_score": 8.1,
+      "body_language_score": 6.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 65.7,
+      "voice_score": 4.4,
+      "presence_score": 6.5,
+      "body_language_score": 7.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 61.2,
+      "voice_score": 7.6,
+      "presence_score": 2.1,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 66.7,
+      "voice_score": 9.1,
+      "presence_score": 6.1,
+      "body_language_score": 3.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 64.7,
+      "voice_score": 7.5,
+      "presence_score": 7.7,
+      "body_language_score": 2.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 77.5,
+      "voice_score": 8.0,
+      "presence_score": 6.9,
+      "body_language_score": 8.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 73.4,
+      "voice_score": 7.5,
+      "presence_score": 7.5,
+      "body_language_score": 6.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 59.5,
+      "voice_score": 7.3,
+      "presence_score": 3.7,
+      "body_language_score": 4.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 59.2,
+      "voice_score": 4.1,
+      "presence_score": 6.6,
+      "body_language_score": 4.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 63.4,
+      "voice_score": 6.0,
+      "presence_score": 6.4,
+      "body_language_score": 4.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 75.0,
+      "voice_score": 6.2,
+      "presence_score": 7.9,
+      "body_language_score": 7.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 61.2,
+      "voice_score": 6.6,
+      "presence_score": 3.7,
+      "body_language_score": 6.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 56.5,
+      "voice_score": 8.0,
+      "presence_score": 4.3,
+      "body_language_score": 2.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 88.5,
+      "voice_score": 9.2,
+      "presence_score": 8.3,
+      "body_language_score": 9.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 64.3,
+      "voice_score": 1.8,
+      "presence_score": 9.5,
+      "body_language_score": 6.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 66.1,
+      "voice_score": 3.2,
+      "presence_score": 8.4,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 55.8,
+      "voice_score": 7.9,
+      "presence_score": 0.4,
+      "body_language_score": 6.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 65.1,
+      "voice_score": 9.0,
+      "presence_score": 7.6,
+      "body_language_score": 1.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 67.5,
+      "voice_score": 6.5,
+      "presence_score": 9.1,
+      "body_language_score": 3.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 74.9,
+      "voice_score": 7.9,
+      "presence_score": 6.4,
+      "body_language_score": 7.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 72.4,
+      "voice_score": 7.9,
+      "presence_score": 8.0,
+      "body_language_score": 5.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 60.4,
+      "voice_score": 7.3,
+      "presence_score": 3.9,
+      "body_language_score": 4.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 62.2,
+      "voice_score": 5.2,
+      "presence_score": 6.7,
+      "body_language_score": 5.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 61.3,
+      "voice_score": 4.8,
+      "presence_score": 6.1,
+      "body_language_score": 5.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 72.3,
+      "voice_score": 7.2,
+      "presence_score": 6.4,
+      "body_language_score": 7.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 64.8,
+      "voice_score": 8.1,
+      "presence_score": 3.9,
+      "body_language_score": 5.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 63.1,
+      "voice_score": 7.5,
+      "presence_score": 5.8,
+      "body_language_score": 3.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 92.2,
+      "voice_score": 9.1,
+      "presence_score": 9.8,
+      "body_language_score": 10.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 63.0,
+      "voice_score": 2.6,
+      "presence_score": 7.5,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 64.5,
+      "voice_score": 4.2,
+      "presence_score": 8.2,
+      "body_language_score": 5.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 54.3,
+      "voice_score": 6.2,
+      "presence_score": 0.5,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 69.7,
+      "voice_score": 8.1,
+      "presence_score": 8.2,
+      "body_language_score": 3.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 70.0,
+      "voice_score": 7.2,
+      "presence_score": 9.0,
+      "body_language_score": 3.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 76.1,
+      "voice_score": 9.5,
+      "presence_score": 6.5,
+      "body_language_score": 6.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 76.8,
+      "voice_score": 8.6,
+      "presence_score": 7.3,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 54.8,
+      "voice_score": 6.8,
+      "presence_score": 2.1,
+      "body_language_score": 5.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 63.2,
+      "voice_score": 4.6,
+      "presence_score": 6.6,
+      "body_language_score": 6.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 63.8,
+      "voice_score": 5.5,
+      "presence_score": 6.7,
+      "body_language_score": 5.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 65.5,
+      "voice_score": 6.3,
+      "presence_score": 5.9,
+      "body_language_score": 6.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 64.7,
+      "voice_score": 6.4,
+      "presence_score": 4.3,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 54.5,
+      "voice_score": 5.9,
+      "presence_score": 4.3,
+      "body_language_score": 3.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "intermediate",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 90.5,
+      "voice_score": 8.7,
+      "presence_score": 10.0,
+      "body_language_score": 9.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 62.6,
+      "voice_score": 2.5,
+      "presence_score": 7.5,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 67.8,
+      "voice_score": 3.5,
+      "presence_score": 8.3,
+      "body_language_score": 7.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 58.2,
+      "voice_score": 6.6,
+      "presence_score": 1.6,
+      "body_language_score": 7.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 64.8,
+      "voice_score": 8.5,
+      "presence_score": 8.0,
+      "body_language_score": 1.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 67.9,
+      "voice_score": 7.3,
+      "presence_score": 7.4,
+      "body_language_score": 4.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 71.0,
+      "voice_score": 8.7,
+      "presence_score": 4.9,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 75.9,
+      "voice_score": 7.4,
+      "presence_score": 8.5,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 60.1,
+      "voice_score": 8.2,
+      "presence_score": 4.0,
+      "body_language_score": 3.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 62.0,
+      "voice_score": 4.3,
+      "presence_score": 7.2,
+      "body_language_score": 5.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 59.9,
+      "voice_score": 5.1,
+      "presence_score": 7.0,
+      "body_language_score": 3.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 77.1,
+      "voice_score": 7.1,
+      "presence_score": 8.0,
+      "body_language_score": 7.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 63.7,
+      "voice_score": 7.5,
+      "presence_score": 4.1,
+      "body_language_score": 5.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 61.7,
+      "voice_score": 6.9,
+      "presence_score": 6.2,
+      "body_language_score": 3.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "general"
+    },
+    "scores": {
+      "overall_score": 93.5,
+      "voice_score": 10.0,
+      "presence_score": 9.4,
+      "body_language_score": 10.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 63.2,
+      "voice_score": 2.6,
+      "presence_score": 7.4,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 65.5,
+      "voice_score": 5.2,
+      "presence_score": 6.4,
+      "body_language_score": 6.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 57.7,
+      "voice_score": 8.0,
+      "presence_score": 1.3,
+      "body_language_score": 5.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 64.2,
+      "voice_score": 9.2,
+      "presence_score": 5.9,
+      "body_language_score": 2.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 67.9,
+      "voice_score": 7.9,
+      "presence_score": 8.8,
+      "body_language_score": 2.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 71.8,
+      "voice_score": 8.3,
+      "presence_score": 5.6,
+      "body_language_score": 6.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 72.3,
+      "voice_score": 7.4,
+      "presence_score": 8.2,
+      "body_language_score": 5.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 56.9,
+      "voice_score": 8.1,
+      "presence_score": 3.0,
+      "body_language_score": 3.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 60.0,
+      "voice_score": 4.4,
+      "presence_score": 5.8,
+      "body_language_score": 5.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 60.9,
+      "voice_score": 5.2,
+      "presence_score": 6.5,
+      "body_language_score": 4.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 70.2,
+      "voice_score": 7.4,
+      "presence_score": 6.5,
+      "body_language_score": 6.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 58.5,
+      "voice_score": 6.2,
+      "presence_score": 3.1,
+      "body_language_score": 6.1,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 58.9,
+      "voice_score": 7.1,
+      "presence_score": 5.2,
+      "body_language_score": 3.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "soutenance_pfe"
+    },
+    "scores": {
+      "overall_score": 89.3,
+      "voice_score": 9.0,
+      "presence_score": 8.9,
+      "body_language_score": 9.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 63.4,
+      "voice_score": 2.4,
+      "presence_score": 7.7,
+      "body_language_score": 7.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 64.4,
+      "voice_score": 3.0,
+      "presence_score": 8.2,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 49.4,
+      "voice_score": 5.9,
+      "presence_score": 0.3,
+      "body_language_score": 5.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Critical",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 59.4,
+      "voice_score": 7.3,
+      "presence_score": 7.2,
+      "body_language_score": 1.3,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 69.8,
+      "voice_score": 7.0,
+      "presence_score": 9.2,
+      "body_language_score": 3.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 75.3,
+      "voice_score": 8.9,
+      "presence_score": 7.1,
+      "body_language_score": 6.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 74.7,
+      "voice_score": 7.0,
+      "presence_score": 8.6,
+      "body_language_score": 6.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 57.7,
+      "voice_score": 7.0,
+      "presence_score": 3.3,
+      "body_language_score": 4.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 62.6,
+      "voice_score": 4.1,
+      "presence_score": 7.9,
+      "body_language_score": 5.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 61.6,
+      "voice_score": 5.4,
+      "presence_score": 6.6,
+      "body_language_score": 4.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 68.6,
+      "voice_score": 5.6,
+      "presence_score": 6.0,
+      "body_language_score": 7.8,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 65.0,
+      "voice_score": 7.5,
+      "presence_score": 4.9,
+      "body_language_score": 5.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 59.5,
+      "voice_score": 6.8,
+      "presence_score": 5.0,
+      "body_language_score": 4.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "pitch"
+    },
+    "scores": {
+      "overall_score": 88.3,
+      "voice_score": 9.4,
+      "presence_score": 8.5,
+      "body_language_score": 9.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 70.4,
+      "voice_score": 3.9,
+      "presence_score": 8.3,
+      "body_language_score": 7.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon regard."
+    ],
+    "weaknesses": [
+      "Débit trop rapide."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Débit trop rapide.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 64.3,
+      "voice_score": 3.0,
+      "presence_score": 7.9,
+      "body_language_score": 6.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Gestuelle correcte."
+    ],
+    "weaknesses": [
+      "Rythme trop lent."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Rythme trop lent.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 50.1,
+      "voice_score": 6.0,
+      "presence_score": 0.4,
+      "body_language_score": 5.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix claire."
+    ],
+    "weaknesses": [
+      "Regard fuyant."
+    ],
+    "top_recommendation": {
+      "category": "Presence & Regard",
+      "severity": "Warning",
+      "message": "Regard fuyant.",
+      "actionable_tip": "Action phare pour régler le problème de Presence & Regard."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 61.9,
+      "voice_score": 7.8,
+      "presence_score": 7.6,
+      "body_language_score": 1.4,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Excellente diction."
+    ],
+    "weaknesses": [
+      "Corps trop figé."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Corps trop figé.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 68.6,
+      "voice_score": 8.5,
+      "presence_score": 8.3,
+      "body_language_score": 2.6,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne énergie."
+    ],
+    "weaknesses": [
+      "Mains trop agitées."
+    ],
+    "top_recommendation": {
+      "category": "Gestuelle",
+      "severity": "Warning",
+      "message": "Mains trop agitées.",
+      "actionable_tip": "Action phare pour régler le problème de Gestuelle."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 76.3,
+      "voice_score": 9.7,
+      "presence_score": 6.4,
+      "body_language_score": 6.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Discours structuré."
+    ],
+    "weaknesses": [
+      "Lumière insuffisante."
+    ],
+    "top_recommendation": {
+      "category": "Image & Lumiere",
+      "severity": "Warning",
+      "message": "Lumière insuffisante.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Lumiere."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 70.0,
+      "voice_score": 7.0,
+      "presence_score": 8.0,
+      "body_language_score": 4.9,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bon contact visuel."
+    ],
+    "weaknesses": [
+      "Image floue."
+    ],
+    "top_recommendation": {
+      "category": "Image & Nettete",
+      "severity": "Warning",
+      "message": "Image floue.",
+      "actionable_tip": "Action phare pour régler le problème de Image & Nettete."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 63.8,
+      "voice_score": 8.5,
+      "presence_score": 4.1,
+      "body_language_score": 5.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Voix assurée."
+    ],
+    "weaknesses": [
+      "Visage hors cadre."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Visage hors cadre.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 66.3,
+      "voice_score": 5.3,
+      "presence_score": 6.0,
+      "body_language_score": 7.2,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne posture."
+    ],
+    "weaknesses": [
+      "Trop d'hésitations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Fluidite",
+      "severity": "Warning",
+      "message": "Trop d'hésitations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Fluidite."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 53.6,
+      "voice_score": 4.0,
+      "presence_score": 4.9,
+      "body_language_score": 4.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Contenu clair."
+    ],
+    "weaknesses": [
+      "Voix monotone, manque de variations."
+    ],
+    "top_recommendation": {
+      "category": "Voix & Debit",
+      "severity": "Warning",
+      "message": "Voix monotone, manque de variations.",
+      "actionable_tip": "Action phare pour régler le problème de Voix & Debit."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 69.0,
+      "voice_score": 5.7,
+      "presence_score": 7.9,
+      "body_language_score": 6.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne présence."
+    ],
+    "weaknesses": [
+      "Bruit de fond perturbant."
+    ],
+    "top_recommendation": {
+      "category": "Scene",
+      "severity": "Warning",
+      "message": "Bruit de fond perturbant.",
+      "actionable_tip": "Action phare pour régler le problème de Scene."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 60.9,
+      "voice_score": 6.4,
+      "presence_score": 4.0,
+      "body_language_score": 6.0,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Bonne articulation."
+    ],
+    "weaknesses": [
+      "Trop proche de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop proche de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 57.1,
+      "voice_score": 8.1,
+      "presence_score": 3.9,
+      "body_language_score": 2.7,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Calme apparent."
+    ],
+    "weaknesses": [
+      "Trop loin de la caméra."
+    ],
+    "top_recommendation": {
+      "category": "Cadre & Posture",
+      "severity": "Warning",
+      "message": "Trop loin de la caméra.",
+      "actionable_tip": "Action phare pour régler le problème de Cadre & Posture."
+    },
+    "pedagogical_source": ""
+  },
+  {
+    "session_context": {
+      "experience_level": "advanced",
+      "current_goal": "entretien"
+    },
+    "scores": {
+      "overall_score": 90.7,
+      "voice_score": 8.8,
+      "presence_score": 10.0,
+      "body_language_score": 9.5,
+      "scene_score": 8.5
+    },
+    "strengths": [
+      "Maîtrise exceptionnelle."
+    ],
+    "weaknesses": [
+      "Quelques micro-pauses."
+    ],
+    "top_recommendation": {
+      "category": "Maintien",
+      "severity": "Warning",
+      "message": "Quelques micro-pauses.",
+      "actionable_tip": "Action phare pour régler le problème de Maintien."
+    },
+    "pedagogical_source": ""
+  }
+]

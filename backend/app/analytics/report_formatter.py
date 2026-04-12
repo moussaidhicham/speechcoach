@@ -304,15 +304,7 @@ def _sanitize_encouragement(
     text = str(encouragement or '').strip()
     if not text:
         return None
-
-    references = list(weaknesses)
-    if recommendations:
-        references.append(str(recommendations[0].get('message') or ''))
-        references.append(str(recommendations[0].get('tip') or ''))
-
-    if _has_strong_overlap(text, references):
-        return None
-
+    # We disabled the overlap check to ensure the LLM's conclusion is always visible
     return text
 
 
