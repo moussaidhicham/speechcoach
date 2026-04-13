@@ -377,7 +377,7 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     story.append(metrics_table)
     story.append(Spacer(1, 14))
 
-    story.append(Paragraph('Plan de pratique', styles['SectionTitle']))
+    story.append(Paragraph("Plan d'action", styles['SectionTitle']))
     story.append(Paragraph(f"<b>Focus principal:</b> {escape(str(training_plan.get('focus_primary', '') or 'Progression generale'))}", styles['BodyTextCustom']))
     story.append(Paragraph(f"<b>Focus secondaire:</b> {escape(str(training_plan.get('focus_secondary', '') or 'Consolidation'))}", styles['BodyTextCustom']))
     for day in training_plan.get('days', []):

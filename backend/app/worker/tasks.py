@@ -10,13 +10,16 @@ from typing import Any, Dict, List
 # Silence noisy libraries BEFORE they are imported anywhere else
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['ABSL_LOGGING_LEVEL'] = 'error'
+os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '1'
+os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
 
 import logging
-# Set external libraries to WARNING level
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("huggingface_hub").setLevel(logging.WARNING)
-logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
-logging.getLogger("whisper").setLevel(logging.WARNING)
+# Set external libraries to ERROR level to eliminate noisy ML prints
+logging.getLogger("urllib3").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
+logging.getLogger("whisper").setLevel(logging.ERROR)
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 # Add backend/ folder to sys.path to allow imports from `ml` and `db` cleanly
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
@@ -136,6 +139,41 @@ def get_user_preferences(session_id: str):
     return {}
 
 
+def get_user_recent_history(session_id: str, limit: int = 3) -> str:
+    """Retrieves a summary of the user's last X completed sessions for trend analysis."""
+    try:
+        with SessionLocal() as db:
+            current_session = db.get(VideoSession, uuid_lib.UUID(session_id))
+            if not current_session or not current_session.user_id:
+                return "Première session."
+
+            # Query the last X completed analyses for this user, excluding current session
+            stmt = (
+                select(AnalysisResult)
+                .join(VideoSession)
+                .where(VideoSession.user_id == current_session.user_id)
+                .where(VideoSession.id != current_session.id)
+                .where(VideoSession.status == 'completed')
+                .order_by(VideoSession.created_at.desc())
+                .limit(limit)
+            )
+            results = db.execute(stmt).scalars().all()
+            
+            if not results:
+                return "Première session SpeechCoach."
+
+            # Format as a chronology: [Sess#1: 65] -> [Sess#2: 72]
+            # Reverse order to show chronologically in the string
+            chronology = []
+            for i, res in enumerate(reversed(results)):
+                chronology.append(f"Session {i+1}: Score {res.overall_score}/100")
+            
+            return " -> ".join(chronology)
+    except Exception as e:
+        logger.error(f"Error fetching history: {e}")
+        return "Historique indisponible."
+
+
 def _build_scores(metrics_json: Dict[str, Any]) -> Scores:
     score_data = metrics_json.get('scores') or {}
     return Scores(
@@ -201,18 +239,29 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
     update_session_status(session_id, "completed", step="Génération du coaching IA en cours...", progress=90)
     from app.analytics.engine.agent.agent_coach import generate_coaching_text
 
+    # Fetch trend/history context
+    history_context = get_user_recent_history(session_id)
+    logger.info(f"Contextual History for LLM: {history_context}")
+
     llm_started_at = time.perf_counter()
-    llm_coaching = generate_coaching_text(
-        scores=scores,
-        strengths=strengths,
-        weaknesses=weaknesses,
-        recommendations=recommendations,
-        fetched_docs=fetched_docs,
-        language=language,
-        model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
-        experience_level=experience_level,
-        current_goal=current_goal,
-    )
+    llm_coaching = None
+    try:
+        llm_coaching = generate_coaching_text(
+            scores=scores,
+            strengths=strengths,
+            weaknesses=weaknesses,
+            recommendations=recommendations,
+            fetched_docs=fetched_docs,
+            language=language,
+            model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
+            experience_level=experience_level,
+            current_goal=current_goal,
+            history_context=history_context
+        )
+    except Exception as e:
+        logger.error(f"LLM Enrichment failed: {e}")
+        # Graceful degradation: we will rely on the deterministic fallback in the next steps
+
     logger.info("LLM coaching generation completed in %.2fs", time.perf_counter() - llm_started_at)
 
     report_dict['retrieved_documents'] = fetched_docs
@@ -237,7 +286,7 @@ def process_video_task(
     Background worker: runs the full SpeechCoach analysis pipeline and saves results to DB.
     """
     # Clean terminal start
-    print(f"\n--- [START] Session {session_id[:8]} ({source_name or 'upload'}) ---")
+    logger.info("--- [START] Session %s (%s) ---", session_id[:8], source_name or 'upload')
     
     update_session_status(session_id, "processing", step="Démarrage...", progress=5, started_now=True)
     

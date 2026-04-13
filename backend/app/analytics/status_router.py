@@ -122,27 +122,29 @@ def _serialize_session_history_item(
 def _build_dashboard_coaching_snapshot(report: Dict[str, Any]) -> Dict[str, Any]:
     strengths = report.get('strengths') or []
     training_plan = report.get('training_plan') or {}
-    exercise_recommendation = report.get('exercise_recommendation') or {}
-    first_day = (training_plan.get('days') or [None])[0] or {}
-    next_practice_title = first_day.get('title')
-    next_practice_step = (first_day.get('items') or [None])[0]
+    summary = report.get('summary') or {}
+    
+    # Priority for new AI-generated exercises
+    next_practice_title = summary.get('exercice_titre')
+    next_practice_step = summary.get('exercice_consigne')
 
-    if not exercise_recommendation.get('should_display', True):
-        next_practice_title = None
-        next_practice_step = None
-    elif not next_practice_title:
-        next_practice_title = exercise_recommendation.get('title')
-        next_practice_step = (exercise_recommendation.get('steps') or [None])[0] or exercise_recommendation.get('summary')
+    # Fallback to legacy training plan if AI fields are missing
+    if not next_practice_title:
+        first_day = (training_plan.get('days') or [None])[0] or {}
+        next_practice_title = first_day.get('title')
+        next_practice_step = (first_day.get('items') or [None])[0]
 
     return {
         'session_id': report.get('session', {}).get('id', ''),
         'title': report.get('session', {}).get('title', 'Rapport'),
         'created_at': report.get('session', {}).get('created_at', ''),
-        'overall_score': report.get('summary', {}).get('overall_score', 0),
-        'priority_focus': report.get('summary', {}).get('priority_focus', 'Progression generale'),
-        'narrative': report.get('summary', {}).get('narrative', ''),
-        'encouragement': report.get('summary', {}).get('encouragement'),
-        'primary_focus': training_plan.get('focus_primary') or report.get('summary', {}).get('priority_focus', 'Progression generale'),
+        'overall_score': summary.get('overall_score', 0),
+        'headline': summary.get('headline', ''),
+        'priority_focus': summary.get('priority_focus', 'Progression générale'),
+        'description': summary.get('narrative', ''), # Map narrative to description for frontend
+        'bilan': summary.get('narrative', ''),
+        'encouragement': summary.get('encouragement'),
+        'primary_focus': training_plan.get('focus_primary') or summary.get('priority_focus', 'Progression générale'),
         'first_strength': strengths[0] if strengths else None,
         'next_practice_title': next_practice_title,
         'next_practice_step': next_practice_step,

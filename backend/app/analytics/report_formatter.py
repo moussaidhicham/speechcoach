@@ -50,23 +50,36 @@ def _format_fps(value: Any) -> str:
 def _format_sharpness_label(value: Any) -> str:
     blur = _safe_int(value)
     if blur < 20:
-        return 'Floue'
+        return 'Floue (Inexploitable)'
     if blur < 40:
-        return 'Correcte'
-    return 'Nette'
+        return 'Passable (Limite)'
+    return 'Nette (Optimale)'
 
 
 def _format_axis_score(value: Any) -> str:
-    return f"{_safe_float(value) / 10:.1f}/10"
+    return f"{_safe_float(value):.1f}/10"
+
+
+def _format_intensity_label(value: Any) -> str:
+    score = _safe_float(value)
+    if score >= 7.5:
+        return 'Agitée'
+    if score >= 3.5:
+        return 'Naturelle'
+    return 'Statique'
 
 
 def _format_pace_label(value: Any) -> str:
     wpm = _safe_int(value)
-    if wpm > 160:
+    if wpm > 180:
+        return 'Trop rapide'
+    if wpm > 150:
         return 'Rapide'
     if wpm >= 120:
-        return 'Correct'
-    return 'Lent'
+        return 'Idéal'
+    if wpm > 0:
+        return 'Lent'
+    return 'N/A'
 
 
 def _format_eye_contact_label(value: Any) -> str:
@@ -92,8 +105,8 @@ def _format_lighting_label(value: Any) -> str:
     if brightness < 70:
         return 'Trop sombre'
     if brightness > 210:
-        return 'Trop fort'
-    return 'Correct'
+        return 'Surexposée'
+    return 'Optimale'
 
 
 def _score_headline(score: int) -> str:
@@ -390,9 +403,28 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         'narrative': summary_narrative,
         'priority_focus': priority_focus,
         'encouragement': encouragement,
+        'exercice_titre': llm_coaching.get('exercice_titre'),
+        'exercice_consigne': llm_coaching.get('exercice_consigne'),
     }
     exercise_recommendation = _sanitize_exercise_recommendation(exercise_recommendation, summary_payload, recommendations)
     training_plan = _sanitize_training_plan(training_plan, summary_payload, recommendations)
+
+    if llm_coaching and 'exercice_titre' in llm_coaching and 'exercice_consigne' in llm_coaching:
+        exercise_recommendation['mode'] = 'single_exercise'
+        exercise_recommendation['should_display'] = True
+        exercise_recommendation['title'] = str(llm_coaching.get('exercice_titre', 'Pratique Ciblée'))
+        
+        consigne = str(llm_coaching.get('exercice_consigne', ''))
+        steps = [s.strip() for s in consigne.split(' | ') if s.strip()]
+        if len(steps) < 2:
+             steps = [s.strip() for s in consigne.split('\n') if s.strip()]
+             
+        exercise_recommendation['summary'] = 'Une action concrète à tester dès la prochaine répétition.'
+        exercise_recommendation['steps'] = steps if steps else [consigne]
+        
+        # Override legacy 3-day plan so the UI prioritizes the AI mission
+        training_plan['days'] = []
+
     if exercise_recommendation.get('should_display') and not training_plan.get('days') and not exercise_recommendation.get('summary') and not exercise_recommendation.get('steps'):
         exercise_recommendation['should_display'] = False
 
@@ -426,6 +458,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
             'eye_contact_ratio': _safe_int(_safe_float(vision.get('eye_contact_ratio')) * 100),
             'hands_visibility_ratio': _safe_int(_safe_float(vision.get('hands_visibility_ratio')) * 100),
             'hands_activity_score': round(_safe_float(vision.get('hands_activity_score')), 2),
+            'hands_intensity_label': _format_intensity_label(vision.get('hands_activity_score')),
             'brightness': _safe_int(vision.get('avg_brightness')),
             'blur': _safe_int(vision.get('avg_blur')),
         },
@@ -512,23 +545,20 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     lines.append('')
 
     practice_mode = str(exercise_recommendation.get('mode') or '')
-    if exercise_recommendation.get('should_display', True):
-        section_title = '## Plan de pratique'
-        if practice_mode == 'light_tip':
-            section_title = '## Conseil de repetition'
-        elif practice_mode == 'setup_action':
-            section_title = '## Verification avant la prochaine prise'
-        elif practice_mode == 'single_exercise':
-            section_title = '## Exercice prioritaire'
-
+    # --- MISSION MASTER COACH (AI) ---
+    if enrichment_status == 'completed' and summary.get('exercice_titre'):
         lines.extend([
-            section_title,
+            f"## Plan d'action : {summary.get('exercice_titre')}",
             '',
-            f"- Focus principal : {training_plan.get('focus_primary', '') or exercise_recommendation.get('focus_primary', '') or 'Progression generale'}",
-            f"- Focus secondaire : {training_plan.get('focus_secondary', '') or exercise_recommendation.get('focus_secondary', '') or 'Consolidation'}",
+            summary.get('exercice_consigne', ''),
             '',
         ])
-
+    else:
+        # Fallback to legacy training plan if AI mission is missing
+        lines.extend([
+            '## Séquence d\'entraînement recommandée',
+            '',
+        ])
         if training_plan.get('days'):
             for day in training_plan.get('days', []):
                 lines.append(f"### {day.get('title', 'Bloc de pratique')}")
@@ -536,10 +566,9 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
                     lines.append(f'- {item}')
                 lines.append('')
         else:
-            lines.append(f"- {exercise_recommendation.get('summary', 'Aucune consigne detaillee n a ete fournie.')}")
+            lines.append(f"- {exercise_recommendation.get('summary', 'Reprenez votre discours en appliquant le conseil prioritaire.')}")
             for step in exercise_recommendation.get('steps', []):
-                if step != exercise_recommendation.get('summary'):
-                    lines.append(f"- {step}")
+                lines.append(f"- {step}")
             lines.append('')
 
     lines.extend([
@@ -547,8 +576,9 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         '',
         '### Voix',
         f"- Rythme de parole : {metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
-        f"- Pauses marquees (>0.5s) : {metrics.get('pause_count', 0)}",
-        f"- Hesitations detectees : {metrics.get('filler_count', 0)}",
+        f"- Pauses marquées (>0.5s) : {metrics.get('pause_count', 0)}",
+        f"- Hésitations détectées : {metrics.get('filler_count', 0)} ({'Excellent !' if metrics.get('filler_count', 0) == 0 else 'A réduire'})",
+        f"- Répétitions détectées : {metrics.get('stutter_count', 0)} ({'Excellent !' if metrics.get('stutter_count', 0) == 0 else 'A surveiller'})",
         '',
         '### Qualite video',
         f"- Eclairage : {_format_lighting_label(metrics.get('brightness', 0))}",
@@ -556,9 +586,9 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         '',
         '### Presence a l ecran',
         f"- Visage visible dans le cadre : {metrics.get('face_presence_ratio', 0)}%",
-        f"- Regard vers la camera : {metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
+        f"- Regard vers la caméra : {metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
         f"- Mains visibles : {metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
-        f"- Energie gestuelle : {metrics.get('hands_activity_score', 0)}/10",
+        f"- Intensité gestuelle : {metrics.get('hands_activity_score', 0)}/10 ({metrics.get('hands_intensity_label', 'N/A')})",
         '',
         '## Transcription automatique',
         '',
@@ -583,10 +613,30 @@ def _render_bullet_cards(items: List[str], empty_message: str) -> str:
 
 def _render_coaching_block(summary: Dict[str, Any], training_plan: Dict[str, Any], enrichment_status: str) -> str:
     if enrichment_status == 'pending':
-        return '<div class="note">Le coaching enrichi est encore en preparation. Revenez dans quelques instants pour une formulation plus fine.</div>'
+        return '<div class="note">Le coaching enrichi est encore en préparation. Revenez dans quelques instants pour une formulation plus fine.</div>'
 
     if enrichment_status == 'failed':
-        return '<div class="note">Le coaching enrichi n a pas pu etre charge cette fois-ci. Le plan de pratique reste disponible ci-dessous.</div>'
+        return '<div class="note">Le coaching enrichi n\'a pas pu être chargé cette fois-ci. Le plan de pratique reste disponible ci-dessous.</div>'
+
+    ex_titre = summary.get('exercice_titre')
+    ex_consigne = summary.get('exercice_consigne')
+
+    if ex_titre and ex_consigne:
+        return f"""
+        <div class="mission-block">
+            <h3 style="margin-top: 0; color: var(--primary-color);">Mission : {escape(ex_titre)}</h3>
+            <div style="font-size: 1.1em; line-height: 1.6;">{escape(ex_consigne)}</div>
+        </div>
+        """
+    
+    # Fallback to legacy
+    next_up = training_plan.get('focus_primary', 'Général')
+    return f"""
+    <div class="note">
+        <strong>Focus recommandé :</strong> {escape(next_up)}<br/>
+        Suivez les étapes du plan détaillé ci-dessous.
+    </div>
+    """
 
     priority_focus = str(summary.get('priority_focus', '') or training_plan.get('focus_primary', '') or 'Progression generale')
     encouragement = str(summary.get('encouragement') or '').strip()
@@ -662,21 +712,31 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     encouragement = str(summary.get('encouragement') or '').strip()
     practice_mode = str(exercise_recommendation.get('mode') or '')
 
-    practice_title = 'Plan de pratique'
-    if practice_mode == 'light_tip':
-        practice_title = 'Conseil de repetition'
-    elif practice_mode == 'setup_action':
-        practice_title = 'Verification avant la prochaine prise'
-    elif practice_mode == 'single_exercise':
-        practice_title = 'Exercice prioritaire'
-
+    practice_title = "Plan d'action"
     practice_section = ''
-    if exercise_recommendation.get('should_display', True):
+    
+    # Priority to AI Mission
+    ex_titre = summary.get('exercice_titre')
+    ex_consigne = summary.get('exercice_consigne')
+
+    if ex_titre and ex_consigne:
+        practice_section = f"""
+        <article class=\"card\">
+          <div class=\"section-title\"><h2>{escape(practice_title)} : {escape(ex_titre)}</h2></div>
+          <div class=\"note\" style=\"font-size: 1.1em; line-height: 1.6; border-left: 4px solid var(--primary);\">
+            {escape(ex_consigne)}
+          </div>
+        </article>
+        """
+    elif exercise_recommendation.get('should_display', True):
+        practice_title = 'Plan de pratique'
+        if practice_mode == 'light_tip':
+            practice_title = 'Conseil de répétition'
+        
         practice_body = _render_training_days(training_plan.get('days', []))
         if not training_plan.get('days'):
-            practice_body = (
-                f"<div class=\"note\">{escape(str(exercise_recommendation.get('summary') or 'Aucune consigne detaillee n a ete fournie.'))}</div>"
-            )
+            practice_body = f"<div class=\"note\">{escape(str(exercise_recommendation.get('summary') or 'Reprenez votre discours en appliquant le conseil prioritaire.'))}</div>"
+            
         practice_section = f"""
         <article class=\"card\">
           <div class=\"section-title\"><h2>{escape(practice_title)}</h2></div>
@@ -864,11 +924,11 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
           <div class=\"section-title\"><h2>Details techniques</h2></div>
           <div class=\"metrics-grid\">
             <div class=\"metric-item\"><strong>Rythme de parole</strong><span>{metrics.get('wpm', 0)} mots/min</span></div>
-            <div class=\"metric-item\"><strong>Pauses marquees</strong><span>{metrics.get('pause_count', 0)}</span></div>
-            <div class=\"metric-item\"><strong>Eclairage</strong><span>{_format_lighting_label(metrics.get('brightness', 0))}</span></div>
-            <div class=\"metric-item\"><strong>Nettete de l image</strong><span>{_format_sharpness_label(metrics.get('blur', 0))}</span></div>
-            <div class=\"metric-item\"><strong>Regard vers la camera</strong><span>{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})</span></div>
-            <div class=\"metric-item\"><strong>Mains visibles</strong><span>{metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})</span></div>
+            <div class=\"metric-item\"><strong>Hésitations / Répétitions</strong><span>{metrics.get('filler_count', 0)} / {metrics.get('stutter_count', 0)}</span></div>
+            <div class=\"metric-item\"><strong>Éclairage</strong><span>{_format_lighting_label(metrics.get('brightness', 0))}</span></div>
+            <div class=\"metric-item\"><strong>Netteté de l'image</strong><span>{_format_sharpness_label(metrics.get('blur', 0))}</span></div>
+            <div class=\"metric-item\"><strong>Regard caméra</strong><span>{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})</span></div>
+            <div class=\"metric-item\"><strong>Intensité gestuelle</strong><span>{metrics.get('hands_activity_score', 0)}/10 ({metrics.get('hands_intensity_label', 'N/A')})</span></div>
           </div>
         </article>
 

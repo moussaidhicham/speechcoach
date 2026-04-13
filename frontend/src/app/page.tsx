@@ -44,9 +44,9 @@ const capabilities = [
   {
     title: 'Coaching structure',
     description:
-      "Chaque session se termine par un rapport partageable avec forces, points a corriger et plan de pratique.",
+      "Chaque session se termine par un rapport partageable avec forces, points a corriger et un plan d'action personnalise.",
     icon: ClipboardList,
-    points: ['Resume executif', 'Recommandations prioritaires', "Plan d'entrainement"],
+    points: ['Resume executif', 'Recommandations prioritaires', "Plan d'action"],
   },
 ];
 
@@ -199,7 +199,7 @@ function ProductPreview() {
             {[
               ['Force', 'Structure orale claire et rythme stable.'],
               ['A corriger', 'Regarder la camera dans les transitions.'],
-              ['Prochaine action', '2 repetitions de 90 secondes sans notes.'],
+              ["Plan d'action", '2 repetitions de 90 secondes sans notes.'],
             ].map(([label, value]) => (
               <div key={label} className="rounded-xl border border-border/60 bg-background/70 px-4 py-4">
                 <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">

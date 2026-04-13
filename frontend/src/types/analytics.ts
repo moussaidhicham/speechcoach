@@ -124,6 +124,7 @@ export interface DashboardCoachingSnapshot {
   title: string;
   created_at: string;
   overall_score: number;
+  headline: string;
   priority_focus: string;
   narrative: string;
   encouragement?: string | null;

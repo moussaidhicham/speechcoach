@@ -21,6 +21,8 @@
 \usepackage{fancyhdr}
 \usepackage{float}
 \usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -323,6 +325,100 @@ Introduction d'un système de surcharge linguistique (\textit{override}). En per
 \subsection{Granularité du suivi IA}
 Décomposition modulaire de la phase finale d'enrichissement en sous-étapes distinctes (\textit{retrieval} et \textit{generation}). Cette granularité permet un monitoring plus précis des temps de réponse de chaque couche d'intelligence et assure un feedback visuel continu à l'utilisateur pendant les phases de calcul plus lourdes.
 
+\section{Architecture Hybride et Moteur de Coaching Avancé}
+
+Afin de concilier une analyse contextuelle profonde (IA) avec une fluidité d'utilisation en production, l'architecture a été transformée en un système hybride asynchrone doté de garde-fous stricts.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.5cm and 2.5cm,
+        box/.style={rectangle, draw=blue!70!black, fill=blue!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, rounded corners},
+        data/.style={cylinder, draw=gray!70!black, fill=gray!5, thick, shape border rotate=90, aspect=0.25, minimum height=1.5cm, minimum width=3.8cm, align=center},
+        rag/.style={rectangle, draw=orange!70!black, fill=orange!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, dashed, rounded corners},
+        api/.style={rectangle, draw=red!70!black, fill=red!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, rounded corners},
+        arrow/.style={->, >=stealth, thick, draw=black!80}
+    ]
+
+    % --- LEFT COLUMN ---
+    \node[box] (ui) {Interface Frontend \\ (Dashboard)};
+    \node[box, below=1.5cm of ui] (scoring) {Moteur Déterministe \\ (\texttt{scoring.py})};
+    \node[box, below=6cm of scoring] (sanitizer) {Filtres Sécurité \\ \& Fallback};
+
+    % --- CENTER COLUMN ---
+    \node[box, right=2.5cm of scoring] (worker) {Worker Asynchrone \\ (\texttt{tasks.py})};
+    \node[data, below=1.5cm of worker] (db) {Base de Données \\ (Tendances \& Historique)};
+    \node[box, below=1.5cm of db] (agent) {Master Coach Agent \\ (\texttt{agent\_coach.py})};
+
+    % --- RIGHT COLUMN ---
+    \node[rag, right=2.5cm of db] (raginfo) {Knowledge Base \\ RAG (\texttt{.json})};
+    \node[api, right=2.5cm of agent] (llm) {Groq API \\ (\texttt{Llama-3.3-70B})};
+
+    % --- WIRING / ROUTES ---
+    
+    % Phase 1: Upload (Left Column)
+    \draw[arrow] (ui) -- node[left, align=right, font=\scriptsize] {1. Envoi vidéo \\ (Synchrone)} (scoring);
+    \draw[arrow] (scoring) -- node[above, font=\scriptsize] {2. Déclenche Tâche Background} (worker);
+    
+    % Phase 2: Worker to Data (Center / Right)
+    \draw[arrow] (worker) -- node[left, align=right, font=\scriptsize] {3. Extraction des 3 \\ dernières sessions} (db);
+    \draw[arrow] (worker) -| node[above right, font=\scriptsize] {Requête base documentaire} (raginfo);
+    
+    % Phase 3: Data to Agent (Center Convergence)
+    \draw[arrow] (db) -- node[left, font=\scriptsize] {Historique injecté} (agent);
+    \draw[arrow] (raginfo.west) -- node[above, sloped, font=\scriptsize] {4. Règles d'oratoire exigées} (agent.north east);
+    
+    % Phase 4: Agent to LLM (Right Call)
+    \draw[arrow] (agent) -- node[above, align=center, font=\scriptsize] {5. Prompt (Contexte RAG \\ + Format JSON strict)} (llm);
+    
+    % Phase 5: LLM to Sanitizer (Bottom sweeping line)
+    \draw[arrow] (llm.south) |- node[below right, font=\scriptsize] {6. Génération LLM brute} (sanitizer.east);
+    
+    % Phase 6: Validation (Diagonal UP to DB)
+    \draw[arrow] (sanitizer.north east) -- node[above, sloped, font=\scriptsize] {7. Si Validé : Écriture Rapport Final} (db.south west);
+    
+    % Fallback Lane (Left vertical return)
+    \draw[arrow, dashed, draw=red!70] (sanitizer.north) -- node[left, align=right, font=\scriptsize] {Si Jargon / Tutoiement : \\ Repli Déterministe d'Urgence} (scoring.south);
+    
+    % Polling Lane (Far Left sweeping line)
+    \draw[arrow, dashed, draw=blue!70] (ui.west) -- ++(-1.5,0) |- node[above right, near start, font=\scriptsize] {Polling: Surveille le statut (\texttt{status\_router})} (db.west);
+
+    \end{tikzpicture}
+    \caption{Architecture hybride du moteur d'évaluation (Flux asynchrone sans croisement).}
+\end{figure}
+
+\subsection{Work-flux Asynchrone : Analyse en 2 Temps}
+Le traitement est désormais découplé pour garantir une interface sans latence :
+\begin{itemize}
+    \item \textbf{Phase 1 (Immédiate) - Scoring Déterministe :} Le moteur de calcul (\texttt{scoring.py}) chiffre instantanément les métriques brutes (WPM, FPS, Cadrage) et applique ses seuils de pénalités. Le tableau de bord et le rapport s'affichent sans bloquer l'utilisateur.
+    \item \textbf{Phase 2 (Asynchrone) - Enrichissement IA :} Un \textit{worker} Celery (\texttt{tasks.py}) consolide les données en tâche de fond. Il extrait l'historique utilisateur, interroge la base documentaire (RAG) et requiert un \textit{prompt} complexe à l'API LLM (Groq via authentification \texttt{GROQ\_API\_KEY}).
+    \item \textbf{Polling Intelligent :} Le frontend (React) interroge silencieusement la route \texttt{status\_router.py} et notifie l'utilisateur dès que le coaching personnalisé de l'Agent est prêt.
+\end{itemize}
+
+\subsection{Intelligence Pédagogique (Master Coach Agent)}
+Le modèle LLM est contraint par des directives strictes au sein du contrôleur \texttt{agent\_coach.py} :
+\begin{itemize}
+    \item \textbf{Intégration RAG (Toastmasters) :} Le système s'appuie sur le document \texttt{knowledge\_base.json}. L'intelligence artificielle base son intervention \textit{uniquement} sur des standards d'art oratoire éprouvés, bloquant radicalement toute hallucination.
+    \item \textbf{Analyse des Tendances (Historique) :} L'Agent ingère de manière dynamique les 3 dernières sessions enregistrées. Son plan d'action réagit à une "trajectoire" (ex: stagnation, forte amélioration) et non plus à un incident technique isolé.
+    \item \textbf{Prompting JSON Sécurisé :} Format d'échange imposé (Bilan, Priorité, Exercice), incluant une interdiction formelle d'employer du jargon (comme "WPM") selon les lois d'instructions injectées dans l'API.
+\end{itemize}
+
+\subsection{Sécurité Industrielle et \textit{Fallback} Déterministe}
+L'architecture de production déploie un filet de sécurité rigide pour prévenir toute anomalie LLM :
+\begin{itemize}
+    \item \textbf{Filtre Anti-Tutoiement :} Un module basé sur expressions régulières examine le retour LLM. L'analyse est annulée et censurée si des pronoms familiers (\textit{tu, ton, fais}) sont observés.
+    \item \textbf{Validation Sémantique :} Un filtre exclut arbitrairement un bilan formulé de manière trop vague (ex: \textit{"Le problème concerne le regard"}).
+    \item \textbf{Repli Déterministe (Fallback) :} Si l'API distante Groq subit une panne, est trop lente, ou censure son output, le système bascule sur un algorithme interne calculant un feedback poli. Le compte-rendu ne restera de ce fait \textbf{jamais vide}.
+\end{itemize}
+
+\subsection{Cohérence Frontend-Backend (UI "Executive")}
+L'interface finale n'est plus une vitrine indépendante, elle est le miroir exact du traitement scientifique :
+\begin{itemize}
+    \item Les objectifs cibles affichés à l'écran (ex: \textit{Maintenir entre 120 et 160 mots/min} ; \textit{Mouvement équilibré 2.5 à 6.5}) reproduisent avec une précision mathématique les seuils de pénalité de \texttt{scoring.py}.
+    \item \textbf{Moteur de Parsing Regex} : Côté Client, la "bouillie textuelle" produite par l'IA est scindée pour forcer l'affichage d'un "Plan d'Action" clair, aéré et numéroté (Étapes 1, 2, 3), ce qui annule toute surcharge cognitive pour l'orateur.
+    \item Affichage de la perfection des algorithmes : Si l'ASR détecte 0 Hésitation, la métrique est intentionnellement affichée et gratifiée d'un sigle \textit{(Excellent)} pour consolider la confiance dans l'outil de diagnostic.
+\end{itemize}
+
 \section{Synthèse}
 \begin{table}[H]
     \centering
@@ -344,6 +440,14 @@ Décomposition modulaire de la phase finale d'enrichissement en sous-étapes dis
         \midrule
         Coaching LLM (V1 Local) & Implémenté & Validé comme solution de repli (Ollama), mais limité en nuances sémantiques. \\
         Coaching LLM (V2 Groq) & Implémenté & Utilisation de Llama-3.3-70B pour une qualité de coaching "humaine" et experte. \\
+        \midrule
+        \textbf{Architecture \& IA} & & \\
+        \midrule
+        Analyse Asynchrone (2 Temps) & Implémentée & Scoring immédiat puis LLM background avec polling. \\
+        Agent RAG (Toastmasters) & Implémenté & Modèle LLM canalisé par le RAG et l'historique de l'orateur. \\
+        Sécurité et Fallback & Validée & Filtre anti-tutoiement et repli déterministe (\textit{0 rapport vide}). \\
+        Cohérence UI/Moteur & Validée & Objectifs mathématiques (\textit{sweet-spots}) calqués en frontend. \\
+        Parsing Regex Plan d'Action & Implémenté & Affichage IA numéroté (1,2,3) réduisant la charge cognitive. \\
         \bottomrule
     \end{tabularx}
     \caption{Résumé des travaux de cette phase.}

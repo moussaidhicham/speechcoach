@@ -97,7 +97,7 @@ def call_groq_safe(model: str, system: str, user: str, temp: float = 0.2, limit:
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=20)
         if response.status_code != 200:
-            print(f"\n[GROQ API ERROR] Status {response.status_code}: {response.text}\n")
+            logger.error("Groq API error: status %s, %s", response.status_code, response.text)
             logger.error("Groq API error: %s", response.text)
             return ""
             
@@ -106,7 +106,7 @@ def call_groq_safe(model: str, system: str, user: str, temp: float = 0.2, limit:
         logger.info("Groq coaching output (%s): %s", model, content.replace("\n", " | "))
         return clean_llm_output(content)
     except Exception as error:
-        print(f"\n[GROQ CONNECTION ERROR] {error}\n")
+        logger.error("Groq connection error: %s", error)
         logger.error("Groq call failed: %s", error)
         return ""
 
@@ -212,20 +212,6 @@ def _validate_and_sanitize(text: str, fallback: str) -> str:
     if any(re.search(pattern, lowered) for pattern in tutoiement_patterns):
         return fallback
 
-    banned_fragments = [
-        "aventure de",
-        "croyez en",
-        "chaque jour une",
-        "representation visuelle",
-        "cadence de parole",
-        "ombre au tableau",
-        "trou blanc",
-        "splendides aptitudes",
-        "pointement du recordage",
-    ]
-    if any(fragment in lowered for fragment in banned_fragments):
-        return fallback
-
     if cleaned[-1] not in ".!?":
         cleaned = cleaned + "."
     return cleaned
@@ -246,54 +232,18 @@ def _needs_more_specific_bilan(text: str) -> bool:
 def _is_bad_bilan(text: str) -> bool:
     if not text or len(text) < 30:
         return True
-    sentence_count = _sentence_count(text)
-    return sentence_count < 2 or sentence_count > 4
+    return False
 
 
 def _is_bad_priority(text: str, tip_seed: str) -> bool:
-    if not text or len(text) < 18:
+    del tip_seed
+    if not text or len(text) < 15:
         return True
-    if _sentence_count(text) != 1:
-        return True
-
-    lowered = text.lower()
-    banned = [
-        "regarder l'ecran",
-        "ecran plutot que l'objectif",
-        "recharger votre cerveau",
-        "recharger leur cerveau",
-        "moins stressante",
-    ]
-    if any(fragment in lowered for fragment in banned):
-        return True
-
-    tip_tokens = {
-        token
-        for token in re.findall(r"[a-zA-Z]{4,}", tip_seed.lower())
-        if token not in {"avec", "pour", "dans", "plus", "vous", "votre"}
-    }
-    text_tokens = set(re.findall(r"[a-zA-Z]{4,}", lowered))
-    return bool(tip_tokens) and not tip_tokens.intersection(text_tokens)
+    return False
 
 
 def _is_bad_encouragement(text: str) -> bool:
-    if not text or len(text) < 18:
-        return True
-    if _sentence_count(text) != 1:
-        return True
-
-    lowered = text.lower()
-    banned = [
-        "croyez en vous",
-        "plus fort que vous ne le croyez",
-        "travaillez dur",
-        "confiance en vous",
-        "potentiel a explorer",
-        "grand pas",
-    ]
-    if any(fragment in lowered for fragment in banned):
-        return True
-    if "?" in text:
+    if not text or len(text) < 15:
         return True
     return False
 
@@ -329,61 +279,66 @@ def _build_prompt_payload(
     weaknesses: List[str],
     recommendations: List[Recommendation],
     fetched_docs: List[Dict[str, Any]],
+    language: str = "fr",
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
+    history_context: str = "Aucun historique disponible."
 ) -> Tuple[str, str]:
     top_category, top_message, top_tip = _top_recommendation(recommendations, weaknesses)
-    strengths_text = " | ".join(strengths[:3]) if strengths else "Aucun point fort explicite."
-    weaknesses_text = " | ".join(weaknesses[:3]) if weaknesses else top_message
-    pedagogical_source = ""
+    strengths_text = " | ".join(strengths[:3]) if strengths else "Bases de présentation correctes."
+    weaknesses_text = " | ".join(weaknesses[:2]) if weaknesses else top_message
+    
+    # Enrich from RAG
+    pedagogical_info = ""
     if fetched_docs:
-        pedagogical_source = str(fetched_docs[0].get("content", "")).strip()[:240]
-    normalized_level = (experience_level or "non renseigne").strip()
-    normalized_goal = (current_goal or "general").strip()
+        doc = fetched_docs[0]
+        title = doc.get("title", "Technique sans titre")
+        content = doc.get("content", "")
+        steps = " | ".join(doc.get("exercise_steps", []))
+        pedagogical_info = f"Technique: {title}\nThéorie: {content}\nÉtapes suggérées: {steps}"
+
+    normalized_level = (experience_level or "Beginner").strip()
+    normalized_goal = (current_goal or "Général").strip()
 
     system = (
-        "Tu es un coach expert en art oratoire et prise de parole en public. "
-        "Tu dois repondre uniquement au format JSON valide strict. "
-        "Tu dois toujours utiliser exactement ces 3 cles : "
-        "bilan_global, point_prioritaire, encouragement. "
-        "N'ajoute absolument aucun texte avant ou apres le bloc JSON. "
-        "Directives redactionnelles : "
-        "1. bilan_global (2-3 phrases) : Analyse fluide, engageante et tres humaine. Donne le score, celebre avec naturel les points forts, puis pointe doucement ce qui peche. "
-        "2. point_prioritaire (1 phrase) : Donne un seul conseil tres specifique et actionnable pour le defaut principal. "
-        "3. encouragement (1 phrase) : Une chute motivante, pragmatique, basee sur le futur resultat escompte. "
-        "Directives de style CRITIQUES : "
-        "Sois direct et professionnel (vouvoie toujours). "
-        "Reformule completement les termes techniques comme un vrai coach humain le ferait a l'oral. "
-        "Bannis totalement les expressions de robot (ex: 'Voici votre compte-rendu', 'Vous avez recu un message', 'Le systeme indique')."
+        "Vous êtes le 'Master Coach' de SpeechCoach, un expert certifié en communication (Toastmasters International). "
+        "Votre mission est de transformer des chiffres bruts en un parcours d'entraînement puissant. "
+        "Répondez exclusivement au format JSON strict avec ces 5 clés : "
+        "bilan_global, point_prioritaire, encouragement, exercice_titre, exercice_consigne. "
+        "DIRECTIVES PÉDAGOGIQUES : "
+        "1. Ton : Professionnel, bienveillant, humain. Vouvoiement obligatoire. "
+        "2. Langage : Interdiction totale du jargon technique (pas de 'WPM', dites 'mots par minute'). "
+        "3. Bilan : Mentionnez la TENDANCE basée sur l'historique (progression ou stagnation). "
+        "4. Exercice Universel : Concevez un exercice de 5 minutes SANS support. Ne copiez JAMAIS mot pour mot la source pédagogique ! INVENTEZ à chaque fois un scénario pratique, créatif et unique adapté. "
+        "5. Format Exercice : 'exercice_titre' (court), 'exercice_consigne' DOIT ÊTRE UN TABLEAU JSON DE STRING comprenant EXACTEMENT 3 étapes. Exemple: [\"Faites X.\", \"Dites Y.\", \"Vérifiez Z.\"].\n"
+        "6. Adaptation Linguistique : Rédigez le texte global en FRANÇAIS. Mais si vous donnez des exemples de mots (mots de liaison, tics linguistiques), ils DOIVENT ABSOLUMENT être dans la LANGUE DE LA VIDÉO."
     )
     user = (
-        f"Score global: {int(round(scores.overall_score))}\n"
-        f"Voix: {scores.voice_score}/10\n"
-        f"Presence: {scores.presence_score}/10\n"
-        f"Corps: {scores.body_language_score}/10\n"
-        f"Scene: {scores.scene_score}/10\n"
+        f"--- CONTEXTE UTILISATEUR ---\n"
+        f"Niveau: {normalized_level} | Objectif: {normalized_goal}\n"
+        f"Langue de la Vidéo: {language.upper() if language else 'FR'}\n"
+        f"Historique/Tendance: {history_context}\n\n"
+        f"--- MÉTRIQUES ACTUELLES ---\n"
+        f"Score: {int(round(scores.overall_score))}/100\n"
         f"Points forts: {strengths_text}\n"
-        f"Axes de progression: {weaknesses_text}\n"
-        f"Top recommandation: {top_category}\n"
-        f"Message: {top_message}\n"
-        f"Conseil actionnable: {top_tip}\n"
-        f"Niveau utilisateur: {normalized_level}\n"
-        f"Objectif utilisateur: {normalized_goal}\n"
-        f"Source pedagogique: {pedagogical_source or 'Non fournie'}"
+        f"Défauts: {weaknesses_text}\n\n"
+        f"--- SOURCE PÉDAGOGIQUE (RAG) ---\n"
+        f"{pedagogical_info or 'Utilisez votre expertise générale.'}"
     )
     return system, user
 
 
 def _generate_with_model(system: str, user: str, model_name: str) -> str:
+    from app.analytics.engine.agent.agent_coach import _resolve_backend, call_groq_safe, call_ollama_safe
     backend = _resolve_backend()
     
-    print(f"[AI ENGINE] {backend.upper()} | {model_name}")
+    logger.info("AI ENGINE | %s | %s", backend.upper(), model_name)
 
     if backend == "groq":
-        return call_groq_safe(model_name, system, user, temp=0.2, limit=220)
+        return call_groq_safe(model_name, system, user, temp=0.6, limit=1000) # Increased limit and temp for creativity
     elif backend != "ollama":
         logger.warning("Unsupported coaching backend '%s'. Falling back to Ollama.", backend)
-    return call_ollama_safe(model_name, system, user, temp=0.2, limit=220)
+    return call_ollama_safe(model_name, system, user, temp=0.6, limit=1000)
 
 
 def generate_coaching_text(
@@ -394,19 +349,21 @@ def generate_coaching_text(
     fetched_docs: List[Dict[str, Any]],
     language: str,
     model: str = "",
-    speaker_name: Optional[str] = None,
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
+    history_context: str = "Première session."
 ) -> Optional[Dict[str, str]]:
-    del language, speaker_name
 
     from app.core.config import settings
-    default_model = settings.SPEECHCOACH_LLM_MODEL or "qwen2.5:3b-instruct"
+    default_model = settings.SPEECHCOACH_LLM_MODEL or "llama-3.3-70b-versatile"
     model_name = model or default_model
 
+    # Minimal fallbacks - deterministic strings improved for robust wording
     fallback_bilan = build_bilan(scores, strengths, recommendations, weaknesses)
     fallback_priority = build_priority(recommendations, weaknesses)
     fallback_encouragement = build_encouragement(strengths, recommendations, weaknesses)
+    fallback_ex_titre = "Mission : Pratique Ciblée"
+    fallback_ex_consigne = "Focalisez votre attention sur votre axe de progression principal durant 2 minutes de parole libre."
 
     system, user = _build_prompt_payload(
         scores,
@@ -414,29 +371,44 @@ def generate_coaching_text(
         weaknesses,
         recommendations,
         fetched_docs,
+        language=language,
         experience_level=experience_level,
         current_goal=current_goal,
+        history_context=history_context
     )
 
     try:
         raw_output = _generate_with_model(system, user, model_name)
     except Exception as error:
-        logger.error("Coaching generation failed before validation: %s", error, exc_info=True)
+        logger.error("Coaching generation failed: %s", error)
         raw_output = ""
 
     payload = _extract_json_payload(raw_output)
     if payload is None:
-        logger.warning("Coaching output was not valid JSON. Falling back field by field.")
         return {
             "bilan_global": fallback_bilan,
             "point_prioritaire": fallback_priority,
             "encouragement": fallback_encouragement,
+            "exercice_titre": fallback_ex_titre,
+            "exercice_consigne": fallback_ex_consigne
         }
 
+    # Sanitize and Validate
     bilan = _validate_and_sanitize(str(payload.get("bilan_global", "")).strip(), fallback_bilan)
     priority = _validate_and_sanitize(str(payload.get("point_prioritaire", "")).strip(), fallback_priority)
     encouragement = _validate_and_sanitize(str(payload.get("encouragement", "")).strip(), fallback_encouragement)
+    ex_titre = str(payload.get("exercice_titre", fallback_ex_titre)).strip()[:60]
+    
+    # Process exercice_consigne mathematically: if it's an array, force the pipe separator
+    raw_consigne = payload.get("exercice_consigne", fallback_ex_consigne)
+    if isinstance(raw_consigne, list):
+        # Guarantee flawless separation for the frontend safely
+        formatted_steps = [str(step).strip() for step in raw_consigne if str(step).strip()]
+        ex_consigne = " | ".join(formatted_steps) if formatted_steps else fallback_ex_consigne
+    else:
+        ex_consigne = str(raw_consigne).strip()
 
+    # Smart swap if LLM output is too vague or fails quality checks
     if _is_bad_bilan(bilan) or _needs_more_specific_bilan(bilan):
         bilan = fallback_bilan
     if _is_bad_priority(priority, fallback_priority):
@@ -448,4 +420,6 @@ def generate_coaching_text(
         "bilan_global": bilan,
         "point_prioritaire": priority,
         "encouragement": encouragement,
+        "exercice_titre": ex_titre or fallback_ex_titre,
+        "exercice_consigne": ex_consigne or fallback_ex_consigne
     }

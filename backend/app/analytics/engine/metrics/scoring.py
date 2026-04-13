@@ -84,75 +84,83 @@ def calculate_scores(audio: AudioMetrics, vision: VisionMetrics) -> Scores:
 
 
 def generate_feedback_summary(scores: Scores, audio: AudioMetrics, vision: VisionMetrics) -> Tuple[List[str], List[str]]:
-    """Generate deterministic strengths and weaknesses for the report."""
+    """Generate professional deterministic strengths and weaknesses for the report."""
     strengths: List[str] = []
     weakness_entries: List[Tuple[int, str]] = []
+    
+    # Priority weighting
     presence_priority_bonus = 10 if scores.presence_score + 1.0 < scores.voice_score else 0
     voice_priority_penalty = 10 if scores.presence_score + 1.0 < scores.voice_score else 0
 
     def add_weakness(priority: int, text: str) -> None:
         weakness_entries.append((priority, text))
 
+    # --- VOICE & PACE ---
     if 120 <= audio.wpm <= 160:
-        strengths.append(f"Excellent rythme vocal ({round(audio.wpm)} mots/minute).")
+        strengths.append(f"Rythme vocal parfaitement maîtrisé ({round(audio.wpm)} mots/minute).")
     elif audio.wpm < 110:
-        add_weakness(82, f"Rythme d'elocution trop lent ({round(audio.wpm)} mots/minute).")
+        add_weakness(82, f"Débit de parole un peu lent ({round(audio.wpm)} mots/minute). Dynamisez vos phrases.")
     elif audio.wpm > 160:
-        voice_priority = 82 if audio.wpm > 175 else 65
+        voice_priority = 85 if audio.wpm > 175 else 70
         voice_priority -= voice_priority_penalty
-        add_weakness(voice_priority, f"Vous parlez trop vite ({round(audio.wpm)} mots/minute).")
+        add_weakness(voice_priority, f"Débit de parole élevé ({round(audio.wpm)} mots/minute). Pensez à respirer entre vos idées.")
 
     estimated_mins = audio.wpm / 140.0 if audio.wpm > 0.1 else 1.0
     fillers_per_min = audio.filler_count / estimated_mins
 
     if audio.filler_count == 0 and audio.stutter_count == 0:
-        strengths.append("Discours clair, sans tics de langage ('euh', 'hum') ni repetitions.")
+        strengths.append("Élocution très fluide : aucune hésitation ni répétition détectée.")
     
     if fillers_per_min > 3:
-        add_weakness(70, f"Attention aux mots parasites ({audio.filler_count} detectes).")
+        add_weakness(70, f"Présence de mots parasites ({audio.filler_count} 'euh', 'donc', etc.). Acceptez le silence.")
     
     stutters_per_min = audio.stutter_count / estimated_mins
     if stutters_per_min > 2:
-        add_weakness(65, f"Des repetitions de mots figees ({audio.stutter_count}) ont ete detectees. Travaillez votre fluidite.")
+        add_weakness(65, f"Répétitions de mots détectées ({audio.stutter_count}). Travaillez la fluidité des transitions.")
 
+    # --- VISION & PRESENCE ---
     eye_contact_percent = round(vision.eye_contact_ratio * 100)
     if vision.eye_contact_ratio >= 0.7:
-        strengths.append(f"Tres bon contact visuel ({eye_contact_percent}% du temps).")
+        strengths.append(f"Excellent contact visuel : vous regardez la caméra {eye_contact_percent}% du temps.")
     elif vision.eye_contact_ratio < 0.4:
         add_weakness(
             92 + presence_priority_bonus,
-            f"Le regard quitte trop souvent la camera ({eye_contact_percent}%). Cherchez un contact plus direct sur vos phrases cles."
+            f"Le regard quitte trop souvent la caméra ({eye_contact_percent}%). Regardez directement la caméra pour engager votre public."
         )
     elif vision.eye_contact_ratio < 0.6:
         add_weakness(
             78 + presence_priority_bonus,
-            f"Le contact camera peut etre plus regulier ({eye_contact_percent}%). Essayez de revenir plus souvent a l'objectif."
+            f"Contact caméra irrégulier ({eye_contact_percent}%). Revenez plus souvent à la caméra pour ponctuer vos propos."
         )
 
     if vision.face_presence_ratio < 0.8:
-        add_weakness(95, "Votre visage disparait parfois du cadre. Restez bien centre.")
+        add_weakness(95, "Cadrage instable : votre visage sort parfois du champ. Restez bien au centre.")
 
+    # --- BODY LANGUAGE ---
     if vision.hands_visibility_ratio >= 0.3:
         if 2.0 <= vision.hands_activity_score <= 8.0:
-            strengths.append("Gestuelle naturelle et equilibree, appuyant bien les propos.")
+            strengths.append("Gestuelle naturelle et équilibrée, appuyant efficacement vos arguments.")
         elif vision.hands_activity_score > 8:
-            add_weakness(68, "Mouvements des mains un peu trop agites, ce qui peut distraire l'attention.")
+            add_weakness(68, "Gestuelle un peu trop agitée : vos mouvements peuvent distraire l'auditoire.")
     else:
-        add_weakness(72, "Corps un peu fige. N'hesitez pas a utiliser vos mains pour illustrer vos points cles.")
+        add_weakness(72, "Posture un peu figée. Libérez vos mains pour illustrer vos points clés.")
 
+    # --- ENVIRONMENT ---
     if vision.avg_brightness < 70:
-        add_weakness(52, "L'eclairage est trop faible (video sombre).")
+        add_weakness(52, "Éclairage insuffisant (image trop sombre).")
     elif vision.avg_brightness > 210:
-        add_weakness(52, "L'image est trop exposee (trop de lumiere).")
+        add_weakness(52, "Image surexposée (trop de lumière).")
 
     if vision.avg_blur < 20:
-        add_weakness(58, "L'image manque de nettete. Nettoyez l'objectif ou ameliorez le focus.")
+        add_weakness(58, "Image floue. Nettoyez la lentille de la caméra ou améliorez la mise au point.")
 
+    # FALLBACKS
     if not strengths:
-        strengths.append("Bases de presentation correctes.")
+        strengths.append("Les fondamentaux de votre présentation sont bien en place.")
     if not weakness_entries:
-        weakness_entries.append((0, "Pas de defaut majeur identifie a ce stade."))
+        weakness_entries.append((0, "Aucun défaut majeur identifié. Continuez ainsi !"))
 
+    # Sorting by priority DESC
     weakness_entries.sort(key=lambda item: item[0], reverse=True)
     weaknesses = [text for _, text in weakness_entries]
     return strengths, weaknesses

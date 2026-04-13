@@ -166,8 +166,8 @@ export function buildMarkdownReport(report: ReportResult): string {
         : practice?.mode === 'setup_action'
           ? '## Verification avant la prochaine prise'
         : practice?.mode === 'single_exercise'
-          ? '## Exercice prioritaire'
-          : '## Plan de pratique';
+          ? "## Plan d'action"
+          : "## Plan d'action";
 
     lines.push(sectionTitle, '');
     lines.push(`- Focus principal : ${report.training_plan.focus_primary || practice?.focus_primary || 'Progression generale'}`);

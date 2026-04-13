@@ -711,17 +711,17 @@ def generate_training_plan(recommendations: List[Recommendation], scores: Scores
     day_2_block = '\n'.join(f"  - {line}" for line in day_2_lines)
     day_3_block = '\n'.join(f"  - {line}" for line in day_3_lines)
 
-    return f"""### Mini-plan de progression sur 3 jours
+    return f"""### Séquence d'entraînement recommandée
 
 **Focus Principal :** {exercise.get('focus_primary', 'Progression generale')}
 **Focus Secondaire :** {exercise.get('focus_secondary', 'Consolidation')}
 
-* **Jour 1 : Exercice principal - {exercise.get('title', 'Exercice cible')}**
+* **Bloc 1 : Exercice principal - {exercise.get('title', 'Exercice cible')}**
 {day_1_block}
 
-* **Jour 2 : Mise en pratique**
+* **Bloc 2 : Mise en pratique**
 {day_2_block}
 
-* **Jour 3 : Consolidation**
+* **Bloc 3 : Consolidation**
 {day_3_block}
 """

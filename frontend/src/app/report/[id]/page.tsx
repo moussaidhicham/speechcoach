@@ -15,6 +15,7 @@ import {
   Mic,
   PauseCircle,
   Sparkles,
+  Target,
   User,
   Video,
   type LucideIcon,
@@ -74,15 +75,15 @@ function formatFpsValue(fps: number) {
 }
 
 function formatLightingLabel(brightness: number) {
-  if (brightness < 70) return 'Trop sombre';
-  if (brightness > 210) return 'Trop fort';
-  return 'Correct';
+  if (brightness < 70) return 'Sous-exposé';
+  if (brightness > 210) return 'Surexposé';
+  return 'Optimal';
 }
 
 function formatSharpnessLabel(blur: number) {
-  if (blur < 20) return 'Floue';
-  if (blur < 40) return 'Correcte';
-  return 'Nette';
+  if (blur < 20) return 'Flou critique';
+  if (blur < 40) return 'Légèrement flou';
+  return 'Optimal';
 }
 
 function formatAxisScore(value: number) {
@@ -91,7 +92,7 @@ function formatAxisScore(value: number) {
 
 function formatPaceLabel(wpm: number) {
   if (wpm > 160) return 'Rapide';
-  if (wpm >= 120) return 'Correct';
+  if (wpm >= 120) return 'Optimal';
   return 'Lent';
 }
 
@@ -105,6 +106,12 @@ function formatHandsLabel(value: number) {
   if (value >= 60) return 'Visibles';
   if (value >= 30) return 'Parfois visibles';
   return 'Peu visibles';
+}
+
+function formatActivityLabel(score: number) {
+  if (score > 6.5) return 'Agité';
+  if (score >= 2.5) return 'Équilibré';
+  return 'Figé';
 }
 
 function getMeaningfulTokens(value: string) {
@@ -359,7 +366,7 @@ export default function ReportPage() {
                       {coachingNarrative}
                     </CardDescription>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5 text-right">
+                  <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5 text-left">
                     <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                       Priorite
                     </div>
@@ -428,8 +435,8 @@ export default function ReportPage() {
                       />
                     </div>
                     <div className="grid gap-2.5 sm:grid-cols-2">
-                      <MiniMetricCard label="Resolution" value={formatResolutionValue(report.session.resolution)} />
-                      <MiniMetricCard label="FPS" value={formatFpsValue(report.session.fps)} />
+                      <MiniMetricCard label="Résolution" value={formatResolutionValue(report.session.resolution)} />
+                      <MiniMetricCard label="Fluidité (FPS)" value={formatFpsValue(report.session.fps)} />
                     </div>
                   </div>
                 </div>
@@ -475,7 +482,7 @@ export default function ReportPage() {
           <section className="grid gap-6 lg:grid-cols-2">
             <ListSectionCard
               title="Points forts"
-              description="Ce qui donne deja de la credibilite a votre prise de parole."
+              description="Les atouts qui consolident la crédibilité de votre discours."
               icon={CheckCircle2}
               items={report.strengths}
               tone="success"
@@ -507,32 +514,38 @@ export default function ReportPage() {
                   </summary>
                   <div className="mt-4 space-y-4">
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4">
-                      <div className="text-sm font-medium text-foreground">Metriques vocales</div>
-                      <div className="mt-3 grid gap-2.5">
-                        <ContextRow label="Debit (WPM)" value={`${report.metrics.wpm} mots/min (${formatPaceLabel(report.metrics.wpm)})`} />
-                        <ContextRow label="Pauses (>0.5s)" value={`${report.metrics.pause_count}`} />
-                        <ContextRow label="Hesitations" value={`${report.metrics.filler_count} detectees`} />
-                        {(report.metrics.stutter_count ?? 0) > 0 && (
-                          <ContextRow label="Repetitions" value={`${report.metrics.stutter_count} detectees`} />
-                        )}
+                      <div className="text-sm font-medium text-foreground">Métriques vocales</div>
+                      <div className="mt-3 grid gap-3">
+                        <ContextRow label="Débit (WPM)" value={`${report.metrics.wpm} mots/min (${formatPaceLabel(report.metrics.wpm)})`} target="Entre 120 et 160 mots/min (Maîtrisé)" />
+                        <ContextRow label="Pauses (>0.5s)" value={`${report.metrics.pause_count} pause(s)`} target="Moins de 4 pauses longues par minute" />
+                        <ContextRow label="Hésitations" value={`${report.metrics.filler_count} détectée(s) ${report.metrics.filler_count === 0 ? '(Excellent)' : ''}`} target="Moins de 2 mots parasites par minute" />
+                        <ContextRow label="Répétitions" value={`${report.metrics.stutter_count ?? 0} détectée(s) ${(report.metrics.stutter_count ?? 0) === 0 ? '(Excellent)' : ''}`} target="Aucune répétition pour un score optimal" />
                       </div>
                     </div>
 
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4">
-                      <div className="text-sm font-medium text-foreground">Qualite visuelle</div>
-                      <div className="mt-3 grid gap-2.5">
-                        <ContextRow label="Luminosite" value={formatLightingLabel(report.metrics.brightness)} />
-                        <ContextRow label="Nettete" value={formatSharpnessLabel(report.metrics.blur)} />
+                      <div className="text-sm font-medium text-foreground">Qualité visuelle</div>
+                      <div className="mt-3 grid gap-3">
+                        <ContextRow 
+                          label="Luminosité" 
+                          value={`${Number(report.metrics.brightness).toFixed(0)} (${formatLightingLabel(report.metrics.brightness)})`} 
+                          target="Entre 70 et 210 pour éviter l'éblouissement" 
+                        />
+                        <ContextRow 
+                          label="Netteté" 
+                          value={`${Number(report.metrics.blur).toFixed(0)} (${formatSharpnessLabel(report.metrics.blur)})`} 
+                          target="Score supérieur à 40 pour une image nette" 
+                        />
                       </div>
                     </div>
 
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4">
-                      <div className="text-sm font-medium text-foreground">Metriques visuelles</div>
-                      <div className="mt-3 grid gap-2.5">
-                        <ContextRow label="Presence visage" value={`${report.metrics.face_presence_ratio}%`} />
-                        <ContextRow label="Contact visuel" value={`${report.metrics.eye_contact_ratio}% (${formatEyeContactLabel(report.metrics.eye_contact_ratio)})`} />
-                        <ContextRow label="Mains visibles" value={`${report.metrics.hands_visibility_ratio}% (${formatHandsLabel(report.metrics.hands_visibility_ratio)})`} />
-                        <ContextRow label="Intensite gestuelle" value={`${report.metrics.hands_activity_score}/10`} />
+                      <div className="text-sm font-medium text-foreground">Métriques visuelles</div>
+                      <div className="mt-3 grid gap-3">
+                        <ContextRow label="Présence visage" value={`${report.metrics.face_presence_ratio}%`} target="Supérieure à 80% dans le cadre" />
+                        <ContextRow label="Contact visuel" value={`${report.metrics.eye_contact_ratio}% (${formatEyeContactLabel(report.metrics.eye_contact_ratio)})`} target="Soutenir la caméra (> 70% du temps)" />
+                        <ContextRow label="Mains visibles" value={`${report.metrics.hands_visibility_ratio}% (${formatHandsLabel(report.metrics.hands_visibility_ratio)})`} target="Mains dans le cadre (> 60% du temps)" />
+                        <ContextRow label="Intensité gestuelle (mains)" value={`${report.metrics.hands_activity_score}/10 (${formatActivityLabel(report.metrics.hands_activity_score)})`} target="Mouvement équilibré (2.5 à 6.5/10)" />
                       </div>
                     </div>
                   </div>
@@ -622,22 +635,6 @@ export default function ReportPage() {
           )}
 
           {/* Ã¢â€â‚¬Ã¢â€â‚¬ Context Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
-          <section>
-            <Card className="print-card">
-              <CardHeader>
-                <CardTitle>Notes utiles</CardTitle>
-                <CardDescription>
-                  Quelques reperes simples pour comprendre le contexte d'analyse.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-2.5">
-                <ContextRow label="Qualite visuelle" value={`${report.scores.scene}/100`} />
-                <ContextRow label="Eclairage" value={formatLightingLabel(report.metrics.brightness)} />
-                <ContextRow label="Resolution" value={formatResolutionValue(report.session.resolution)} />
-                <ContextRow label="Verdict" value={getScoreVerdict(report.summary.overall_score)} />
-              </CardContent>
-            </Card>
-          </section>
 
           {/* Ã¢â€â‚¬Ã¢â€â‚¬ Transcript Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */}
           <section>
@@ -762,6 +759,24 @@ function SessionMetaCard({ label, value }: { label: string; value: string }) {
       >
         {value}
       </div>
+    </div>
+  );
+}
+
+function ContextRow({ label, value, target, mono = false }: { label: string; value: string; target?: string; mono?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-sm">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-muted-foreground">{label}</span>
+        <span className={cn('font-medium text-foreground', mono && 'font-mono text-xs')}>
+          {value}
+        </span>
+      </div>
+      {target ? (
+        <div className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground/60">
+          Objectif : <span className="text-primary/70">{target}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -922,147 +937,106 @@ function PracticeFocusCard({
   exerciseRecommendation?: ReportResult['exercise_recommendation'];
 }) {
   const practiceMode = exerciseRecommendation?.mode ?? 'mini_plan_3_days';
-  const cardTitle =
-    practiceMode === 'light_tip'
-      ? 'Conseil de repetition'
-      : practiceMode === 'setup_action'
-        ? 'Verification avant la prochaine prise'
-      : practiceMode === 'single_exercise'
-        ? 'Exercice prioritaire'
-        : 'Plan de pratique';
-  const badgeLabel =
-    practiceMode === 'light_tip'
-      ? 'Conseil court'
-      : practiceMode === 'setup_action'
-        ? 'Verification'
-      : practiceMode === 'single_exercise'
-        ? 'Action concrete'
-        : 'Mini-plan 3 jours';
+  const cardTitle = "Plan d'action";
   const shouldShowSecondaryFocus =
     Boolean(secondaryFocus)
     && (practiceMode === 'mini_plan_3_days' || practiceMode === 'setup_action')
     && secondaryFocus !== primaryFocus;
+
+  // Improved steps harvesting avoiding destructive punctuation splitting
+  const rawSteps = practiceMode === 'mini_plan_3_days' && practiceDays.length > 0
+    ? practiceDays[0].items
+    : (exerciseRecommendation?.steps ?? []);
+
+  // Use the array directly, removing the reckless \.\s|, split that broke sentences
+  const steps = rawSteps.flatMap(s => s.split(/ \| /))
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  const themeTitle = exerciseRecommendation?.title || (practiceDays.length > 0 ? practiceDays[0].title : 'Pratique directe');
   const summary = exerciseRecommendation?.summary;
-  const steps = exerciseRecommendation?.steps ?? [];
 
   return (
-    <div className="rounded-xl border border-border/60 bg-background/70 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="font-display text-base font-medium text-foreground">
-          {cardTitle}
-        </div>
-        <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary">
-          {badgeLabel}
-        </Badge>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Badge variant="secondary" className="bg-secondary/70 text-foreground">
-          Focus : {primaryFocus}
-        </Badge>
-        {shouldShowSecondaryFocus ? (
-          <Badge variant="secondary" className="bg-secondary/50 text-muted-foreground">
-            Secondaire : {secondaryFocus}
+    <div className="space-y-4">
+      {/* Dense Header: Focus & Title synced */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px] font-bold uppercase tracking-tight px-1.5 py-0">
+              Focus: {primaryFocus}
+            </Badge>
+            {shouldShowSecondaryFocus && (
+              <Badge variant="secondary" className="bg-secondary/40 text-muted-foreground border-none text-[10px] font-bold uppercase tracking-tight px-1.5 py-0">
+                {secondaryFocus}
+              </Badge>
+            )}
+          </div>
+          <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest text-primary/60 border-primary/20 bg-primary/5">
+            Conseillé
           </Badge>
-        ) : null}
-      </div>
-      <div className="mt-4 rounded-xl bg-secondary/50 p-4">
-        {practiceMode === 'mini_plan_3_days' ? (
-          <div className="text-sm font-medium text-foreground">Les 3 etapes</div>
-        ) : practiceMode === 'setup_action' ? (
-          <div className="text-sm font-medium text-foreground">A verifier</div>
-        ) : null}
-        {practiceDays.length > 0 ? (
-          <div className="mt-3 space-y-4">
-            <div className="rounded-xl border border-border/60 bg-background/70 p-4">
-              <div className="text-sm font-medium text-foreground">{practiceDays[0].title}</div>
-              <div className="mt-3 space-y-2.5">
-                {practiceDays[0].items.map((step, stepIndex) => (
-                  <div
-                    key={`${practiceDays[0].title}-${step}`}
-                    className={cn(
-                      'rounded-lg px-3.5 py-2.5 text-sm leading-relaxed',
-                      stepIndex === 0
-                        ? 'border border-primary/30 bg-primary/10 text-foreground'
-                        : 'bg-background/80 text-foreground'
-                    )}
-                  >
-                    {stepIndex === 0 ? (
-                      <div className="mb-1 text-[11px] font-medium uppercase tracking-widest text-primary">
-                        A commencer ici
-                      </div>
-                    ) : null}
-                    {step}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {practiceDays.length > 1 ? (
-              <details className="group rounded-xl border border-border/60 bg-background/70 p-4">
-                <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
-                  Voir tout le plan ({practiceDays.length - 1} blocs restants)
-                </summary>
-                <div className="mt-4 space-y-4">
-                  {practiceDays.slice(1).map((day) => (
-                    <div key={day.title} className="rounded-xl border border-border/60 bg-background/80 p-4">
-                      <div className="text-sm font-medium text-foreground">{day.title}</div>
-                      <div className="mt-3 space-y-2.5">
-                        {day.items.map((step) => (
-                          <div
-                            key={`${day.title}-${step}`}
-                            className="rounded-lg bg-secondary/50 px-3.5 py-2.5 text-sm leading-relaxed text-foreground"
-                          >
-                            {step}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ) : null}
-          </div>
-        ) : summary ? (
-          <div className="mt-3 rounded-xl border border-border/60 bg-background/70 p-4">
-            <div className="text-sm leading-relaxed text-foreground">{summary}</div>
-            {steps.length > 0 ? (
-              <div className="mt-3 space-y-2.5">
-                {steps.map((step, stepIndex) => (
-                  <div
-                    key={`${exerciseRecommendation?.title || 'practice'}-${step}`}
-                    className={cn(
-                      'rounded-lg px-3.5 py-2.5 text-sm leading-relaxed',
-                      stepIndex === 0
-                        ? 'border border-primary/30 bg-primary/10 text-foreground'
-                        : 'bg-background/80 text-foreground'
-                    )}
-                  >
-                    {step}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <div className="mt-3 rounded-lg bg-background/80 px-3.5 py-2.5 text-sm leading-relaxed text-muted-foreground">
-            Relisez l'axe prioritaire puis refaites une courte prise de parole en vous concentrant uniquement sur ce point.
-          </div>
+        </div>
+        
+        <h4 className="font-display text-lg font-semibold text-foreground leading-tight">
+          {themeTitle}
+        </h4>
+        {summary && (
+          <p className="text-sm text-muted-foreground/80 leading-relaxed">
+            {summary}
+          </p>
         )}
       </div>
+
+      {/* Structured steps with standard font size */}
+      {steps.length > 0 ? (
+        <div className="space-y-3">
+          {steps.map((step, idx) => (
+            <div key={idx} className="group flex items-start gap-3">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-primary font-display text-xs font-bold shadow-sm transition-all group-hover:bg-primary group-hover:text-primary-foreground">
+                {idx + 1}
+              </div>
+              <p className="text-sm leading-relaxed text-foreground/85 group-hover:text-foreground pt-0.5">
+                {step.replace(/^\w/, (c) => c.toUpperCase())}
+                {!step.endsWith('.') && '.'}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 rounded-lg bg-secondary/20 p-3 text-sm text-muted-foreground">
+           <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-primary font-bold">1</div>
+           <p>Relisez l'élocution et refaites une prise courte centrée sur ce point.</p>
+        </div>
+      )}
+
+      {/* Compact Plan Support */}
+      {practiceMode === 'mini_plan_3_days' && practiceDays.length > 1 && (
+        <div className="mt-5 border-t border-border/40 pt-4">
+          <details className="group">
+            <summary className="cursor-pointer list-none text-xs font-semibold text-primary/70 hover:text-primary transition-colors flex items-center gap-2 uppercase tracking-tight">
+              <span>Plan complet ({practiceDays.length - 1} jours)</span>
+            </summary>
+            <div className="mt-4 space-y-4">
+              {practiceDays.slice(1).map((day) => (
+                <div key={day.title} className="rounded-lg border border-border/40 bg-muted/5 p-4">
+                  <div className="mb-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">{day.title}</div>
+                  <div className="space-y-2.5">
+                    {day.items.map((item, iIdx) => (
+                      <div key={iIdx} className="flex items-start gap-2.5 text-sm text-foreground/70 leading-relaxed">
+                        <div className="h-1.5 w-1.5 rounded-full bg-primary/30 mt-2 shrink-0" />
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </details>
+        </div>
+      )}
     </div>
   );
 }
 
-function ContextRow({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={cn('font-medium text-foreground', mono && 'font-mono text-xs')}>
-        {value}
-      </span>
-    </div>
-  );
-}
 
 
 

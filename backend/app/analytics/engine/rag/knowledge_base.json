@@ -1,58 +1,106 @@
 [
   {
     "id": "fiche-voix-001",
-    "category": "Voix & Debit",
-    "title": "Maitriser un debit de parole trop lent",
+    "category": "Voix & Débit",
+    "title": "La Ponctuation Mentale (Débit Lent)",
     "problem_keywords": ["lent", "endormir", "bas", "rythme"],
-    "content": "Un debit trop lent (moins de 110 mots par minute) risque de desengager l'auditoire. L'objectif n'est pas de se precipiter, mais de dynamiser la phrase.\n\n**Exercice Pratique : La lecture chronometree**\n1. Prenez un article de presse ou un texte court (environ 150 mots).\n2. Lisez-le a voix haute en essayant de le terminer exactement en 1 minute.\n3. Si vous depassez 1 minute, recommencez en accelerant tres legerement sur les mots de liaison ('et', 'donc', 'ainsi') tout en appuyant sur les mots-cles."
+    "curriculum_level": 1,
+    "content": "Un débit trop lent peut donner une impression de manque d'énergie. L'objectif est de dynamiser vos phrases pour captiver votre auditoire, même sans texte sous les yeux.",
+    "exercise_steps": [
+      "Choisissez une idée simple à expliquer (votre métier, une passion).",
+      "Énoncez-la en essayant de parler un peu plus vite sur les petits mots de liaison (articles, pronoms, conjonctions).",
+      "Accélérez jusqu'à ce que vous sentiez un léger effort d'articulation nécessaire."
+    ]
   },
   {
     "id": "fiche-voix-002",
-    "category": "Voix & Debit",
-    "title": "Ralentir un debit de parole excessif",
-    "problem_keywords": ["rapide", "vite", "precipite", "respirer", "rythme"],
-    "content": "Parler trop vite (plus de 160 mots par minute) fatigue le cerveau de ceux qui vous ecoutent et donne une impression de stress.\n\n**Exercice Pratique : La regle des virgules**\n1. Imprimez votre discours ou vos notes.\n2. Surlignez les ponctuations fortes (points, points-virgules) en rouge.\n3. Entrainez-vous a marquer une pause physique de deux secondes completes (comptez 'un, deux' dans votre tete) a chaque point rouge avant d'inspirer. Cela force votre cerveau a ralentir."
+    "category": "Voix & Débit",
+    "title": "Le Rythme Respiratoire (Débit Rapide)",
+    "problem_keywords": ["rapide", "vite", "précipité", "respirer", "rythme"],
+    "curriculum_level": 1,
+    "content": "Parler trop vite sature l'attention du public. La méthode 'Toastmasters' consiste à utiliser le silence comme un outil pour laisser respirer vos idées.",
+    "exercise_steps": [
+      "Comptez mentalement jusqu'à deux à la fin de chaque idée ou phrase terminée.",
+      "Profitez de ce silence pour inspirer uniquement par le nez.",
+      "Reprenez votre explication calmement, comme si vous déposiez chaque mot sur une table."
+    ]
   },
   {
     "id": "fiche-voix-003",
-    "category": "Voix & Fluidite",
-    "title": "Eliminer les mots parasites",
-    "problem_keywords": ["parasite", "tics", "euh", "hum", "hesitation"],
-    "content": "Les 'euh' et autres tics verbaux sont des bequilles utilisees par le cerveau lorsqu'il cherche ses mots. Le secret pour les reduire est d'accepter le silence.\n\n**Exercice Pratique : Le silence impose**\n1. Filmez-vous en train de raconter vos dernieres vacances pendant 2 minutes.\n2. Des que vous sentez qu'un 'euh' va sortir ou que vous cherchez vos mots, fermez litteralement la bouche et faites une pause silencieuse d'une seconde.\n3. Le silence vous paraitra long, mais pour le public, c'est une pause qui donne de l'impact."
+    "category": "Voix & Fluidité",
+    "title": "La Pause de Transition (Mots Parasites)",
+    "problem_keywords": ["parasite", "tics", "euh", "hum", "hésitation"],
+    "curriculum_level": 1,
+    "content": "Les parasites vocaux ('euh', 'hum', 'like', etc.) sont des béquilles mentales. Le secret est d'accepter le vide entre deux pensées plutôt que de le combler par un bruit.",
+    "exercise_steps": [
+      "Chaque fois que vous cherchez un mot, fermez littéralement la bouche.",
+      "Maintenez le silence pendant une à deux secondes, même si cela vous semble long.",
+      "Ne reprenez la parole que lorsque vous avez trouvé la suite de votre idée."
+    ]
   },
   {
     "id": "fiche-regard-001",
-    "category": "Presence & Regard",
-    "title": "Creer une connexion avec la camera",
-    "problem_keywords": ["regard", "visuel", "contact", "fuite", "camera", "detourne"],
-    "content": "Regarder l'ecran au lieu de l'objectif de la camera casse l'illusion du contact visuel en visioconference ou en video enregistree.\n\n**Exercice Pratique : Le repere visuel**\n1. Placez un petit repere visuel juste a cote de l'objectif de votre webcam.\n2. Pendant votre presentation, adressez-vous a ce repere comme s'il s'agissait d'une vraie personne.\n3. Entrainez-vous a revenir vers ce point precis a la fin des phrases importantes."
+    "category": "Présence & Regard",
+    "title": "Le Regard dans l'Objectif",
+    "problem_keywords": ["regard", "visuel", "contact", "fuite", "caméra", "détourné"],
+    "curriculum_level": 1,
+    "content": "En vidéo, le contact visuel ne se fait pas en regardant le visage de l'autre sur l'écran, mais en s'adressant directement à la lentille.",
+    "exercise_steps": [
+      "Forcez-vous à regarder le petit point noir de votre caméra 80% du temps.",
+      "Imaginez que c'est l'œil de votre interlocuteur le plus attentif.",
+      "Ne détournez le regard que pour réfléchir brièvement ou pour conclure un point."
+    ]
   },
   {
     "id": "fiche-posture-001",
     "category": "Gestuelle",
-    "title": "Debloquer une posture figee",
-    "problem_keywords": ["fige", "statique", "immobile", "mains", "cacher", "bras"],
-    "content": "Une presentation avec les bras ballants ou caches manque d'energie. Les mains sont essentielles pour appuyer la structure du discours.\n\n**Exercice Pratique : La pyramide des mains**\n1. Adoptez une position de repos stable avec les doigts legerement joints devant vous, au niveau du torse.\n2. Utilisez cette position comme point de repos entre deux idees.\n3. Lorsque vous citez des elements importants, ouvrez les mains puis revenez a la position de repos. Cela evite l'agitation tout en gardant une presence visible."
+    "title": "Le Triangle de Référence (Mains)",
+    "problem_keywords": ["figé", "statique", "immobile", "mains", "cacher", "bras"],
+    "curriculum_level": 1,
+    "content": "Une gestuelle invisible enlève de la conviction. Vos mains doivent être le prolongement de vos mots pour structurer votre discours.",
+    "exercise_steps": [
+      "Maintenez vos mains au niveau de votre nombril, les doigts légèrement joints en position neutre.",
+      "Sortez une main pour illustrer un concept (un chiffre, une direction, une taille).",
+      "Ramenez systématiquement vos mains à cette position neutre après chaque geste."
+    ]
   },
   {
     "id": "fiche-posture-002",
     "category": "Cadre & Posture",
-    "title": "Optimiser le cadrage de sa video",
-    "problem_keywords": ["cadre", "centre", "coupe", "cadrage", "visage"],
-    "content": "Un mauvais cadrage (front coupe, trop de vide au-dessus de la tete) donne un rendu amateur.\n\n**Exercice Pratique : La regle des tiers**\n1. Avant d'enregistrer, asseyez-vous bien au fond de votre chaise, le dos droit.\n2. Ajustez l'ecran pour que vos yeux se situent sur le tiers superieur de l'image.\n3. Assurez-vous que vos epaules et le haut de votre torse sont visibles, ce qui laisse la place a votre gestuelle."
+    "title": "L'Ancrage au Cadre",
+    "problem_keywords": ["cadre", "centre", "coupé", "cadrage", "visage"],
+    "curriculum_level": 1,
+    "content": "Un bon cadrage 'professionnel' transmet de l'autorité. Vous devez occuper l'espace sans paraître étouffé par le cadre.",
+    "exercise_steps": [
+      "Ajustez votre caméra pour que vos yeux soient au niveau du tiers supérieur de l'image.",
+      "Laissez un petit espace (l'équivalent de deux doigts) au-dessus de votre crâne.",
+      "Assurez-vous que vos épaules sont bien visibles pour permettre une gestuelle libre."
+    ]
   },
   {
     "id": "fiche-environnement-001",
-    "category": "Image & Lumiere",
-    "title": "Gerer l'eclairage de sa scene",
-    "problem_keywords": ["sombre", "lumiere", "eclairage", "flou", "qualite", "contre-jour"],
-    "content": "Une video trop sombre ou a contre-jour distrait l'attention et reduit la qualite visuelle globale. Un mauvais eclairage peut aussi rendre l'image plus floue a cause du bruit numerique.\n\n**Exercice Pratique : L'eclairage simplifie**\n1. Ne vous asseyez pas dos a une fenetre non voilee.\n2. Positionnez votre principale source de lumiere devant vous ou legerement de trois quarts.\n3. Si un cote du visage est trop sombre, utilisez une surface claire pour renvoyer un peu de lumiere."
+    "category": "Image & Lumière",
+    "title": "La Clarté du Décor",
+    "problem_keywords": ["sombre", "lumière", "éclairage", "flou", "qualité", "contre-jour"],
+    "curriculum_level": 1,
+    "content": "Un mauvais éclairage fatigue l'auditoire. Une image claire et nette renforce la confiance transmise par votre visage.",
+    "exercise_steps": [
+      "Placez-vous face à une source de lumière naturelle (fenêtre) ou artificielle.",
+      "Évitez les sources de lumière fortes derrière vous (contre-jour).",
+      "Vérifiez que vos deux yeux sont bien éclairés et qu'il n'y a pas d'ombre masquant vos expressions."
+    ]
   },
   {
     "id": "fiche-gestuelle-002",
     "category": "Gestuelle",
-    "title": "Canaliser des mouvements trop agites",
-    "problem_keywords": ["agite", "trop", "mains", "rapide", "distraire"],
-    "content": "Bouger les mains constamment, a chaque mot, finit par distraire l'auditoire de la substance du message.\n\n**Exercice Pratique : L'ancrage au corps**\n1. Asseyez-vous devant votre camera.\n2. Placez vos avant-bras a plat sur votre bureau ou croisez doucement les mains sur vos genoux si vous etes debout.\n3. Ne levez les mains que pour enumerer un point ou illustrer une taille ou une direction. Le reste du temps, revenez a une position d'ancrage."
+    "title": "La Gestuelle d'Impact (Canaliser)",
+    "problem_keywords": ["agité", "trop", "mains", "rapide", "distraire"],
+    "curriculum_level": 2,
+    "content": "Trop de gestes diluent le message. Un geste n'a d'impact que s'il commence et s'arrête de manière volontaire.",
+    "exercise_steps": [
+      "Identifiez les trois mots les plus importants de votre prochaine intervention.",
+      "Ne faites un geste de la main QUE sur ces trois mots précis.",
+      "Restez parfaitement immobile le reste du temps pour créer un contraste de puissance."
+    ]
   }
 ]
