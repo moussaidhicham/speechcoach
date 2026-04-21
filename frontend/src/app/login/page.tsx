@@ -1,60 +1,81 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { motion } from 'framer-motion';
-import { ArrowRight, Eye, EyeOff, Loader2, Mic, ShieldCheck, Sparkles, Video } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, Mail, ShieldCheck, Sparkles, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/auth-context';
 
-/* ─── Schema ─────────────────────────────────────────────────────────── */
-
 const loginSchema = z.object({
-  email:    z.string().email('Email invalide'),
+  email: z.string().email('Email invalide'),
   password: z.string().min(1, 'Le mot de passe est requis'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-/* ─── Data ───────────────────────────────────────────────────────────── */
-
 const highlights = [
-  { icon: Video,      text: 'Studio vidéo optimisé pour webcam et mobile.' },
-  { icon: Sparkles,   text: 'Coaching clair, structuré et priorisé.' },
-  { icon: ShieldCheck, text: 'Rapports partageables pour contexte académique et pro.' },
+  {
+    icon: Video,
+    title: 'Reprendre vos analyses',
+    description: 'Retrouvez rapidement vos sessions, rapports et exercices prioritaires.',
+  },
+  {
+    icon: Sparkles,
+    title: 'Un coaching plus lisible',
+    description: 'Les retours restent courts, priorises et faciles a appliquer des la prochaine prise.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Un espace de travail stable',
+    description: 'Votre suivi reste centralise pour les usages academiques comme professionnels.',
+  },
 ];
 
-/* ─── Animation preset ───────────────────────────────────────────────── */
-
-const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 16 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1], delay },
-});
-
-/* ─── Page ───────────────────────────────────────────────────────────── */
-
 export default function LoginPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <LoginClient />
+    </React.Suspense>
+  );
+}
+
+function LoginClient() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isUnverified, setIsUnverified] = React.useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = React.useState('');
+  const [isResending, setIsResending] = React.useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
 
+  useEffect(() => {
+    const email = searchParams.get('email');
+    if (email) {
+      form.setValue('email', email);
+    }
+    if (searchParams.get('verified') === 'true') {
+      toast.success('Votre email a ete verifie.');
+    }
+  }, [searchParams, form]);
+
   async function onSubmit(data: LoginFormValues) {
     setIsSubmitting(true);
+    setIsUnverified(false);
     try {
       const params = new URLSearchParams();
       params.append('username', data.email);
@@ -62,168 +83,173 @@ export default function LoginPage() {
 
       const { access_token } = await authService.login(params);
       localStorage.setItem('token', access_token);
-      login(access_token, { id: 'temp-session', email: data.email });
-      toast.success('Bon retour parmi nous.');
-    } catch (error: unknown) {
-      console.error(error);
+
+      const userStatus = await authService.getStatus();
+      if (!userStatus.is_verified) {
+        setIsUnverified(true);
+        setUnverifiedEmail(data.email);
+        localStorage.removeItem('token');
+        toast.error('Veuillez verifier votre email.');
+        return;
+      }
+
+      login(access_token, { id: userStatus.id, email: userStatus.email });
+      toast.success('Connexion reussie.');
+    } catch (error: any) {
       localStorage.removeItem('token');
-      toast.error('Identifiants invalides ou erreur serveur.');
+      const detail = error.response?.data?.detail;
+      toast.error(detail === 'LOGIN_BAD_CREDENTIALS' ? 'Email ou mot de passe incorrect.' : 'Erreur de connexion.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  async function handleResendEmail() {
+    if (!unverifiedEmail) return;
+    setIsResending(true);
+    try {
+      await authService.requestVerification(unverifiedEmail);
+      toast.success('Email de verification renvoye.');
+    } catch {
+      toast.error("Impossible de renvoyer l'email.");
+    } finally {
+      setIsResending(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-5xl items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-
-        {/* ── Left panel ────────────────────────────────────────────── */}
-        <motion.section
-          {...fadeUp(0)}
-          className="hidden flex-col justify-between gap-10 rounded-3xl border border-border/60 bg-card p-10 lg:flex"
-        >
-          {/* Logo */}
-          <Link href="/" className="inline-flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Mic className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="font-display text-lg font-medium">SpeechCoach</div>
-              <div className="text-xs text-muted-foreground">Coaching vidéo et oralité structurée</div>
-            </div>
-          </Link>
-
-          {/* Hero copy */}
-          <div className="space-y-4">
-            <h1 className="font-display text-4xl font-medium leading-snug text-foreground">
-              Revenez dans votre espace de pratique avec une interface{' '}
-              <em className="not-italic text-primary">plus claire.</em>
-            </h1>
-            <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
-              Analysez vos prises de parole, retrouvez vos rapports et poursuivez
-              votre progression sans friction.
+    <AuthShell
+      badge="Connexion"
+      title="Reprenez votre progression sans perdre de temps."
+      subtitle="Connectez-vous pour retrouver vos analyses, vos priorites de travail et votre historique de progression dans un espace plus simple a relire."
+      highlights={highlights}
+      footer={
+        <div className="rounded-2xl border border-border/60 bg-background/70 p-4 text-sm leading-6 text-muted-foreground">
+          Session apres session, l'espace reste centre sur ce qui compte vraiment : un diagnostic clair, une priorite nette et un plan d'action simple.
+        </div>
+      }
+    >
+      {!isUnverified ? (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-primary">Bon retour</p>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Se connecter</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Entrez vos identifiants pour revenir directement sur votre tableau de bord.
             </p>
           </div>
 
-          {/* Highlights */}
-          <div className="space-y-2.5">
-            {highlights.map((item) => (
-              <div
-                key={item.text}
-                className="flex items-center gap-4 rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <item.icon className="h-4 w-4" />
-                </div>
-                <p className="text-sm leading-relaxed text-foreground/80">{item.text}</p>
+          {searchParams.get('verified') === 'true' ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/8 p-4 text-sm text-emerald-700">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>Votre compte est bien verifie. Vous pouvez maintenant vous connecter.</p>
+            </div>
+          ) : null}
+
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="email"
+                  placeholder="nom@exemple.com"
+                  className="h-11 rounded-2xl border-border/60 bg-background/60 pl-10"
+                  {...form.register('email')}
+                />
               </div>
-            ))}
+              {form.formState.errors.email ? (
+                <p className="text-xs font-medium text-destructive">{form.formState.errors.email.message}</p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Mot de passe</Label>
+                <Link href="/forgot-password" className="text-xs font-medium text-primary hover:underline">
+                  Mot de passe oublie ?
+                </Link>
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="h-11 rounded-2xl border-border/60 bg-background/60 pr-10"
+                  {...form.register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {form.formState.errors.password ? (
+                <p className="text-xs font-medium text-destructive">{form.formState.errors.password.message}</p>
+              ) : null}
+            </div>
+
+            <div className="rounded-2xl border border-border/60 bg-secondary/25 p-4 text-sm leading-6 text-muted-foreground">
+              Vous retrouvez vos rapports, vos parametres et vos preferences d'analyse sans reconfigurer votre espace.
+            </div>
+
+            <Button type="submit" disabled={isSubmitting} className="h-12 w-full rounded-2xl text-base font-semibold shadow-lg shadow-primary/15">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
+                <>
+                  Continuer
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Pas encore de compte ?{' '}
+            <Link href="/register" className="font-semibold text-primary hover:underline">
+              Creer un compte
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[24px] bg-amber-500/10 text-amber-600">
+            <Mail className="h-7 w-7" />
           </div>
-        </motion.section>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight">Verification requise</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              L'adresse <span className="font-semibold text-foreground">{unverifiedEmail}</span> doit etre confirmee avant la connexion.
+            </p>
+          </div>
 
-        {/* ── Right panel: form ──────────────────────────────────────── */}
-        <motion.section {...fadeUp(0.06)} className="flex items-center">
-          <Card className="w-full">
-            <CardHeader className="px-7 pt-7">
-              {/* Mobile-only logo */}
-              <Link href="/" className="mb-5 inline-flex items-center gap-3 lg:hidden">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                  <Mic className="h-4 w-4" />
-                </div>
-                <span className="font-display text-base font-medium">SpeechCoach</span>
-              </Link>
+          <div className="rounded-2xl border border-border/60 bg-secondary/25 p-4 text-left text-sm leading-6 text-muted-foreground">
+            Ouvrez l'email de verification, puis revenez ici. Si besoin, vous pouvez en renvoyer un nouveau.
+          </div>
 
-              <CardTitle>Connexion</CardTitle>
-              <CardDescription className="mt-1.5">
-                Accédez à vos analyses, vos rapports et vos objectifs de progression.
-              </CardDescription>
-            </CardHeader>
-
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-              <CardContent className="space-y-5 px-7 py-6">
-                {/* Email */}
-                <div className="relative space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="nom@exemple.com"
-                    autoComplete="email"
-                    aria-invalid={Boolean(form.formState.errors.email)}
-                    aria-describedby={form.formState.errors.email ? 'login-email-error' : undefined}
-                    {...form.register('email')}
-                    className={form.formState.errors.email ? 'border-destructive' : ''}
-                  />
-                  {form.formState.errors.email && (
-                    <p id="login-email-error" className="text-xs text-destructive">
-                      {form.formState.errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Password */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="password">Mot de passe</Label>
-                    <span className="text-xs text-muted-foreground/70">
-                      Besoin d'aide ? Passez par les paramètres.
-                    </span>
-                  </div>
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    aria-invalid={Boolean(form.formState.errors.password)}
-                    aria-describedby={form.formState.errors.password ? 'login-password-error' : undefined}
-                    {...form.register('password')}
-                    className={form.formState.errors.password ? 'border-destructive pr-12' : 'pr-12'}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-0 top-[29px] flex h-10 items-center px-3 text-muted-foreground"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                  {form.formState.errors.password && (
-                    <p id="login-password-error" className="text-xs text-destructive">
-                      {form.formState.errors.password.message}
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-
-              <CardFooter className="flex flex-col gap-4 border-none bg-transparent px-7 pb-7">
-                <Button className="w-full" type="submit" size="default" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Connexion en cours…
-                    </>
-                  ) : (
-                    <>
-                      Se connecter
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  Nouveau ici ?{' '}
-                  <Link
-                    href="/register"
-                    className="font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    Créer un compte
-                  </Link>
-                </p>
-              </CardFooter>
-            </form>
-          </Card>
-        </motion.section>
-
-      </div>
-    </div>
+          <div className="space-y-3">
+            <Button onClick={handleResendEmail} disabled={isResending} className="h-12 w-full rounded-2xl text-base font-semibold">
+              {isResending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi...
+                </>
+              ) : (
+                'Renvoyer l’email'
+              )}
+            </Button>
+            <Button variant="ghost" className="h-11 w-full rounded-2xl" onClick={() => setIsUnverified(false)}>
+              Utiliser un autre compte
+            </Button>
+          </div>
+        </div>
+      )}
+    </AuthShell>
   );
 }

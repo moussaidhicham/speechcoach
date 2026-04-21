@@ -29,7 +29,7 @@ if BACKEND_DIR not in sys.path:
 from app.worker.celery_app import celery_app
 from app.db.database import SessionLocal
 from app.analytics.models import VideoSession, AnalysisResult, CoachingFeedback
-from app.users.models import Profile, User
+from app.db.models import Profile, User
 from sqlmodel import select
 from app.analytics.engine.metrics.schema import Recommendation, Scores
 
@@ -135,12 +135,30 @@ def get_user_preferences(session_id: str):
                     "preferred_language": profile.preferred_language,
                     "experience_level": profile.experience_level,
                     "current_goal": profile.current_goal,
+                    "weak_points": profile.weak_points,
                 }
     return {}
 
 
 def get_user_recent_history(session_id: str, limit: int = 3) -> str:
     """Retrieves a summary of the user's last X completed sessions for trend analysis."""
+    def _axis_tuple(result: AnalysisResult) -> tuple[float, float, float, float]:
+        metrics = result.metrics_json or {}
+        score_data = metrics.get('scores') or {}
+        return (
+            float(score_data.get('voice_score', 0.0) or 0.0),
+            float(score_data.get('presence_score', 0.0) or 0.0),
+            float(score_data.get('body_language_score', 0.0) or 0.0),
+            float(score_data.get('scene_score', 0.0) or 0.0),
+        )
+
+    def _delta_label(delta: float, tolerance: float = 0.2) -> str:
+        if delta > tolerance:
+            return "hausse"
+        if delta < -tolerance:
+            return "baisse"
+        return "stable"
+
     try:
         with SessionLocal() as db:
             current_session = db.get(VideoSession, uuid_lib.UUID(session_id))
@@ -162,13 +180,41 @@ def get_user_recent_history(session_id: str, limit: int = 3) -> str:
             if not results:
                 return "Première session SpeechCoach."
 
-            # Format as a chronology: [Sess#1: 65] -> [Sess#2: 72]
-            # Reverse order to show chronologically in the string
-            chronology = []
-            for i, res in enumerate(reversed(results)):
-                chronology.append(f"Session {i+1}: Score {res.overall_score}/100")
-            
-            return " -> ".join(chronology)
+            ordered = list(reversed(results))
+            chronology_parts: List[str] = []
+            for idx, res in enumerate(ordered, start=1):
+                voice, presence, body, scene = _axis_tuple(res)
+                chronology_parts.append(
+                    "Session {idx}: Global {global_score}/100 | "
+                    "Voix {voice:.1f}/10 | Presence {presence:.1f}/10 | "
+                    "Gestes {body:.1f}/10 | Cadrage {scene:.1f}/10".format(
+                        idx=idx,
+                        global_score=int(res.overall_score or 0),
+                        voice=voice,
+                        presence=presence,
+                        body=body,
+                        scene=scene,
+                    )
+                )
+
+            first = ordered[0]
+            last = ordered[-1]
+            first_voice, first_presence, first_body, first_scene = _axis_tuple(first)
+            last_voice, last_presence, last_body, last_scene = _axis_tuple(last)
+            trend_summary = (
+                "Tendance recente ({count} sessions): "
+                "Global {global_trend}, Voix {voice_trend}, Presence {presence_trend}, "
+                "Gestes {body_trend}, Cadrage {scene_trend}."
+            ).format(
+                count=len(ordered),
+                global_trend=_delta_label(float(last.overall_score or 0) - float(first.overall_score or 0), tolerance=1.0),
+                voice_trend=_delta_label(last_voice - first_voice),
+                presence_trend=_delta_label(last_presence - first_presence),
+                body_trend=_delta_label(last_body - first_body),
+                scene_trend=_delta_label(last_scene - first_scene),
+            )
+
+            return f"{trend_summary} Historique detaille: {' || '.join(chronology_parts)}"
     except Exception as e:
         logger.error(f"Error fetching history: {e}")
         return "Historique indisponible."
@@ -216,6 +262,10 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
     language = str(metadata.get('detected_language') or 'unknown').strip() or 'unknown'
     experience_level = metadata.get('experience_level')
     current_goal = metadata.get('current_goal')
+    weak_points = str(metadata.get('weak_points') or '').strip() or None
+    if not weak_points:
+        prefs = get_user_preferences(session_id)
+        weak_points = str(prefs.get('weak_points') or '').strip() or None
 
     fetched_docs: List[Dict[str, Any]] = []
     rag_ready = False
@@ -256,6 +306,7 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
             model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
             experience_level=experience_level,
             current_goal=current_goal,
+            weak_points=weak_points,
             history_context=history_context
         )
     except Exception as e:
@@ -306,20 +357,24 @@ def process_video_task(
     try:
         update_session_status(session_id, "processing", step="Préparation des fichiers...", progress=10)
         self.update_state(state='PROGRESS', meta={'step': 'Ingestion...'})
-        
+
         from app.analytics.engine.process_video import process_video
-        
+
         # Use session_id as the folder name instead of file_id for consistency
         session_dir = os.path.join(output_dir, session_id)
-        
+
         update_session_status(
-            session_id, 
-            "processing", 
-            step=f"Analyse Audio & Vision (L:{forced_language or 'auto'}, D:{device_type})...", 
+            session_id,
+            "processing",
+            step=f"Analyse Audio & Vision (L:{forced_language or 'auto'}, D:{device_type})...",
             progress=25
         )
         self.update_state(state='PROGRESS', meta={'step': f'Analyzing Audio & Vision ({forced_language or "auto"})...'})
-        
+
+        # Progress callback wrapper
+        def progress_callback(sid, progress, step):
+            update_session_status(sid, "processing", step=step, progress=progress)
+
         # Full ML pipeline (Synchronous)
         process_video(
             video_path,
@@ -331,6 +386,8 @@ def process_video_task(
             source_name=source_name,
             experience_level=user_preferences.get("experience_level"),
             current_goal=user_preferences.get("current_goal"),
+            weak_points=user_preferences.get("weak_points"),
+            progress_callback=progress_callback,
         )
         
         # Read generated report
@@ -376,6 +433,8 @@ def enrich_report_task(self, session_id: str, report_path: str):
 
         update_session_status(session_id, "completed", step="Enrichissement IA (RAG & Analyse)...", progress=75)
         enriched_report = run_report_enrichment(session_id, report_dict)
+
+        update_session_status(session_id, "completed", step="Génération du coaching IA...", progress=90)
 
         update_session_status(session_id, "completed", step="Finalisation du coaching...", progress=95)
         with open(report_path, 'w', encoding='utf-8') as f:

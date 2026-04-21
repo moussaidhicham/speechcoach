@@ -10,6 +10,19 @@ class Settings(BaseSettings):
     MYSQL_PORT: int = 3306
     MYSQL_DB: str = "speechcoach"
     
+    # Frontend URL for links in emails
+    FRONTEND_URL: str = "http://localhost:3000"
+    
+    # Email Settings
+    MAIL_USERNAME: str = "your_mailtrap_user"
+    MAIL_PASSWORD: str = "your_mailtrap_password"
+    MAIL_FROM: str = "noreply@speechcoach.com"
+    MAIL_FROM_NAME: str = "SpeechCoach"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "sandbox.smtp.mailtrap.io"
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+    
     @property
     def ASYNC_DATABASE_URL(self) -> str:
         return f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}"

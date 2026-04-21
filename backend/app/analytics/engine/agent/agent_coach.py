@@ -124,6 +124,26 @@ def _top_recommendation(recommendations: List[Recommendation], weaknesses: List[
     return "Progression generale", "Quelques ajustements restent utiles.", "Concentrez-vous sur un seul axe a la fois."
 
 
+def _focus_tag_from_category(category: str) -> str:
+    text = (category or '').strip().lower()
+    if any(token in text for token in ['voix', 'debit', 'rythme', 'parole']):
+        return 'voice'
+    if any(token in text for token in ['regard', 'presence']):
+        return 'presence'
+    if any(token in text for token in ['gestuelle', 'mains', 'posture', 'corps']):
+        return 'body'
+    if any(token in text for token in ['cadrage', 'image', 'nettete', 'scene', 'camera']):
+        return 'scene'
+    return 'general'
+
+
+def _sanitize_focus_tag(value: Any, fallback: str = 'general') -> str:
+    raw = str(value or '').strip().lower().replace('-', '_')
+    if raw in {'voice', 'presence', 'body', 'scene', 'general'}:
+        return raw
+    return fallback
+
+
 def _strength_anchor(strength: str) -> str:
     lowered = strength.lower()
     if "discours clair" in lowered or "tics de langage" in lowered:
@@ -273,6 +293,23 @@ def _extract_json_payload(text: str) -> Optional[Dict[str, Any]]:
     return payload
 
 
+def _format_user_weak_points(weak_points: Optional[str]) -> str:
+    """Optional onboarding choices (comma-separated labels), not auto-detected weaknesses."""
+    raw = (weak_points or "").strip()
+    if not raw:
+        return (
+            "L'utilisateur n'a pas renseigné de domaines à l'adhésion (étape optionnelle) : "
+            "basez le coaching sur les métriques et les défauts détectés ci-dessous."
+        )
+    parts = [p.strip() for p in re.split(r"[,;]\s*|\s*\|\s*", raw) if p.strip()]
+    if not parts:
+        return (
+            "L'utilisateur n'a pas renseigné de domaines à l'adhésion (étape optionnelle) : "
+            "basez le coaching sur les métriques et les défauts détectés ci-dessous."
+        )
+    return "\n".join(f"- {p}" for p in parts[:20])
+
+
 def _build_prompt_payload(
     scores: Scores,
     strengths: List[str],
@@ -282,46 +319,71 @@ def _build_prompt_payload(
     language: str = "fr",
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
+    weak_points: Optional[str] = None,
     history_context: str = "Aucun historique disponible."
 ) -> Tuple[str, str]:
     top_category, top_message, top_tip = _top_recommendation(recommendations, weaknesses)
     strengths_text = " | ".join(strengths[:3]) if strengths else "Bases de présentation correctes."
     weaknesses_text = " | ".join(weaknesses[:2]) if weaknesses else top_message
     
-    # Enrich from RAG
+    # Enrich from RAG - Now passes all fetched docs to let LLM choose contextually
     pedagogical_info = ""
     if fetched_docs:
-        doc = fetched_docs[0]
-        title = doc.get("title", "Technique sans titre")
-        content = doc.get("content", "")
-        steps = " | ".join(doc.get("exercise_steps", []))
-        pedagogical_info = f"Technique: {title}\nThéorie: {content}\nÉtapes suggérées: {steps}"
+        pedagogical_info = "SOURCES PÉDAGOGIQUES DISPONIBLES :\n"
+        for i, doc in enumerate(fetched_docs):
+            title = doc.get("title", "Technique sans titre")
+            content = doc.get("content", "")
+            steps = " | ".join(doc.get("exercise_steps", []))
+            pedagogical_info += f"--- SOURCE {i+1} ---\nTechnique: {title}\nThéorie: {content}\nÉtapes: {steps}\n\n"
+        pedagogical_info += "INSTRUCTION : Identifiez la source la plus cohérente avec l'erreur de l'utilisateur pour concevoir l'exercice."
 
     normalized_level = (experience_level or "Beginner").strip()
     normalized_goal = (current_goal or "Général").strip()
+    current_axes = (
+        f"Voix {scores.voice_score:.1f}/10 | "
+        f"Presence {scores.presence_score:.1f}/10 | "
+        f"Gestes {scores.body_language_score:.1f}/10 | "
+        f"Cadrage {scores.scene_score:.1f}/10"
+    )
 
     system = (
         "Vous êtes le 'Master Coach' de SpeechCoach, un expert certifié en communication (Toastmasters International). "
         "Votre mission est de transformer des chiffres bruts en un parcours d'entraînement puissant. "
-        "Répondez exclusivement au format JSON strict avec ces 5 clés : "
-        "bilan_global, point_prioritaire, encouragement, exercice_titre, exercice_consigne. "
+        "Répondez exclusivement au format JSON strict avec ces 6 clés : "
+        "bilan_global, point_prioritaire, encouragement, exercice_titre, exercice_consigne, focus_primary. "
         "DIRECTIVES PÉDAGOGIQUES : "
         "1. Ton : Professionnel, bienveillant, humain. Vouvoiement obligatoire. "
         "2. Langage : Interdiction totale du jargon technique (pas de 'WPM', dites 'mots par minute'). "
-        "3. Bilan : Mentionnez la TENDANCE basée sur l'historique (progression ou stagnation). "
+        "3. Bilan : Redigez un resume executif clair de la session actuelle (sans details excessifs), "
+        "puis comparez-le explicitement aux 2-3 sessions precedentes en vous appuyant sur les axes. "
+        "Le bilan doit rester concis (3 a 5 phrases), compréhensible, et orienté coaching. "
         "4. Exercice Universel : Concevez un exercice de 5 minutes SANS support. Ne copiez JAMAIS mot pour mot la source pédagogique ! INVENTEZ à chaque fois un scénario pratique, créatif et unique adapté. "
         "5. Format Exercice : 'exercice_titre' (court), 'exercice_consigne' DOIT ÊTRE UN TABLEAU JSON DE STRING comprenant EXACTEMENT 3 étapes. Exemple: [\"Faites X.\", \"Dites Y.\", \"Vérifiez Z.\"].\n"
-        "6. Adaptation Linguistique : Rédigez le texte global en FRANÇAIS. Mais si vous donnez des exemples de mots (mots de liaison, tics linguistiques), ils DOIVENT ABSOLUMENT être dans la LANGUE DE LA VIDÉO."
+        "6. Adaptation Linguistique : Rédigez le texte global en FRANÇAIS. Mais si vous donnez des exemples de mots (mots de liaison, tics linguistiques), ils DOIVENT ABSOLUMENT être dans la LANGUE DE LA VIDÉO. "
+        "7. Cohérence Prioritaire : point_prioritaire et exercice_consigne doivent cibler un SEUL axe principal (pas de combinaison multi-axes dans la même mission). "
+        "8. focus_primary : renseignez uniquement un de ces tags canoniques: voice|presence|body|scene. "
+        "Ce tag DOIT correspondre exactement à l'axe principal de point_prioritaire et exercice_consigne. "
+        "9. Domaines choisis à l'adhésion (onboarding optionnel) : ce sont des déclarations volontaires "
+        "de l'utilisateur, pas un diagnostic automatique. Si renseignées, intégrez-les dans le ton, "
+        "les exemples et l'angle du bilan lorsqu'elles sont cohérentes avec l'axe prioritaire unique ; "
+        "sinon privilégiez les métriques et l'axe déterministe ci-dessous."
     )
+    weak_points_block = _format_user_weak_points(weak_points)
     user = (
         f"--- CONTEXTE UTILISATEUR ---\n"
         f"Niveau: {normalized_level} | Objectif: {normalized_goal}\n"
         f"Langue de la Vidéo: {language.upper() if language else 'FR'}\n"
-        f"Historique/Tendance: {history_context}\n\n"
+        f"Historique/Tendance: {history_context}\n"
+        f"Domaines sur lesquels l'utilisateur souhaite travailler (choix volontaires à l'adhésion, optionnel ; "
+        f"ce ne sont pas des défauts détectés par l'application) :\n"
+        f"{weak_points_block}\n\n"
         f"--- MÉTRIQUES ACTUELLES ---\n"
         f"Score: {int(round(scores.overall_score))}/100\n"
+        f"Axes actuels: {current_axes}\n"
         f"Points forts: {strengths_text}\n"
         f"Défauts: {weaknesses_text}\n\n"
+        f"Axe prioritaire déterministe à respecter: {top_category}\n"
+        f"Règle stricte: ne pas mélanger plusieurs axes dans point_prioritaire et exercice_consigne.\n\n"
         f"--- SOURCE PÉDAGOGIQUE (RAG) ---\n"
         f"{pedagogical_info or 'Utilisez votre expertise générale.'}"
     )
@@ -351,6 +413,7 @@ def generate_coaching_text(
     model: str = "",
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
+    weak_points: Optional[str] = None,
     history_context: str = "Première session."
 ) -> Optional[Dict[str, str]]:
 
@@ -364,6 +427,7 @@ def generate_coaching_text(
     fallback_encouragement = build_encouragement(strengths, recommendations, weaknesses)
     fallback_ex_titre = "Mission : Pratique Ciblée"
     fallback_ex_consigne = "Focalisez votre attention sur votre axe de progression principal durant 2 minutes de parole libre."
+    fallback_focus_primary = _focus_tag_from_category(_top_recommendation(recommendations, weaknesses)[0])
 
     system, user = _build_prompt_payload(
         scores,
@@ -374,6 +438,7 @@ def generate_coaching_text(
         language=language,
         experience_level=experience_level,
         current_goal=current_goal,
+        weak_points=weak_points,
         history_context=history_context
     )
 
@@ -390,7 +455,8 @@ def generate_coaching_text(
             "point_prioritaire": fallback_priority,
             "encouragement": fallback_encouragement,
             "exercice_titre": fallback_ex_titre,
-            "exercice_consigne": fallback_ex_consigne
+            "exercice_consigne": fallback_ex_consigne,
+            "focus_primary": fallback_focus_primary,
         }
 
     # Sanitize and Validate
@@ -415,11 +481,13 @@ def generate_coaching_text(
         priority = fallback_priority
     if _is_bad_encouragement(encouragement):
         encouragement = fallback_encouragement
+    focus_primary = _sanitize_focus_tag(payload.get("focus_primary"), fallback_focus_primary)
 
     return {
         "bilan_global": bilan,
         "point_prioritaire": priority,
         "encouragement": encouragement,
         "exercice_titre": ex_titre or fallback_ex_titre,
-        "exercice_consigne": ex_consigne or fallback_ex_consigne
+        "exercice_consigne": ex_consigne or fallback_ex_consigne,
+        "focus_primary": focus_primary,
     }

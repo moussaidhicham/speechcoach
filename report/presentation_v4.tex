@@ -1,0 +1,632 @@
+\documentclass[10pt,aspectratio=169]{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{lmodern}
+\usepackage{tcolorbox}
+\usepackage{pifont}
+\usepackage{csquotes}
+\usetikzlibrary{positioning,calc,arrows.meta,shapes.geometric,fit}
+\tcbuselibrary{skins}
+
+\definecolor{primary}{RGB}{12,54,106}
+\definecolor{secondary}{RGB}{234,241,255}
+\definecolor{accent}{RGB}{255,111,0}
+\definecolor{darktext}{RGB}{20,33,61}
+\definecolor{lighttext}{RGB}{108,117,125}
+\definecolor{success}{RGB}{42,157,143}
+\definecolor{danger}{RGB}{230,57,70}
+\definecolor{warning}{RGB}{244,162,97}
+
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size=\huge,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large,series=\normalfont}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=darktext}
+\setbeamercolor{frametitle}{fg=primary}
+\setbeamercolor{title}{fg=primary}
+\setbeamercolor{subtitle}{fg=lighttext}
+\setbeamercolor{structure}{fg=primary}
+\setbeamercolor{item}{fg=accent}
+
+\newtcolorbox{keybox}[1][] {
+    colframe=primary!25,
+    colback=secondary!35,
+    boxrule=0.8pt,
+    arc=4pt,
+    left=6pt,
+    right=6pt,
+    top=5pt,
+    bottom=5pt,
+    #1
+}
+
+\newcommand{\cmark}{\textcolor{success}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{danger}{\ding{55}}}
+
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture,overlay]
+    \fill[secondary!30] (current page.south west) rectangle (current page.north east);
+    \fill[primary!5, opacity=0.85] (current page.north west) -- (current page.south east) -- (current page.south west) -- cycle;
+    \fill[accent, opacity=0.08] ($(current page.center)+(3cm,1.2cm)$) circle (4cm);
+    \node[anchor=center, align=center] at (current page.center) {
+        {\Huge\bfseries\textcolor{primary}{SpeechCoach}}\\[0.3cm]
+        {\huge\bfseries\textcolor{darktext}{Réunion d'avancement n\textdegree 4}}\\[0.55cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (3.2cm,0.12cm);
+        \end{tikzpicture}\\[0.55cm]
+        {\Large\itshape\textcolor{lighttext}{Optimisation ASR multilingue, analyse visuelle adaptative}}\\[0.2cm]
+{\Large\itshape\textcolor{lighttext}{et coaching LLM hybride}}\\[1.2cm]
+        {\normalsize Hicham Moussaid}\\[0.15cm]
+        {\small Master SIE -- ENS Meknès}\\[0.15cm]
+        {\small Encadrant : Pr. Abdelaaziz Hessane}
+    };
+\end{tikzpicture}
+\end{frame}
+
+\setbeamertemplate{footline}{
+    \begin{tikzpicture}[remember picture,overlay]
+        \fill[primary!5] (current page.south west) rectangle ($(current page.south east)+(0,15pt)$);
+        \node[anchor=south east, xshift=-14pt, yshift=4pt, text=primary!60, font=\scriptsize\bfseries] at (current page.south east) {
+            \insertframenumber~|~\inserttotalframenumber
+        };
+        \fill[accent] (current page.south west) rectangle ($(current page.south west)+(3pt,15pt)$);
+        \node[anchor=south west, xshift=10pt, yshift=4pt, text=primary!60, font=\tiny\bfseries] at (current page.south west) {
+            SPEECHCOACH | AVANCEMENT 2026
+        };
+    \end{tikzpicture}
+}
+
+\begin{frame}{Plan de la présentation}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{1. Objectifs et contexte}
+\begin{itemize}
+    \item trois axes de travail
+    \item évolution du coaching
+\end{itemize}
+\vspace{0.3cm}
+\textbf{2. Travail ASR}
+\begin{itemize}
+    \item problème et benchmark
+    \item correctifs et résultats
+\end{itemize}
+\end{column}
+\begin{column}{0.48\textwidth}
+\textbf{3. Analyse visuelle adaptative}
+\begin{itemize}
+    \item problème smartphone
+    \item profils et auto-détection
+\end{itemize}
+\vspace{0.3cm}
+\textbf{4. Stratégie LLM et architecture}
+\begin{itemize}
+    \item fine-tuning et transition Groq
+    \item performance et prochaines étapes
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Objectifs et évolution du coaching}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Objectifs de la phase, colframe=primary, colback=primary!3]
+\small
+\begin{enumerate}
+    \item Améliorer le bloc d'exercices
+    \item Optimiser ASR multilingue (fillers, répétitions)
+    \item Renforcer cohérence moteur--LLM
+\end{enumerate}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Évolution du coaching, colframe=accent, colback=accent!3]
+\small
+\textbf{Phase 1 :} Programme fixe 7 jours \xmark\\
+\textit{Problème :} utilisateur pas prêt à s'engager sur une semaine\\
+\textbf{Phase 2 :} Approche par modes \xmark\\
+\textit{Problème :} templates limitent créativité IA\\
+\textbf{Phase 3 :} Master Coach Agent \cmark\\
+\textit{Solution :} génération dynamique sans templates
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{keybox}
+\textbf{Master Coach Agent :} IA reçoit métriques actuelles + RAG + \textbf{historique des 3 dernières sessions complétées} (scores par axe : voix, présence, gestes, cadrage ; tendances récentes ; chronologie détaillée), conçoit mission unique en 3 étapes adaptée au parcours utilisateur, post-processeur assure focus sur un seul axe
+\end{keybox}
+\end{frame}
+
+\begin{frame}{Master Coach Agent : Détails de l'implémentation}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Flux de génération, colframe=primary, colback=primary!3]
+\small
+\textbf{Phase immédiate -- scoring :}
+\begin{itemize}
+    \item Moteur déterministe calcule métriques brutes
+    \item Tableau de bord s'actualise sans attendre LLM
+\end{itemize}
+\textbf{Phase différée -- enrichissement :}
+\begin{itemize}
+    \item Worker Celery agrège historique + RAG
+    \item Appel API Groq pour coaching
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Intelligence pédagogique, colframe=success, colback=success!3]
+\small
+\textbf{RAG :}
+\begin{itemize}
+    \item Base documentaire via embeddings
+    \item Recherche vectorielle FAISS
+    \item Sans recopie littérale des fiches
+\end{itemize}
+\textbf{Sortie JSON structurée :}
+\begin{itemize}
+    \item Bilan global, point prioritaire
+    \item Encouragement
+    \item Exercice (titre + 3 étapes)
+    \item Axe de focus (voix, présence, gestuelle, scène)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Travail ASR : Problème et benchmark}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Problème identifié, colframe=danger, colback=danger!3]
+\small
+\begin{itemize}
+    \item Fillers (\textit{um}, \textit{uh}, \textit{euh}, \textit{mmm}, arabes) entendus mais non conservés
+    \item Affecte directement le score voix/débit
+    \item Incohérence entre analyse et transcription
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Benchmark CrisperWhisper, colframe=warning!60!black, colback=warning!8]
+\small
+\textbf{Résultats :}
+\begin{itemize}
+    \item \xmark~Temps d'exécution trop élevé
+    \item \xmark~Amélioration non convaincante
+    \item \xmark~Qualité insuffisante
+\end{itemize}
+\textbf{Conclusion :} rejeté, conservé Faster-Whisper
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{keybox}
+\textbf{5 sources d'erreur identifiées :} chaînes arabes corrompues, prompt multilingue, listes incomplètes, lissage sons nasaux, modélisation répétitions insuffisante
+\end{keybox}
+\end{frame}
+
+\begin{frame}{Travail ASR : Correctifs et résultats}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Correctifs, colframe=primary, colback=primary!3]
+\small
+\textbf{Linguistiques :}
+\begin{itemize}
+    \item Restauration chaînes arabes
+    \item Suppression prompt multilingue
+    \item Stratégie deux passes
+\end{itemize}
+\textbf{Techniques :}
+\begin{itemize}
+    \item Listes fillers améliorées
+    \item Détecteur acoustique nasaux (\texttt{librosa})
+    \item Comptage répétitions
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Résultats par langue, colframe=success, colback=success!3]
+\small
+\textbf{Anglais} \cmark~stable\\
+\textbf{Français} \cmark~itérations nécessaires\\
+\textbf{Arabe} \cmark~cas difficile
+\end{tcolorbox}
+\begin{tcolorbox}[title=Configuration retenue, colframe=accent, colback=accent!3]
+\small
+\texttt{medium + beam\_size 1}\\
+Réduction 32--38\% temps total\\
+Impact minimal sur précision
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Difficultés rencontrées et résolutions}
+\begin{keybox}
+\textbf{Problèmes techniques résolus pendant cette phase}
+\end{keybox}
+\vspace{0.35cm}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Faux "multi-axes", colframe=danger, colback=danger!3]
+\small
+\begin{itemize}
+    \item Termes polysémiques faisaient croire à mélange voix/présence/scène
+    \item \textbf{Solution :} détection restreinte à lexiques plus explicites
+    \item Tests de non-régression en place
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Cohérence profil--rapport, colframe=warning!60!black, colback=warning!8]
+\small
+\begin{itemize}
+    \item Rapport écrit avant enrichissement LLM
+    \item Risque de perdre préférences utilisateur
+    \item \textbf{Solution :} serveur recharge profil si champ absent des métadonnées
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{Apprentissage :} chaque difficulté a été résolue avec une solution spécifique et testée
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Analyse visuelle : Problème et solution}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Problème, colframe=danger, colback=danger!3]
+\small
+\textbf{Logique générique pénalisait vidéos smartphone}
+\begin{itemize}
+    \item Cas test révélateur : visage centré, mains visibles, regard caméra
+    \item Résultats anormaux :
+    \begin{itemize}
+        \item Présence : 71\%
+        \item Contact visuel : 10\%
+        \item Mains visibles : 7\%
+    \end{itemize}
+    \item Cause : pipeline vision (MediaPipe + OpenCV) inadapté aux mobiles
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Solution, colframe=success, colback=success!3]
+\small
+\textbf{Profils d'appareil :}
+\begin{itemize}
+    \item \texttt{laptop\_desktop} : réglage initial (pitch -32° à 8°, yaw ±15°)
+    \item \texttt{tablet} : tolère décalages latéraux (yaw ±25°)
+    \item \texttt{smartphone} : traitement spécifique (pitch -18° à 18°)
+    \item \texttt{unknown} : auto-détection + tolérance générique
+\end{itemize}
+\textbf{Correctifs smartphone :} format portrait conservé, fréquence 2 fps (vs 1 fps), tolérances regard assouplies
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Analyse visuelle : Résultats et auto-détection}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Résultats smartphone, colframe=accent, colback=accent!3]
+\small
+\textbf{Amélioration spectaculaire sur cas test}
+\begin{itemize}
+    \item Présence : 71\% $\rightarrow$ \textbf{100\%} (+29\%)
+    \item Contact visuel : 10\% $\rightarrow$ \textbf{80\%+} (+70\%)
+    \item Mains visibles : 7\% $\rightarrow$ \textbf{60\%+} (+53\%)
+\end{itemize}
+\textbf{Observations :} laptop et tablette plus stables, ajustement supplémentaire pour tablette (usages paysage)
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Auto-détection, colframe=primary, colback=primary!3]
+\small
+\textbf{Stratégie hiérarchique :}
+\begin{itemize}
+    \item 1. Métadonnées \texttt{ffprobe} + nom de fichier (tablet/phone keywords)
+    \item 2. Rotation réelle + ratio d'aspect
+    \item 3. Heuristique géométrique (portrait $\rightarrow$ smartphone, landscape $\rightarrow$ tablette/laptop)
+\end{itemize}
+\textbf{Résultats détection :}
+\begin{itemize}
+    \item Smartphone : auto-détecté via métadonnées/rotation
+    \item Tablette : reconnue via métadonnées/nom de fichier
+    \item Laptop/desktop : déduit par heuristique
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Stratégie LLM : Fine-tuning et transition Groq}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Fine-tuning engine-centric, colframe=warning!60!black, colback=warning!8]
+\small
+\textbf{Approche centrée sur le moteur :}
+\begin{itemize}
+    \item Données contraintes par sorties réelles du moteur (\texttt{calculate\_scores}, \texttt{generate\_recommendations})
+    \item Enrichissements : niveau (Débutant/Intermédiaire/Avancé), objectif (Pitch/Soutenance/PFE/Entretien)
+    \item Données générées par système (fidélité totale aux scores)
+\end{itemize}
+\textbf{Résultats :}
+\begin{itemize}
+    \item \xmark~Qwen 1.5B : résultats non convaincants
+    \item \xmark~Limitations cohérence/généralisation sur long terme
+    \item \cmark~Preuve de concept validée (Ollama local)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Transition Groq, colframe=success, colback=success!3]
+\small
+\textbf{Choix stratégique :} Llama 3.3 70B + Groq
+\begin{itemize}
+    \item \cmark~Rapidité exceptionnelle (LPU) : latence maîtrisée
+    \item \cmark~Puissance de raisonnement : missions fines, sans répétitions
+    \item \cmark~Quota gratuit : 100--120 sessions/jour
+    \item \cmark~Fidélité JSON et rôle ``Master Coach''
+\end{itemize}
+\textbf{Avantages :} infrastructure cloud fiable pour usage produit, meilleure qualité que modèles compacts
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{Décision :} migration vers Groq pour production (V2) après validation fine-tuning local
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Méthodologie fine-tuning : construction du jeu de données}
+\begin{keybox}
+\textbf{Jeu de données de référence (v2) construit en quatre phases méthodiques}
+\end{keybox}
+\vspace{0.35cm}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Phases 1-2 : Ancrage et couverture, colframe=primary, colback=primary!3]
+\small
+\textbf{Phase seed (données réelles) :}
+\begin{itemize}
+    \item Ancrage sur sessions réelles annotées manuellement
+    \item Base réaliste pour l'entraînement
+\end{itemize}
+\textbf{Phase archétypes :}
+\begin{itemize}
+    \item Couverture spectre pédagogique complet
+    \item Profils types : du scénario multi-failles à la haute maîtrise
+    \item Échantillonnage stratifié des cas d'usage
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Phases 3-4 : Sondage et distillation, colframe=success, colback=success!3]
+\small
+\textbf{Phase sondage (engine probing) :}
+\begin{itemize}
+    \item Échantillonnage stratifié du domaine des métriques
+    \item Étiquetage par moteur comme fonction déterministe $y = f(x)$
+    \item Couverture exhaustive des combinaisons possibles
+\end{itemize}
+\textbf{Phase distillation enseignant--élève :}
+\begin{itemize}
+    \item Modèle enseignant (Llama 3.3 via API) transforme sorties chiffrées en formulations exploitables
+    \item Transfert de connaissances vers petit modèle cible (Qwen 1.5B)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Architecture backend et sécurité}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Architecture hybride découplée, colframe=primary, colback=primary!3]
+\small
+\textbf{Flux de traitement :}
+\begin{itemize}
+    \item \textbf{Phase immédiate} : scoring déterministe (moteur audio/vision)
+    \item \textbf{Phase différée} : enrichissement asynchrone (Worker Celery)
+    \item \textbf{Suivi client} : polling statut jusqu'à disponibilité
+\end{itemize}
+\textbf{Technologies backend :}
+\begin{itemize}
+    \item FastAPI : API RESTful performante
+    \item Celery : worker asynchrone pour enrichissement
+    \item PostgreSQL : base de données relationnelle
+    \item Redis : cache et file d'attente Celery
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Sécurité et authentification, colframe=accent, colback=accent!3]
+\small
+\textbf{Flux SMTP professionnel :}
+\begin{itemize}
+    \item Envoi e-mail vérification à l'inscription
+    \item Liens sécurisés réinitialisation mot de passe
+    \item Pages dédiées Next.js (vérification/reset)
+\end{itemize}
+\textbf{Gestion de compte :}
+\begin{itemize}
+    \item Authentification JWT sécurisée
+    \item Gestion autonome compte utilisateur
+    \item Force mot de passe dynamique
+\end{itemize}
+\textbf{Garde-fous LLM :}
+\begin{itemize}
+    \item Filtre anti-tutoiement (regex)
+    \item Rejet bilans vagues
+    \item Fallback déterministe (0 rapport vide)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Performance : Optimisations beam\_size=1}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Comparaison avant/après (vidéo 5 min)}
+\vspace{0.1cm}
+\begin{tabular}{lcc}
+\rowcolor{primary!20}\textbf{Métrique} & \textbf{Avant} & \textbf{Après} \\
+\hline
+Cold run & 12:12 & 8:17 \\
+Hot run & 11:59 & 7:23 \\
+\rowcolor{accent!20}\textbf{Réduction} & -- & \textbf{32--38\%} \\
+RTF & ~2.25x & ~1.35x \\
+\hline
+\end{tabular}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{tcolorbox}[title=Impact beam\_size=1, colframe=accent, colback=accent!3]
+\small
+\textbf{Avantages :}
+\begin{itemize}
+    \item Réduction 39--43\% transcription
+    \item Impact minimal sur précision
+    \item Trade-off favorable (fillers/hésitations bien détectés)
+\end{itemize}
+\end{tcolorbox}
+\vspace{0.2cm}
+\begin{tcolorbox}[title=Cache et parallélisme, colframe=success, colback=success!3]
+\small
+\textbf{Optimisations :}
+\begin{itemize}
+    \item Cache : -100\% chargement modèles
+    \item Cache : -89.5\% enrichissement
+    \item Parallélisme : vision $\parallel$ transcription
+    \item Scalabilité : temps linéaire (~1.35x)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.2cm}
+\begin{keybox}
+\textbf{Résultat :} vidéo 5 min traitée en 7:23 (hot run), acceptable pour usage produit
+\end{keybox}
+\end{frame}
+
+\begin{frame}{Analyse de performance : Observations clés}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+\textbf{Temps par phase (vidéo 5 min)}
+\vspace{0.1cm}
+\begin{tabular}{lcc}
+\rowcolor{primary!20}\textbf{Phase} & \textbf{Cold run} & \textbf{Hot run} \\
+\hline
+Chargement modèles & 2:18 & 0:00 \\
+Extraction audio & 0:16 & 0:16 \\
+Transcription Whisper & 5:31 & 5:31 \\
+Analyse vision & 0:17 & 0:17 \\
+Enrichissement LLM & 0:55 & 0:19 \\
+\rowcolor{accent!20}\textbf{TOTAL} & \textbf{8:17} & \textbf{7:23} \\
+\hline
+\end{tabular}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{tcolorbox}[title=Impact du cache, colframe=success, colback=success!3]
+\small
+\textbf{Réductions (cold $\rightarrow$ hot) :}
+\begin{itemize}
+    \item Chargement modèles : \textbf{-100\%}
+    \item Enrichissement : \textbf{-89.5\%}
+    \item Transcription : impact modéré (goulot principal)
+    \item Total : \textbf{-10.9\%}
+\end{itemize}
+\textbf{Goulot d'étranglement :} Transcription = 72--93\% du temps
+\end{tcolorbox}
+\vspace{0.2cm}
+\begin{tcolorbox}[title=Parallélisme, colframe=primary, colback=primary!3]
+\small
+\textbf{Exécution simultanée :}
+\begin{itemize}
+    \item Vision $\parallel$ transcription (gain parallèle)
+    \item Enrichissement LLM très rapide (cache RAG + Groq)
+    \item Scalabilité : temps linéaire (~1.35x temps réel)
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.2cm}
+\begin{tcolorbox}[colback=secondary!45,colframe=primary!25]
+\small \textbf{Optimisations futures :} GPU (10--15x plus rapide), modèles plus légers (compromis qualité/vitesse), batch processing
+\end{tcolorbox}
+\end{frame}
+
+\begin{frame}{Prochaines étapes et bilan}
+\begin{columns}[T]
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Prochaines étapes, colframe=accent, colback=accent!3]
+\small
+\textbf{Priorité 1 : Accélération GPU}\\
+\textit{Réduction 6--15x (7 min $\rightarrow$ 30--60 sec)}\\
+\vspace{0.1cm}
+\textbf{Priorité 2 : Intelligence Émotionnelle (EQ)}\\
+\textit{Détection émotions : stress, confiance, enthousiasme}\\
+\textit{MediaPipe Face Mesh + librosa}\\
+\vspace{0.1cm}
+\textbf{Priorité 3 : Interface multilingue}\\
+\textit{Arabe, Français, Anglais (i18n + RTL)}\\
+\vspace{0.1cm}
+\textbf{Priorité 4 : Coaching en temps réel}\\
+\textit{Streaming audio + WebRTC (transcription + analyse live)}
+\end{tcolorbox}
+\end{column}
+\begin{column}{0.49\textwidth}
+\begin{tcolorbox}[title=Bilan de cette phase, colframe=success, colback=success!3]
+\small
+\textbf{Accomplissements majeurs :}
+\begin{itemize}
+    \item \cmark~Coaching : templates $\rightarrow$ agent dynamique (Groq Llama 3.3)
+    \item \cmark~ASR : fillers mieux détectés (3 langues, détecteur acoustique nasaux)
+    \item \cmark~Vision : profils appareil + auto-détection hiérarchique
+    \item \cmark~LLM : fine-tuning Qwen $\rightarrow$ Groq API (V2)
+    \item \cmark~Performance : -32--38\% temps (beam\_size=1, cache)
+    \item \cmark~UX/UI : professionnel, SMTP, exports PDF/MD/HTML
+    \item \cmark~Backend : FastAPI + Celery + PostgreSQL + Redis
+\end{itemize}
+\end{tcolorbox}
+\end{column}
+\end{columns}
+\vspace{0.3cm}
+\begin{keybox}
+\textbf{Résultat :} prototype technique $\rightarrow$ produit utilisable, performant et professionnel (vidéo 5 min traitée en 7:23)
+\end{keybox}
+\end{frame}
+
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[remember picture, overlay]
+    \fill[primary] (current page.south west) rectangle (current page.north east);
+    \node[text=white, align=center] at (current page.center) {
+        {\Huge\bfseries Merci de votre attention}\\[0.45cm]
+        {\Large Questions et démonstration}\\[0.9cm]
+        \begin{tikzpicture}
+            \fill[accent] (0,0) rectangle (4cm,0.14cm);
+        \end{tikzpicture}
+    };
+\end{tikzpicture}
+\end{frame}
+
+\end{document}

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 logger = logging.getLogger(__name__)
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.auth.router import current_active_user
-from app.users.models import User
+from app.db.models import User
 from app.analytics.models import PlatformFeedback
 from app.analytics.schemas import PlatformFeedbackCreate, PlatformFeedbackRead, PlatformFeedbackUpdate
 from app.db.database import get_session

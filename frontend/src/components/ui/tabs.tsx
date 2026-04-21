@@ -73,14 +73,15 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
       className={cn(
         /*
           Base: text-sm, font-medium, calm inactive colour.
-          Height fills the list minus padding: h-[calc(100%-0.5rem)]
-          since the list now uses p-1 (0.25rem each side).
+          Height fills the list minus padding for default variant: h-[calc(100%-0.5rem)]
+          since the list uses p-1 (0.25rem each side). Line variant uses h-full.
           focus-visible:ring-2 consistent with all other focusable elements.
         */
         "relative inline-flex h-[calc(100%-0.5rem)] flex-1 items-center justify-center gap-1.5 rounded-lg border border-transparent px-3 py-1 text-sm font-medium whitespace-nowrap",
-        "text-muted-foreground transition-colors",
+        "group-data-[variant=line]/tabs-list:h-full",
+        "text-muted-foreground transition-all duration-200 ease-out",
         "group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start",
-        "hover:text-foreground",
+        "hover:text-foreground hover:bg-secondary/40",
         "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none",
         "disabled:pointer-events-none disabled:opacity-40",
         "aria-disabled:pointer-events-none aria-disabled:opacity-40",
@@ -94,20 +95,22 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         "dark:group-data-[variant=default]/tabs-list:data-active:bg-input/30",
         "dark:group-data-[variant=default]/tabs-list:data-active:border-input",
 
-        /* line variant: no background, underline indicator via ::after */
+        /* line variant: subtle background for active state */
         "group-data-[variant=line]/tabs-list:rounded-none",
         "group-data-[variant=line]/tabs-list:bg-transparent",
-        "group-data-[variant=line]/tabs-list:data-active:bg-transparent",
+        "group-data-[variant=line]/tabs-list:data-active:bg-primary/5",
         "group-data-[variant=line]/tabs-list:data-active:text-foreground",
+        "group-data-[variant=line]/tabs-list:data-active:font-semibold",
 
         /*
-          Underline indicator — primary colour instead of foreground.
+          Underline indicator - primary colour with glow effect.
           Positioned just below the list border-b so it sits on top of the track.
+          Thicker underline with shadow for better visibility.
         */
-        "after:absolute after:opacity-0 after:transition-opacity after:rounded-full",
-        "after:bg-primary",
-        "group-data-horizontal/tabs:after:inset-x-2 group-data-horizontal/tabs:after:bottom-[-1px] group-data-horizontal/tabs:after:h-0.5",
-        "group-data-vertical/tabs:after:inset-y-2 group-data-vertical/tabs:after:-right-px group-data-vertical/tabs:after:w-0.5",
+        "after:absolute after:opacity-0 after:transition-all after:duration-300 after:ease-out after:rounded-full",
+        "after:bg-primary after:shadow-[0_0_12px_rgba(var(--primary),0.5)]",
+        "group-data-horizontal/tabs:after:inset-x-2 group-data-horizontal/tabs:after:bottom-[-1px] group-data-horizontal/tabs:after:h-[2px]",
+        "group-data-vertical/tabs:after:inset-y-2 group-data-vertical/tabs:after:-right-px group-data-vertical/tabs:after:w-[2px]",
         "group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
 
         className

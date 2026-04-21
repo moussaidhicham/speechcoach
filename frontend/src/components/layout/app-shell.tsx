@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   History,
+  Home,
   LayoutDashboard,
   LogIn,
   LogOut,
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
  
 import { AvatarCustom } from '@/components/ui/avatar-custom';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/auth-context';
 import { UserProfile } from '@/types/auth';
@@ -45,7 +46,8 @@ interface NavItem {
 /* ─── Nav items ──────────────────────────────────────────────────────── */
  
 const authenticatedNavItems: NavItem[] = [
-  { href: '/dashboard',       label: 'Dashboard',   icon: LayoutDashboard    },
+  { href: '/',                label: 'Accueil',      icon: Home               },
+  { href: '/dashboard',       label: 'Dashboard',    icon: LayoutDashboard    },
   { href: '/studio',          label: 'Studio',       icon: Video              },
   { href: '/history',         label: 'Historique',   icon: History            },
   { href: '/public-feedback', label: 'Avis',         icon: MessageSquareQuote },
@@ -53,7 +55,7 @@ const authenticatedNavItems: NavItem[] = [
 ];
  
 const publicNavItems: NavItem[] = [
-  { href: '/',                label: 'Accueil',      icon: LayoutDashboard    },
+  { href: '/',                label: 'Accueil',      icon: Home               },
   { href: '/public-feedback', label: 'Avis',         icon: MessageSquareQuote },
   { href: '/login',           label: 'Connexion',    icon: LogIn              },
 ];
@@ -69,7 +71,10 @@ function NavLink({
   pathname: string;
   onClick?: () => void;
 }) {
-  const isActive = pathname === item.href;
+  const isActive =
+    item.href === '/'
+      ? pathname === '/'
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
   return (
     <Link
       href={item.href}
@@ -92,13 +97,11 @@ function NavLink({
  
 function UserCard({
   profile,
-  userEmail,
   onLogout,
   isAuthenticated,
   onLinkClick,
 }: {
   profile: UserProfile | null;
-  userEmail?: string;
   onLogout: () => void;
   isAuthenticated: boolean;
   onLinkClick?: () => void;
@@ -128,14 +131,20 @@ function UserCard({
       <div className="flex items-center gap-3">
         <AvatarCustom
           src={profile?.avatar_url}
-          name={profile?.full_name || userEmail || 'Coach'}
+          name={profile?.full_name || 'Utilisateur'}
           size="md"
         />
         <div className="min-w-0">
           <div className="truncate text-sm font-medium text-foreground">
-            {profile?.full_name || 'Coach Speech'}
+            {profile?.full_name || 'Votre compte'}
           </div>
-          <div className="truncate text-xs text-muted-foreground">{userEmail}</div>
+          <Link
+            href="/settings"
+            onClick={onLinkClick}
+            className="mt-0.5 block truncate text-xs text-muted-foreground transition-colors hover:text-primary"
+          >
+            Profil et préférences
+          </Link>
         </div>
       </div>
       <button
@@ -155,14 +164,12 @@ function DesktopSidebar({
   items,
   pathname,
   profile,
-  userEmail,
   onLogout,
   isAuthenticated,
 }: {
   items: NavItem[];
   pathname: string;
   profile: UserProfile | null;
-  userEmail?: string;
   onLogout: () => void;
   isAuthenticated: boolean;
 }) {
@@ -173,7 +180,7 @@ function DesktopSidebar({
     >
       {/* Logo */}
       <Link
-        href={isAuthenticated ? '/dashboard' : '/'}
+        href="/"
         className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-secondary/50"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -196,7 +203,6 @@ function DesktopSidebar({
       <div className="mt-auto rounded-2xl border border-border/60 bg-background/70 p-4">
         <UserCard
           profile={profile}
-          userEmail={userEmail}
           onLogout={onLogout}
           isAuthenticated={isAuthenticated}
         />
@@ -211,7 +217,6 @@ function MobileDrawer({
   items,
   pathname,
   profile,
-  userEmail,
   onClose,
   onLogout,
   isAuthenticated,
@@ -219,7 +224,6 @@ function MobileDrawer({
   items: NavItem[];
   pathname: string;
   profile: UserProfile | null;
-  userEmail?: string;
   onClose: () => void;
   onLogout: () => void;
   isAuthenticated: boolean;
@@ -249,7 +253,7 @@ function MobileDrawer({
           {/* Header */}
           <div className="flex items-center justify-between">
             <Link
-              href={isAuthenticated ? '/dashboard' : '/'}
+              href="/"
               className="flex items-center gap-3"
               onClick={onClose}
             >
@@ -278,7 +282,6 @@ function MobileDrawer({
           <div className="mt-auto rounded-2xl border border-border/60 bg-card/70 p-4">
             <UserCard
               profile={profile}
-              userEmail={userEmail}
               onLogout={() => { onClose(); onLogout(); }}
               isAuthenticated={isAuthenticated}
               onLinkClick={onClose}
@@ -302,7 +305,7 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, token, user, isLoading } = useAuth();
+  const { logout, token, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
  
@@ -365,7 +368,6 @@ export function AppShell({
         items={items}
         pathname={pathname}
         profile={profile}
-        userEmail={user?.email}
         onLogout={logout}
         isAuthenticated={isAuthenticated}
       />
@@ -375,7 +377,6 @@ export function AppShell({
           items={items}
           pathname={pathname}
           profile={profile}
-          userEmail={user?.email}
           onClose={() => setMobileOpen(false)}
           onLogout={logout}
           isAuthenticated={isAuthenticated}

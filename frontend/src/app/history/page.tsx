@@ -141,6 +141,9 @@ export default function HistoryPage() {
       return 0;
     });
 
+  const completedCount = history.filter((item) => item.status === 'completed').length;
+  const processingCount = history.filter((item) => item.status === 'processing').length;
+
   return (
     <AppShell
       title="Historique des analyses"
@@ -148,9 +151,25 @@ export default function HistoryPage() {
       maxWidth="6xl"
     >
       <div className="space-y-5">
+        <section className="surface-mixed rounded-2xl border border-border/60 p-5">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border/60 bg-background/95 px-4 py-3">
+              <div className="text-xs text-muted-foreground">Sessions total</div>
+              <div className="mt-1 text-2xl font-semibold">{history.length}</div>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-background/95 px-4 py-3">
+              <div className="text-xs text-muted-foreground">Sessions terminées</div>
+              <div className="mt-1 text-2xl font-semibold">{completedCount}</div>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-background/95 px-4 py-3">
+              <div className="text-xs text-muted-foreground">En traitement</div>
+              <div className="mt-1 text-2xl font-semibold">{processingCount}</div>
+            </div>
+          </div>
+        </section>
 
         {/* ── Filters ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_200px_200px]">
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-border/60 bg-card p-4 lg:grid-cols-[1fr_200px_200px]">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/60" />
             <Input

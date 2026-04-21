@@ -31,7 +31,6 @@ import { Progress } from '@/components/ui/progress';
 import { FeedbackForm } from '@/features/feedback/FeedbackForm';
 import api from '@/lib/api';
 import {
-  buildMarkdownReport,
   formatDuration,
   formatLanguage,
   formatReportDate,
@@ -233,6 +232,7 @@ export default function ReportPage() {
   const isEnrichmentRunning = report?.enrichment_status === 'pending' && enrichmentMonitorStatus !== 'ready' && enrichmentMonitorStatus !== 'failed';
   const isEnrichmentReadyForRefresh = enrichmentMonitorStatus === 'ready';
   const hasEnrichmentFailed = report?.enrichment_status === 'failed' || enrichmentMonitorStatus === 'failed';
+  const fallbacks = report?.fallbacks;
   const coachingHeadline = isEnrichmentRunning
     ? 'Analyse avancee en preparation.'
     : isEnrichmentReadyForRefresh
@@ -249,11 +249,10 @@ export default function ReportPage() {
       ? 'Version enrichie prete'
       : report?.summary.priority_focus || 'Progression generale';
   const coachingEncouragement = isEnrichmentRunning || isEnrichmentReadyForRefresh ? null : report?.summary.encouragement;
-  const displayEncouragement = shouldDisplayEncouragement(coachingEncouragement, coachingNarrative, coachingPriority)
-    ? coachingEncouragement
-    : null;
+  const displayEncouragement = coachingEncouragement;
   const exerciseRecommendation = report?.exercise_recommendation;
-  const focusPrimary = report?.training_plan.focus_primary || exerciseRecommendation?.focus_primary || 'Progression generale';
+  const focusPrimaryRaw = report?.training_plan.focus_primary || exerciseRecommendation?.focus_primary || 'Progression generale';
+  const focusPrimary = focusPrimaryRaw === 'Cadre' ? 'Presence' : focusPrimaryRaw;
   const focusSecondary = report?.training_plan.focus_secondary || exerciseRecommendation?.focus_secondary || null;
   const practiceDays = report?.training_plan.days ?? [];
   const shouldShowPracticeCard = report
@@ -269,20 +268,18 @@ export default function ReportPage() {
       : 'Une action concrete a tester des la prochaine repetition.';
 
   const handleExportMarkdown = React.useCallback(async () => {
-    if (!report || !sessionId) return;
+    if (!sessionId) return;
     setIsExportingMarkdown(true);
     try {
       const blob = await videoService.getMarkdownExport(sessionId);
       downloadBlob(blob, `speechcoach-report-${sessionId}.md`);
       toast.success('Export Markdown pret.');
     } catch {
-      const content = buildMarkdownReport(report);
-      downloadBlob(new Blob([content], { type: 'text/markdown;charset=utf-8' }), `speechcoach-report-${sessionId}.md`);
-      toast.success('Export Markdown genere localement.');
+      toast.error('Export Markdown indisponible pour le moment.');
     } finally {
       setIsExportingMarkdown(false);
     }
-  }, [report, sessionId]);
+  }, [sessionId]);
 
   const handleExportPdf = React.useCallback(async () => {
     if (!sessionId) return;
@@ -364,81 +361,101 @@ export default function ReportPage() {
                     <CardTitle>{coachingHeadline}</CardTitle>
                     <CardDescription className="mt-2.5 max-w-2xl text-sm leading-relaxed">
                       {coachingNarrative}
+                      {fallbacks?.bilan?.origin === 'fallback' && fallbacks?.bilan?.reason
+                        ? ` (fallback: ${fallbacks.bilan.reason})`
+                        : null}
                     </CardDescription>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3.5 text-left">
-                    <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                  <div className="rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-left">
+                    <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
                       Priorite
                     </div>
-                    <div className="mt-2 text-sm font-medium text-foreground">
+                    <div className="mt-1.5 text-sm font-medium text-foreground">
                       {coachingPriority}
+                      {fallbacks?.priorite?.origin === 'fallback' && fallbacks?.priorite?.reason
+                        ? ` (fallback: ${fallbacks.priorite.reason})`
+                        : null}
                     </div>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="grid gap-6 p-7 lg:grid-cols-[1fr_0.9fr]">
-                {/* Left: meta + focus */}
-                <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <SessionMetaCard label="Date"   value={formatReportDate(report.session.created_at)} />
-                    <SessionMetaCard label="Duree"  value={formatDuration(report.session.duration_seconds)} />
-                    <SessionMetaCard label="Langue" value={formatLanguage(report.session.language)} />
-                  </div>
-                  {(displayEncouragement || isEnrichmentReadyForRefresh) && (
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
-                      <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        Encouragement du coach
-                      </div>
-                      {displayEncouragement ? (
-                        <p className="mt-2.5 rounded-xl bg-primary/8 px-4 py-3 text-sm leading-relaxed text-foreground">
-                          {displayEncouragement}
-                        </p>
-                      ) : null}
-                      {isEnrichmentReadyForRefresh && (
-                        <div className="mt-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-foreground">
-                          La synthese enrichie est prete. Cliquez sur <span className="font-medium">Recharger</span> pour afficher la version finale.
+              <CardContent className="space-y-6 p-7">
+                <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+                  {/* Left: focus / encouragement */}
+                  <div className="space-y-4">
+                    {(displayEncouragement || isEnrichmentReadyForRefresh) && (
+                      <div className="rounded-2xl border border-border/60 bg-background/70 p-5">
+                        <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+                          <Sparkles className="h-3.5 w-3.5 text-primary" />
+                          Encouragement du coach
                         </div>
-                      )}
+                        {displayEncouragement ? (
+                          <p className="mt-2.5 rounded-xl bg-primary/8 px-4 py-3 text-sm leading-relaxed text-foreground">
+                            {displayEncouragement}
+                            {fallbacks?.encouragement?.origin === 'fallback' && fallbacks?.encouragement?.reason
+                              ? ` (fallback: ${fallbacks.encouragement.reason})`
+                              : null}
+                          </p>
+                        ) : null}
+                        {isEnrichmentReadyForRefresh && (
+                          <div className="mt-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm leading-relaxed text-foreground">
+                            La synthese enrichie est prete. Cliquez sur <span className="font-medium">Recharger</span> pour afficher la version finale.
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: score block (Ribbon style) */}
+                  <div className="data-ribbon relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-violet-600 p-6 text-primary-foreground shadow-xl shadow-primary/20">
+                    {/* Decorative glows for premium feel */}
+                    <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/15 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-white/5 blur-3xl" />
+
+                    <div className="relative z-10">
+                      <div className="text-[11px] font-medium uppercase tracking-widest text-primary-foreground/70">
+                        Score global
+                      </div>
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+                        <div className="flex shrink-0 items-baseline gap-1.5">
+                          <div className="font-display text-7xl font-semibold leading-none tracking-tight text-primary-foreground">
+                            {report.summary.overall_score}
+                          </div>
+                          <div className="text-xl font-medium text-primary-foreground/50">/100</div>
+                        </div>
+                        <div className="shrink-0 whitespace-nowrap rounded-lg border border-white/20 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary-foreground backdrop-blur-md shadow-sm">
+                          {getScoreVerdict(report.summary.overall_score)}
+                        </div>
+                      </div>
+                      <div className="mt-8 space-y-5">
+                        <div>
+                          <div className="mb-2.5 flex items-center justify-between text-xs font-medium text-primary-foreground/70">
+                            <span>Évaluation générale</span>
+                            <span>{report.summary.overall_score}%</span>
+                          </div>
+                          <Progress
+                            value={report.summary.overall_score}
+                            className="h-2 w-full"
+                            trackClassName="bg-white/20"
+                            indicatorClassName="bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]"
+                          />
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <MiniMetricCard label="Résolution" value={formatResolutionValue(report.session.resolution)} />
+                          <MiniMetricCard label="Fluidité (FPS)" value={formatFpsValue(report.session.fps)} />
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
-                {/* Right: score block */}
-                <div className="data-ribbon rounded-2xl p-6">
-                  <div className="text-[11px] font-medium uppercase tracking-widest text-primary-foreground/60">
-                    Score global
-                  </div>
-                  <div className="mt-5 flex items-end justify-between gap-4">
-                    <div>
-                      <div className="font-display text-6xl font-medium leading-none text-primary-foreground">
-                        {report.summary.overall_score}
-                      </div>
-                      <div className="mt-2 text-sm text-primary-foreground/60">/100</div>
-                    </div>
-                    <div className="rounded-full border border-white/20 bg-white/12 px-3 py-1 text-xs font-medium text-primary-foreground">
-                      {getScoreVerdict(report.summary.overall_score)}
-                    </div>
-                  </div>
-                  <div className="mt-7 space-y-4">
-                    <div>
-                      <div className="mb-2 flex items-center justify-between text-xs text-primary-foreground/60">
-                        <span>Evaluation generale</span>
-                        <span>{report.summary.overall_score}%</span>
-                      </div>
-                      <Progress
-                        value={report.summary.overall_score}
-                        className="w-full"
-                        trackClassName="bg-white/20"
-                        indicatorClassName="bg-white"
-                      />
-                    </div>
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      <MiniMetricCard label="Résolution" value={formatResolutionValue(report.session.resolution)} />
-                      <MiniMetricCard label="Fluidité (FPS)" value={formatFpsValue(report.session.fps)} />
-                    </div>
-                  </div>
+                {/* Session meta cards under coaching and score blocks */}
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <SessionMetaCard label="Date de session" value={formatReportDate(report.session.created_at)} />
+                  <SessionMetaCard label="Durée vidéo"     value={formatDuration(report.session.duration_seconds)} />
+                  <SessionMetaCard label="Langue"          value={formatLanguage(report.session.language)} />
+                  <SessionMetaCard label="Temps d'analyse" value={report.session.processing_time ? formatDuration(report.session.processing_time) : 'N/A'} />
                 </div>
               </CardContent>
             </Card>
@@ -561,6 +578,9 @@ export default function ReportPage() {
                       <CardTitle>{practiceCardTitle}</CardTitle>
                       <CardDescription>
                         {practiceCardDescription}
+                        {fallbacks?.exercice?.origin === 'fallback' && fallbacks?.exercice?.reason
+                          ? ` (fallback: ${fallbacks.exercice.reason})`
+                          : null}
                       </CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={() => fetchReport().catch(() => undefined)}>
@@ -751,10 +771,10 @@ function ReportEmptyState({ onRetry }: { onRetry: () => void }) {
 
 function SessionMetaCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-border/60 bg-background/70 px-4 py-3.5">
-      <div className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">{label}</div>
+    <div className="min-w-0 rounded-lg border border-border/60 bg-background/70 px-4 py-3.5">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">{label}</div>
       <div
-        className="mt-2 max-w-full break-words text-sm font-medium leading-snug text-foreground"
+        className="mt-2 max-w-full break-words text-sm font-medium leading-snug text-foreground/90"
         title={value}
       >
         {value}
@@ -765,7 +785,7 @@ function SessionMetaCard({ label, value }: { label: string; value: string }) {
 
 function ContextRow({ label, value, target, mono = false }: { label: string; value: string; target?: string; mono?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-border/60 bg-background/70 px-4 py-3 text-sm">
+    <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-background/70 px-4 py-3 text-sm">
       <div className="flex items-center justify-between gap-4">
         <span className="text-muted-foreground">{label}</span>
         <span className={cn('font-medium text-foreground', mono && 'font-mono text-xs')}>
@@ -773,7 +793,7 @@ function ContextRow({ label, value, target, mono = false }: { label: string; val
         </span>
       </div>
       {target ? (
-        <div className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground/60">
+        <div className="text-[10px] font-medium tracking-tight text-muted-foreground/60">
           Objectif : <span className="text-primary/70">{target}</span>
         </div>
       ) : null}
@@ -783,7 +803,7 @@ function ContextRow({ label, value, target, mono = false }: { label: string; val
 
 function MiniMetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/15 bg-white/10 px-4 py-3.5">
+    <div className="min-w-0 rounded-lg border border-white/10 bg-white/5 px-4 py-3.5">
       <div className="max-w-full break-words text-[10px] font-medium uppercase tracking-[0.12em] leading-snug text-primary-foreground/50">
         {label}
       </div>
@@ -807,7 +827,7 @@ function CompactScoreRow({
   helper: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-background/70 px-4 py-3.5">
+    <div className="flex items-start justify-between gap-4 rounded-lg border border-border/60 bg-background/70 px-4 py-3.5">
       <div className="min-w-0">
         <div className="text-sm font-medium text-foreground">{label}</div>
         <div className="mt-1 text-xs leading-relaxed text-muted-foreground">{helper}</div>
@@ -1001,12 +1021,12 @@ function PracticeFocusCard({
             </div>
           ))}
         </div>
-      ) : (
+      ) : practiceMode !== 'none' ? (
         <div className="flex items-center gap-3 rounded-lg bg-secondary/20 p-3 text-sm text-muted-foreground">
            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary text-primary font-bold">1</div>
            <p>Relisez l'élocution et refaites une prise courte centrée sur ce point.</p>
         </div>
-      )}
+      ) : null}
 
       {/* Compact Plan Support */}
       {practiceMode === 'mini_plan_3_days' && practiceDays.length > 1 && (

@@ -30,6 +30,7 @@ export interface ReportSession {
   language: string;
   fps: number;
   resolution: [number, number];
+  processing_time?: number;
 }
 
 export interface ReportSummary {
@@ -86,7 +87,6 @@ export interface ReportExerciseRecommendation {
   self_check: string;
   focus_primary: string;
   focus_secondary: string;
-  secondary_title?: string;
 }
 
 export interface ReportTranscriptSegment {
@@ -98,6 +98,12 @@ export interface ReportTranscriptSegment {
 export interface ReportResult {
   session: ReportSession;
   summary: ReportSummary;
+  fallbacks?: {
+    bilan?: { origin: 'llm' | 'fallback'; reason?: string };
+    priorite?: { origin: 'llm' | 'fallback'; reason?: string };
+    encouragement?: { origin: 'llm' | 'fallback'; reason?: string };
+    exercice?: { origin: 'llm' | 'fallback'; reason?: string };
+  };
   scores: ReportScores;
   metrics: ReportMetrics;
   strengths: string[];

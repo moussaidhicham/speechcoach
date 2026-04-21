@@ -98,6 +98,68 @@ const panelAnim = {
   transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as any },
 };
 
+/* ─── Helper Functions for Time Estimation --------------------------- */
+
+const STORAGE_KEY = 'speechcoach_processing_history';
+
+interface ProcessingHistory {
+  durationSeconds: number;
+  processingTimeSeconds: number;
+  timestamp: number;
+}
+
+function getHistoricalEstimate(durationSeconds: number): number | null {
+  try {
+    const historyJson = localStorage.getItem(STORAGE_KEY);
+    if (!historyJson) return null;
+
+    const history: ProcessingHistory[] = JSON.parse(historyJson);
+
+    // Filter to recent entries (last 30 days)
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const recentHistory = history.filter(h => h.timestamp > thirtyDaysAgo);
+
+    if (recentHistory.length === 0) return null;
+
+    // Find entries with similar duration (±10 seconds)
+    const similarEntries = recentHistory.filter(
+      h => Math.abs(h.durationSeconds - durationSeconds) <= 10
+    );
+
+    if (similarEntries.length === 0) return null;
+
+    // Calculate average processing time for similar videos
+    const avgTime = similarEntries.reduce((sum, h) => sum + h.processingTimeSeconds, 0) / similarEntries.length;
+
+    // Add 10% buffer for variability
+    return Math.round(avgTime * 1.1);
+  } catch (error) {
+    console.error('Error reading processing history:', error);
+    return null;
+  }
+}
+
+function saveProcessingHistory(durationSeconds: number, processingTimeSeconds: number): void {
+  try {
+    const historyJson = localStorage.getItem(STORAGE_KEY);
+    const history: ProcessingHistory[] = historyJson ? JSON.parse(historyJson) : [];
+
+    // Add new entry
+    history.push({
+      durationSeconds,
+      processingTimeSeconds,
+      timestamp: Date.now(),
+    });
+
+    // Keep only last 50 entries
+    const trimmedHistory = history.slice(-50);
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedHistory));
+  } catch (error) {
+    console.error('Error saving processing history:', error);
+  }
+}
+
 /* ─── Page ───────────────────────────────────────────────────────────── */
 
 export default function StudioPage() {
@@ -244,15 +306,29 @@ export default function StudioPage() {
           processingStartedAt: data.processing_started_at
         });
         
-        // Initial estimate logic based on logs
+        // Initial estimate logic based on actual timing data
         setEstimatedSeconds((prev) => {
           if (prev !== null) return prev;
+
           const dur = data.duration_seconds || 30;
-          // Look for "L:en" or "L:fr" instead of "auto"
-          const isForcedLang = data.current_step?.includes('L:') && !data.current_step?.includes('L:auto');
-          const rtf = isForcedLang ? 2.2 : 3.0;
-          const loadingOverhead = 20;
-          return Math.round(dur * rtf + 55 + loadingOverhead);
+
+          // Check if we have historical data from localStorage
+          const historicalEstimate = getHistoricalEstimate(dur);
+          if (historicalEstimate) {
+            return historicalEstimate;
+          }
+
+          // Fallback: Use timing data from logs
+          // Hot run (cached): ~73s for 30s video
+          // Cold run (first-time): ~237s for 30s video
+          // Assume hot run (cached) as default since most users will have cached models
+          // Formula: 40s (base) + 1.1 * duration
+          const baseTime = 40;
+          const durationMultiplier = 1.1;
+          const estimate = Math.round(baseTime + (dur * durationMultiplier));
+
+          // Cap at reasonable values
+          return Math.min(300, Math.max(60, estimate));
         });
 
         setStatusMessage(
@@ -268,6 +344,14 @@ export default function StudioPage() {
             toast.success('Analyse et enrichissement terminés.');
             setDisplayProgress(100);
             setEstimatedSeconds(0);
+
+            // Save processing history for better future estimates
+            if (sessionInfo.processingStartedAt && sessionInfo.durationSeconds) {
+              const start = new Date(sessionInfo.processingStartedAt).getTime();
+              const now = Date.now();
+              const processingTime = Math.round((now - start) / 1000);
+              saveProcessingHistory(sessionInfo.durationSeconds, processingTime);
+            }
           }
           else toast.error("L'analyse a échoué.");
         }
@@ -305,17 +389,17 @@ export default function StudioPage() {
       
       setEstimatedSeconds((prev) => {
         if (prev === null || prev <= 0) return prev;
-        
+
         // Adaptive Calibration: Recalculate remaining based on elapsed time
         if (sessionInfo.processingStartedAt && sessionInfo.progressPercent && sessionInfo.progressPercent > 5) {
             const start = new Date(sessionInfo.processingStartedAt).getTime();
             const now = Date.now();
             const elapsed = (now - start) / 1000;
             const progress = sessionInfo.progressPercent;
-            
+
             // Total estimated work remaining
             let computedRemaining = prev;
-            
+
             // Only calibrate if we have enough progress to be statistically semi-reliable (e.g. > 5%)
             if (progress > 5 && progress < 100) {
                 const start = new Date(sessionInfo.processingStartedAt).getTime();
@@ -325,25 +409,48 @@ export default function StudioPage() {
                 // Sanity check on elapsed: if it's negative or huge, skip
                 if (elapsed > 0 && elapsed < 3600) {
                     if (progress < 75) {
+                        // Main processing phase (0-75%)
+                        // Use velocity-based estimation for more accuracy
                         const velocity = elapsed / progress; // seconds per percentage point
-                        // Cap velocity to a reasonable range (e.g. max 10s per %)
-                        const safeVelocity = Math.min(10, velocity);
-                        computedRemaining = safeVelocity * (75 - progress) + 55;
+                        // Cap velocity to reasonable range based on actual data
+                        // Hot run: ~71s for 75% = 0.95s per %
+                        // Cold run: ~209s for 75% = 2.79s per %
+                        const safeVelocity = Math.min(3.0, Math.max(0.5, velocity));
+                        computedRemaining = safeVelocity * (75 - progress) + 3; // 3s for enrichment
                     } else {
+                        // Enrichment phase (75-100%)
+                        // Based on actual timing: 75-90% ~0.5s, 90-95% ~2s, 95-100% ~0.2s
                         const aiProgress = (progress - 75) / 25;
-                        computedRemaining = Math.max(5, 55 * (1 - aiProgress));
+                        if (progress < 90) {
+                            // RAG initialization phase
+                            computedRemaining = Math.max(2, 3 * (1 - aiProgress));
+                        } else if (progress < 95) {
+                            // LLM coaching phase
+                            computedRemaining = Math.max(1, 2 * (1 - aiProgress));
+                        } else {
+                            // Finalization phase
+                            computedRemaining = Math.max(0.5, 1 * (1 - aiProgress));
+                        }
                     }
                 }
             }
 
-            // Smoothing: blend the computed value with current display value (EMA)
-            // But also cap the maximum possible value to avoid 4000s+ spikes
-            const rawSmoothed = Math.round(prev * 0.8 + computedRemaining * 0.2);
-            const smoothed = Math.min(600, rawSmoothed); // Max 10mn cap as safety
-            
+            // More conservative smoothing to prevent jumps
+            // Use higher weight on current value (0.9) and lower on computed (0.1)
+            const rawSmoothed = Math.round(prev * 0.9 + computedRemaining * 0.1);
+
+            // Prevent sudden drops - only decrease if computed is significantly lower
+            if (rawSmoothed < prev * 0.8) {
+                // Don't allow sudden drops below 80% of current value
+                return Math.max(Math.round(prev * 0.8), rawSmoothed);
+            }
+
+            // Cap maximum value
+            const smoothed = Math.min(300, rawSmoothed);
+
             // Time Stretching: ensure we don't hit 0 too early
-            if (smoothed < 10 && displayProgress < 95) {
-                return Math.random() > 0.66 ? prev - 1 : prev;
+            if (smoothed < 5 && displayProgress < 98) {
+                return Math.random() > 0.5 ? prev - 0.5 : prev;
             }
             return smoothed;
         }
@@ -485,28 +592,28 @@ export default function StudioPage() {
 
   return (
     <AppShell
-      title="Studio"
-      subtitle="Capturez ou importez votre prise de parole avant analyse."
+      title="Studio d'analyse"
+      subtitle="Préparez, capturez puis lancez une analyse claire et guidée."
       actions={
-        <Badge variant="secondary" className="bg-accent text-accent-foreground">
-          Studio
+        <Badge variant="secondary" className="bg-primary/10 text-primary">
+          Studio actif
         </Badge>
       }
       maxWidth="5xl"
     >
-      <div className="space-y-6">
+      <div className="space-y-7">
 
         {/* ── Studio banner ─────────────────────────────────────────── */}
-        <section className="studio-stage relative overflow-hidden rounded-3xl p-7 text-white lg:p-9">
+        <section className="surface-violet relative overflow-hidden rounded-3xl border border-border/60 p-7 text-foreground lg:p-9">
           <div className="relative z-10 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
             <div className="space-y-3">
-              <Badge className="w-fit bg-white/12 text-white hover:bg-white/12">
+              <Badge className="w-fit bg-primary/10 text-primary hover:bg-primary/10">
                 Studio
               </Badge>
               <h2 className="font-display max-w-md text-3xl font-medium leading-snug">
                 Préparez votre prise de parole avant l'analyse.
               </h2>
-              <p className="max-w-md text-sm leading-relaxed text-white/65">
+              <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
                 Vérifiez votre cadre, importez une vidéo ou enregistrez-vous,
                 puis lancez l'analyse.
               </p>
@@ -518,9 +625,12 @@ export default function StudioPage() {
                 ['Capture',     'Import ou webcam'],
                 ['Lecture',     'Traitement puis rapport'],
               ].map(([title, text]) => (
-                <div key={title} className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-sm">
-                  <div className="text-sm font-medium text-white">{title}</div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-white/60">{text}</p>
+                <div
+                  key={title}
+                  className="rounded-2xl border border-border/60 bg-background/90 p-4"
+                >
+                  <div className="text-sm font-medium text-foreground">{title}</div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{text}</p>
                 </div>
               ))}
             </div>
@@ -534,7 +644,7 @@ export default function StudioPage() {
             ['2. Capture ou import', 'Importez un fichier ou utilisez la webcam pour produire une session nette.'],
             ['3. Analyse',         'Patientez pendant le traitement et ouvrez ensuite votre rapport structuré.'],
           ].map(([title, text]) => (
-            <div key={title} className="rounded-2xl border border-border/60 bg-card/70 px-5 py-4">
+            <div key={title} className="rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm">
               <div className="text-sm font-medium text-foreground">{title}</div>
               <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{text}</p>
             </div>

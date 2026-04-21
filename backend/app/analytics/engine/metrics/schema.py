@@ -11,6 +11,8 @@ class VideoMetadata:
     device_type: str = "unknown"
     experience_level: Optional[str] = None
     current_goal: Optional[str] = None
+    weak_points: Optional[str] = None
+    processing_time: float = 0.0
 
 @dataclass
 class Scores:

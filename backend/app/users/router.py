@@ -8,7 +8,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.db.database import get_session
-from app.users.models import User, Profile
+from app.db.models import User, Profile
 from app.analytics.models import VideoSession, AnalysisResult, CoachingFeedback, PlatformFeedback
 from app.auth.router import current_active_user
 

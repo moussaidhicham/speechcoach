@@ -1,4 +1,4 @@
-﻿import logging
+import logging
 import os
 from typing import List, Optional, Tuple
 
@@ -23,7 +23,7 @@ class ASRProcessor:
         model_size: str = "medium",
         device: str = "cpu",
         compute_type: str = "int8",
-        beam_size: int = 5,
+        beam_size: int = 1,
     ):
         """
         Initialize the Faster-Whisper model.
@@ -40,8 +40,15 @@ class ASRProcessor:
         try:
             if cache_key not in _MODEL_CACHE:
                 logger.info(f"Loading Whisper model '{model_size}' on {device} ({compute_type})...")
-                _MODEL_CACHE[cache_key] = WhisperModel(model_size, device=device, compute_type=compute_type)
-                logger.info("Whisper model loaded successfully.")
+                try:
+                    # Pass 1: Try instant local loading to bypass 20s HuggingFace network check
+                    _MODEL_CACHE[cache_key] = WhisperModel(model_size, device=device, compute_type=compute_type, local_files_only=True)
+                    logger.info("Whisper model instantly loaded from local offline cache.")
+                except Exception:
+                    # Pass 2: Fallback to download if it's a fresh install
+                    logger.info("Local model not found. Downloading from HuggingFace...")
+                    _MODEL_CACHE[cache_key] = WhisperModel(model_size, device=device, compute_type=compute_type, local_files_only=False)
+                    logger.info("Whisper model downloaded and loaded successfully.")
             else:
                 logger.info(f"Reusing cached Whisper model '{model_size}' on {device} ({compute_type}).")
 

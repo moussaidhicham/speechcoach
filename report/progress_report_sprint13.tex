@@ -1,16 +1,15 @@
-\documentclass[12pt,a4paper]{article}
+﻿\documentclass[12pt,a4paper]{article}
 
-\usepackage{fontspec}
-\usepackage{polyglossia}
-\setmainlanguage{french}
-\setotherlanguage{arabic}
-\newfontfamily\arabicfont[Script=Arabic]{Amiri}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
 \usepackage{geometry}
 \geometry{margin=2.5cm}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
+    filecolor=magenta,
     urlcolor=cyan,
     citecolor=blue,
 }
@@ -18,406 +17,287 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{titlesec}
+\usepackage{caption}
 \usepackage{fancyhdr}
 \usepackage{float}
 \usepackage{tabularx}
 \usepackage{tikz}
-\usetikzlibrary{positioning, decorations.pathreplacing, shapes.geometric}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric}
 
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{Rapport d'Avancement n\textdegree4 - SpeechCoach}
-\rhead{Master SIE - 2026}
+\lhead{Rapport d'Avancement n\textdegree4 \textemdash{} SpeechCoach}
+\rhead{Master SIE \textemdash{} 2026}
 \cfoot{\thepage}
 
 \titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
 \titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
+\titleformat{\subsubsection}{\bfseries\color{blue!35!black}}{}{0em}{}
+
+\title{
+    \vspace{-2cm}
+    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'État d'Avancement n\textdegree4}\\
+    \large \textit{Exercice adaptatif, ASR multilingue, analyse visuelle selon l'appareil, chaîne de coaching LLM (prompt, API Groq, garde-fous)}
+}
+\author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{Période : après la dernière réunion de suivi}
 
 \begin{document}
-\begin{center}
-    {\Large Master Systèmes Intelligents pour l'Éducation (SIE)\par}
-    \vspace{0.5cm}
-    {\huge \textbf{Rapport d'État d'Avancement n\textdegree4}\par}
-    \vspace{0.3cm}
-    {\large \textit{Itérations sur le bloc d'exercices, la couche ASR et l'analyse visuelle device-aware}\par}
-    \vspace{0.8cm}
-    {\normalsize \textbf{Étudiant :} Hicham Moussaid\par}
-    {\normalsize \textbf{Encadrant :} Pr. Abdelaaziz Hessane\par}
-    \vspace{0.2cm}
-    {\normalsize Période : après la dernière réunion de suivi\par}
-\end{center}
 
-\vspace{0.8cm}
+\maketitle
 
 \section{Objectif de la phase}
-Cette phase avait deux objectifs :
+Cette phase poursuivait trois axes complémentaires :
 \begin{itemize}
     \item améliorer le bloc d'exercices pour qu'il soit plus crédible et plus utile dans le rapport final ;
-    \item améliorer la détection des hésitations et des répétitions dans le pipeline audio, en particulier dans les cas français, anglais et arabe.
+    \item améliorer la détection des hésitations et des répétitions dans le pipeline audio, en particulier en français, anglais et arabe ;
+    \item renforcer la \textbf{cohérence entre le moteur déterministe et le coaching LLM} (ingénierie de prompt, balise de focus, post-traitement, parcours utilisateur et sécurisation du compte).
 \end{itemize}
 
-\section{Travail sur le bloc d'exercices}
+\section{Évolution du conseil pratique : de la règle à l'agent}
 
-\subsection{Problème initial}
-La première version du bloc d'exercices présentait plusieurs limites :
+\subsection{Phase 1 : Le plan de 7 jours (Abandonné)}
+Le premier prototype visait un accompagnement sur le long terme via un programme fixe. Cependant, les tests ont montré que l'utilisateur, après une session courte, n'est pas prêt à s'engager sur une semaine de devoirs. Le lien entre le défaut instantané (ex.\ regard fuyant) et certains exercices prévus pour le cinquième jour était trop ténu.
+
+\subsection{Phase 2 : L'approche par modes (Transition)}
+Pour pallier cette rigidité, nous avons testé une approche par "modes" (conseil léger, exercice unique, mini-plan de 3 jours). Le système choisissait un gabarit selon la sévérité des scores calculés par le moteur. 
 \begin{itemize}
-    \item le plan sur 7 jours était trop long ;
-    \item le bloc apparaissait presque systématiquement, même pour des bonnes sessions ;
-    \item certaines consignes répétaient le bilan ou la priorité au lieu d'apporter une vraie action ;
-    \item des problèmes de setup comme la netteté ou le cadrage étaient parfois affichés comme des exercices de prise de parole.
+    \item \textbf{Limites rencontrées} : Bien que plus flexible, cette approche obligeait l'IA à forcer son conseil dans un moule prédéfini, ce qui limitait sa créativité et la pertinence pédagogique réelle.
 \end{itemize}
 
-\subsection{Itérations réalisées}
-Le travail n'a pas été fait en une seule étape. Plusieurs ajustements successifs ont été nécessaires :
+\subsection{Phase 3 : Le Master Coach Agent (Retenu)}
+Nous avons finalement opté pour une approche centrée sur l'agent (Powered by Groq/Llama-3.3-70B). Le concept de "Master Coach Mission" a été introduit :
 \begin{itemize}
-    \item remplacement du plan par défaut sur 7 jours par une logique conditionnelle ;
-    \item introduction de plusieurs modes : \texttt{none}, \texttt{light\_tip}, \texttt{setup\_action}, \texttt{single\_exercise}, \texttt{mini\_plan\_3\_days} ;
-    \item réduction du plan long vers un mini-plan sur 3 jours ;
-    \item séparation entre \textbf{exercice de parole} et \textbf{action de préparation} ;
-    \item suppression de nombreuses répétitions textuelles entre exercice, bilan, priorité et encouragement ;
-    \item réécriture de plusieurs formulations jugées trop scolaires, trop vagues ou trop artificielles ;
-    \item ajustement du comportement pour que les sessions fortes n'affichent plus automatiquement un exercice.
-\end{itemize}
-
-\subsection{Résultat retenu}
-Le comportement obtenu est plus cohérent :
-\begin{itemize}
-    \item les très bonnes sessions peuvent ne plus afficher d'exercice ;
-    \item les cas intermédiaires affichent un conseil court ou un exercice ciblé ;
-    \item les cas plus faibles affichent un mini-plan plus lisible ;
-    \item les problèmes techniques sont traités comme des vérifications et non comme des exercices oraux.
+    \item \textbf{Génération dynamique} : Plus de templates fixes. L'IA reçoit les métriques brutes, le contexte RAG et l'historique, puis conçoit une mission unique en 3 étapes.
+    \item \textbf{Efficacité} : Cette méthode permet de lier précisément un conseil de posture à un scénario de pratique créatif (ex.\ "Imaginez que vous parlez à un enfant pour ralentir votre débit").
+    \item \textbf{Consistance} : Un post-processeur déterministe assure que l'exercice reste focalisé sur un seul axe majeur pour éviter la surcharge cognitive.
 \end{itemize}
 
 \section{Travail sur l'ASR : hésitations et répétitions}
+\label{sec:asr-hesitations}
 
-\subsection{Constat de départ}
-Le problème principal observé était le suivant : la métrique \texttt{Hesitations} ne reflétait pas toujours ce qui était réellement prononcé. Dans plusieurs tests, des fillers comme \textit{um}, \textit{uh}, \textit{euh}, \textit{hum}, \textit{mmm} ou certaines formes arabes étaient entendus, mais pas correctement conservés dans la transcription \cite{radford2022robust,ctranslate2}. Cela affectait directement le score voix/débit.
+\subsection{Problème et approches explorées}
+Le problème principal observé était que la métrique \texttt{Hesitations} ne reflétait pas toujours ce qui était réellement prononcé. Des fillers comme \textit{um}, \textit{uh}, \textit{euh}, \textit{hum}, \textit{mmm} ou certaines formes arabes étaient entendus mais pas correctement conservés dans la transcription \cite{radford2022robust,ctranslate2}, affectant directement le score voix/débit.
 
-\subsection{Première piste explorée : changer de moteur}
-Un benchmark isolé a été mené avec \textbf{CrisperWhisper} \cite{zusag2024crisperwhisper,crisperwhisper_repo}. L'idée était de vérifier si un moteur plus orienté verbatim pouvait résoudre le problème à la racine.
+Un benchmark avec \textbf{CrisperWhisper} \cite{zusag2024crisperwhisper,crisperwhisper_repo} a été testé mais rejeté car le temps d'exécution était trop élevé, l'amélioration sur nos cas réels n'était pas convaincante et la qualité globale des sorties n'était pas suffisamment stable. La conclusion a été de conserver Faster-Whisper et de corriger notre propre pipeline.
 
-\subsection{Résultat du benchmark CrisperWhisper}
-La piste a été rejetée, car :
-\begin{itemize}
-    \item le temps d'exécution était beaucoup trop élevé ;
-    \item l'amélioration sur nos cas réels n'était pas convaincante ;
-    \item la qualité globale des sorties n'était pas suffisamment stable.
-\end{itemize}
+\subsection{Correctifs implémentés}
+L'analyse a montré que le problème venait de plusieurs sources : chaînes arabes corrompues dans prompts/regex, prompt multilingue favorisant les hallucinations, listes de fillers incomplètes, lissage des sons nasaux par Faster-Whisper (\textit{mm}, \textit{mmm}, \textit{hmm}, arabe : \textit{hamam}), et modélisation insuffisante des répétitions.
 
-La conclusion a été de conserver Faster-Whisper et de corriger notre propre pipeline.
-
-\subsection{Problèmes réellement identifiés}
-L'analyse détaillée a montré que le problème venait de plusieurs sources :
-\begin{itemize}
-    \item certaines chaînes arabes dans les prompts et les regex étaient corrompues ;
-    \item le prompt multilingue de secours favorisait les hallucinations ;
-    \item certaines listes de fillers étaient incomplètes ou mal calibrées ;
-    \item Faster-Whisper lissait encore une partie des sons nasaux de type \textit{mm}, \textit{mmm}, \textarabic{همم} ;
-    \item les répétitions simples et les redémarrages n'étaient pas assez bien modélisés.
-\end{itemize}
-
-\subsection{Itérations réalisées sur Faster-Whisper}
-Le correctif final est le résultat de plusieurs itérations :
-\begin{itemize}
-    \item restauration des chaînes arabes correctes dans les prompts et les regex ;
-    \item suppression du prompt multilingue global ;
-    \item mise en place d'une stratégie en deux passes en mode auto :
-    \begin{itemize}
-        \item première passe pour détecter la langue ;
-        \item seconde passe avec langue forcée et prompt spécifique à la langue détectée ;
-    \end{itemize}
-    \item amélioration des listes de fillers en anglais, français et arabe ;
-    \item exclusion de certains marqueurs discursifs trop généraux, par exemple \textit{like} et \textit{you know} en anglais, ou \textit{donc}, \textit{du coup}, \textit{en fait}, \textit{enfin} en français ;
-    \item conservation de certains fillers jugés pédagogiquement pertinents, comme \textit{ben} en français ;
-    \item ajout d'un détecteur acoustique léger pour les fillers nasaux de type \textit{hum}, \textit{hmm}, \textit{mm}, \textit{mmm}, \textarabic{مم}, \textarabic{همم}, à partir de caractéristiques extraites avec \texttt{librosa} \cite{mcfee2015librosa} ;
-    \item amélioration du comptage des répétitions via un détecteur spécifique de redémarrages et répétitions simples.
-\end{itemize}
+Le correctif final inclut : restauration des chaînes arabes correctes, suppression du prompt multilingue global, stratégie en deux passes (détection langue puis langue forcée avec prompt spécifique), amélioration des listes de fillers en anglais/français/arabe, exclusion de marqueurs discursifs trop généraux, conservation de fillers pédagogiquement pertinents, ajout d'un détecteur acoustique pour fillers nasaux, et amélioration du comptage des répétitions.
 
 \subsection{Résultats observés par langue}
-\textbf{Anglais}
-\begin{itemize}
-    \item l'anglais est devenu le cas le plus stable ;
-    \item les fillers comme \textit{um}, \textit{uh}, \textit{mmm}, \textit{hmm} sont mieux conservés ;
-    \item les répétitions comme \textit{like like like} ou \textit{the system, the system} sont correctement détectées.
-\end{itemize}
+\textbf{Anglais} : Cas le plus stable. Fillers (\textit{um}, \textit{uh}, \textit{mmm}, \textit{hmm}) mieux conservés. Répétitions (\textit{like like like}, \textit{the system, the system}) correctement détectées.
 
-\textbf{Français}
-\begin{itemize}
-    \item plusieurs itérations ont été nécessaires ;
-    \item un bug dans les regex françaises a d'abord empêché le bon comptage ;
-    \item les fillers de type \textit{hum}, \textit{hmm}, \textit{mmm} étaient parfois perdus par la transcription ;
-    \item le fallback acoustique a amélioré la situation ;
-    \item le comptage final est plus cohérent après nettoyage de la liste des marqueurs à conserver.
-\end{itemize}
+\textbf{Français} : Plusieurs itérations nécessaires. Erreurs dans les expressions régulières initialement. Fillers nasaux parfois perdus, améliorés par fallback acoustique. Comptage final cohérent après nettoyage des marqueurs.
 
-\textbf{Arabe}
-\begin{itemize}
-    \item l'arabe restait le cas le plus difficile ;
-    \item les fillers textuels comme \textarabic{يعني}, \textarabic{آه}, \textarabic{ام} sont mieux récupérés ;
-    \item les formes nasales comme \textarabic{مم} ou \textarabic{همم} ne sont pas toujours transcrites ;
-    \item le détecteur acoustique permet néanmoins de récupérer une partie de ces cas même lorsqu'ils n'apparaissent pas dans le texte.
-\end{itemize}
+\textbf{Arabe} : Cas le plus difficile. Fillers textuels (\textit{ya'ni}, \textit{aah}, \textit{am}) mieux récupérés. Formes nasales (\textit{mm}, \textit{hamam}) pas toujours transcrites mais récupérées partiellement par détecteur acoustique.
 
-\subsection{Impact sur la note voix/débit}
-Un point important mis en évidence pendant cette phase est que la note voix/débit dépend directement de la configuration ASR. Dès qu'on change le modèle ou le comportement de transcription, on modifie :
-\begin{itemize}
-    \item le nombre d'hésitations détectées ;
-    \item le nombre de répétitions détectées ;
-    \item parfois même certaines métriques temporelles dérivées.
-\end{itemize}
+\subsection{Impact et configuration retenue}
+La note voix/débit dépend directement de la configuration ASR : changer le modèle ou le comportement de transcription modifie le nombre d'hésitations, répétitions et parfois certaines métriques temporelles dérivées, impactant l'évaluation pédagogique globale.
 
-L'ASR a donc un impact direct sur l'évaluation pédagogique globale.
-
-\section{Comparaison de configurations Faster-Whisper}
-
-\subsection{Configurations comparées}
-Deux configurations ont été testées :
-\begin{itemize}
-    \item \texttt{base + beam size 5} ;
-    \item \texttt{medium + beam size 5}.
-\end{itemize}
-
-\subsection{Résultat}
-La configuration \texttt{base + beam size 5} est plus rapide, mais elle dégrade trop la fidélité utile pour SpeechCoach :
-\begin{itemize}
-    \item perte d'une partie des fillers en anglais ;
-    \item résultats plus faibles en arabe ;
-    \item transcriptions globalement moins fiables pour l'évaluation pédagogique ;
-    \item variation artificielle du score voix/débit.
-\end{itemize}
-
-À l'inverse, \texttt{medium + beam size 5} est plus coûteuse, mais elle stabilise mieux le comptage des hésitations et des répétitions. C'est donc la configuration la plus adaptée à l'objectif du projet.
+Plusieurs configurations ont été testées (\texttt{base + beam size 5}, \texttt{medium + beam size 5}, \texttt{medium + beam size 1}). La configuration \texttt{base + beam size 5} a été rejetée car elle dégrade trop la fidélité utile (perte de fillers en anglais, résultats faibles en arabe, variation artificielle du score voix/débit). La configuration \texttt{medium + beam size 1} a été retenue comme compromis optimal entre qualité et vitesse (réduction de 32--38\% du temps total avec impact minimal sur la précision pour les cas standards). Pour une analyse détaillée de l'impact sur les temps de traitement, voir section~\ref{sec:performance-analysis}.
 
 \section{Travail sur le regard caméra selon le type d'appareil}
 
-\subsection{Problème observé}
-Après stabilisation du bloc d'exercices et de la couche ASR, le point le plus fragile restait l'analyse visuelle, en particulier le regard caméra. Une même logique générique était appliquée à tous les cas, alors que les conditions de capture changent fortement entre :
-\begin{itemize}
-    \item un ordinateur portable ou une webcam intégrée ;
-    \item un smartphone en mode portrait ;
-    \item une tablette utilisée en mode selfie.
-\end{itemize}
+subsection{Problème et solution}
+L'analyse visuelle restait fragile, pénalisant surtout les vidéos smartphone. Une logique générique était appliquée à tous les cas, produisant des valeurs très faibles pour présence, contact visuel et visibilité des mains. Le problème venait du pipeline vision (MediaPipe et OpenCV \cite{mediapipe2023,opencv_library}) appliqué aux vidéos mobiles.
 
-Les premiers essais ont montré que cette hypothèse unique pénalisait surtout les vidéos smartphone. Dans un cas de test où le visage était centré, les mains visibles et le regard dirigé vers la caméra, le système produisait pourtant des valeurs très faibles pour la présence, le contact visuel et la visibilité des mains. Le problème ne venait donc pas seulement du seuil regard, mais plus globalement du pipeline vision appliqué aux vidéos mobiles, construit autour des briques MediaPipe et OpenCV déjà utilisées dans le projet \cite{mediapipe2023,opencv_library}.
+\subsection{Profils d'appareil et correctifs}
+Nous avons introduit des profils d'appareil : \texttt{laptop\_desktop}, \texttt{tablet}, \texttt{smartphone}, \texttt{unknown}. Pour smartphone : conservation du format portrait, augmentation de la fréquence d'échantillonnage, assouplissement des tolérances de regard. Résultats : Présence visage (71\% $\rightarrow$ 100\%), Contact visuel (10\% $\rightarrow$ 80\%+), Mains visibles (7\% $\rightarrow$ 60\%+). Laptop et tablette plus stables.
 
-\subsection{Première version : profils par appareil}
-Une première amélioration a consisté à introduire un contexte d'appareil dans le pipeline :
-\begin{itemize}
-    \item \texttt{laptop\_desktop} ;
-    \item \texttt{tablet} ;
-    \item \texttt{smartphone} ;
-    \item \texttt{unknown}.
-\end{itemize}
+\subsection{Auto-détection}
+Le mode \texttt{unknown} utilise une stratégie hiérarchique : métadonnées vidéo via \texttt{ffprobe} \cite{ffmpeg}, rotation réelle, nom de fichier, heuristique géométrique. Résultats : smartphone auto-détecté via métadonnées/rotation, tablette via métadonnées/nom de fichier, laptop/desktop déduit par heuristique. Le mode \texttt{unknown} est devenu un mode de détection automatique exploitable, avec fallback générique si détection impossible.
 
-Le choix a été propagé depuis le studio jusqu'au traitement backend afin que l'analyse visuelle puisse adapter ses seuils. Le principe retenu est volontairement simple :
-\begin{itemize}
-    \item \texttt{laptop\_desktop} conserve un comportement proche du réglage initial ;
-    \item \texttt{tablet} tolère davantage certains décalages latéraux ;
-    \item \texttt{smartphone} est traité à part, car c'est le cas où la géométrie et le cadrage diffèrent le plus.
-\end{itemize}
+\section{Stratégie de coaching par LLM : apprentissage local, inférence cloud et choix d'architecture}
 
-\subsection{Correctifs spécifiques smartphone}
-Le travail sur smartphone a montré que le problème n'était pas uniquement un problème de seuils. Trois ajustements ont été nécessaires :
-\begin{itemize}
-    \item conservation du format portrait lors de l'extraction des frames, au lieu de forcer un redimensionnement trop proche d'un format paysage ;
-    \item augmentation de la fréquence d'échantillonnage des frames pour smartphone ;
-    \item assouplissement des tolérances de regard pour ce mode.
-\end{itemize}
+\subsection{Contexte scientifique : fine-tuning \textit{engine-centric}}
+Une contribution structurante du projet reste la mise en place d'un pipeline de \textit{fine-tuning} spécialisé pour la couche de coaching. L'objectif initial était de réduire le décalage entre les \textbf{scores calculés} par le moteur déterministe et le \textbf{discours} produit par un LLM générique (biais de politesse, minimisation des erreurs).
 
-Ces ajustements ont permis de faire évoluer un cas de test smartphone d'un résultat incohérent à un résultat crédible. Après correctif, le même clip a produit :
-\begin{itemize}
-    \item \textbf{Présence visage} : de 71\% vers 100\% ;
-    \item \textbf{Contact visuel} : de 10\% vers plus de 80\% ;
-    \item \textbf{Mains visibles} : de 7\% vers plus de 60\%.
-\end{itemize}
+Nous avons adopté une approche \textbf{centrée sur le moteur} (\textit{engine-centric}) : le jeu de données d'entraînement est contraint par les sorties réelles de \texttt{calculate\_scores} et \texttt{generate\_recommendations}, de sorte que le texte d'apprentissage respecte mathématiquement les étiquettes pédagogiques du pipeline. Le pipeline s'appuie sur Transformers \cite{transformers}, PEFT \cite{peft} et QLoRA \cite{qlora} pour l'entraînement efficace.
 
-\subsection{Résultats sur laptop et tablette}
-Les tests laptop et tablette se sont révélés plus stables que le smartphone :
-\begin{itemize}
-    \item sur laptop, les résultats explicites en mode \texttt{laptop\_desktop} étaient déjà cohérents et ont confirmé que le réglage initial était proche du bon comportement ;
-    \item sur tablette, le regard et la présence ont également donné des résultats crédibles, même dans un cadrage selfie où les mains n'étaient presque jamais visibles ;
-    \item l'interprétation posture/gestes reste néanmoins à affiner plus tard pour éviter de sanctionner trop fortement les plans serrés où les mains sont naturellement hors cadre.
-\end{itemize}
+Par rapport à la version précédente (Sprint 12), nous avons enrichi le jeu de données avec des champs supplémentaires (\textit{niveau utilisateur} et \textit{objectif utilisateur}) pour contextualiser le coaching selon le profil. Le niveau utilisateur peut être \textbf{Débutant}, \textbf{Intermédiaire} ou \textbf{Avancé}. L'objectif utilisateur peut être \textbf{Pitch}, \textbf{Soutenance}, \textbf{PFE} ou \textbf{Entretien}. Nous avons également adopté une approche \textbf{centrée sur le moteur} : les données d'entraînement sont générées par notre système à partir des métriques réelles, garantissant une fidélité totale aux sorties du moteur plutôt qu'une génération purement synthétique par IA.
 
-Une dernière passe d'ajustement a ensuite été appliquée pour mieux fermer cette phase :
-\begin{itemize}
-    \item assouplissement supplémentaire des seuils tablette afin de mieux couvrir les usages réels en paysage ;
-    \item ajout d'une heuristique géométrique finale permettant de faire basculer certains formats paysage standards vers le profil \texttt{laptop\_desktop} lorsque les indices tablette ou smartphone sont absents.
-\end{itemize}
-
-\subsection{Mode \texttt{unknown}}
-Une seconde itération a consisté à rendre le mode \texttt{unknown} plus intelligent, afin de ne pas dépendre uniquement d'une sélection manuelle côté utilisateur.
-
-La stratégie retenue est hiérarchique :
-\begin{itemize}
-    \item lecture des métadonnées vidéo et des tags via \texttt{ffprobe} \cite{ffmpeg} ;
-    \item prise en compte de la rotation réelle de la vidéo ;
-    \item utilisation du nom d'origine du fichier comme indice supplémentaire ;
-    \item recours à une heuristique géométrique simple pour les cas paysage les plus standards ;
-    \item repli sur le profil \texttt{unknown} si aucun indice n'est suffisamment fiable.
-\end{itemize}
-
-Les résultats finaux obtenus montrent que :
-\begin{itemize}
-    \item le smartphone peut désormais être auto-détecté via les métadonnées et la rotation ;
-    \item la tablette peut également être reconnue lorsqu'un indice matériel est disponible dans les métadonnées ou dans le nom du fichier ;
-    \item le laptop/desktop peut être déduit proprement par heuristique dans les formats paysage standards lorsqu'aucun marqueur smartphone ou tablette n'est présent ;
-    \item les tests menés en fin de phase ont permis de valider un cas fonctionnel dans les trois situations : smartphone, tablette et laptop.
-\end{itemize}
-
-En pratique, cela signifie que le mode \texttt{unknown} n'est plus uniquement un profil de secours : il devient un mode de détection automatique exploitable dans les cas les plus courants.
-
-Plus explicitement, si l'appareil est détecté correctement, le pipeline bascule directement vers le profil déjà défini correspondant : \texttt{smartphone}, \texttt{tablet} ou \texttt{laptop\_desktop}. Si aucun indice n'est jugé suffisamment fiable, le système ne force pas une classe ; il conserve alors le profil \texttt{unknown}, qui joue le rôle de fallback générique avec des seuils neutres et un traitement non spécialisé.
-
-\section{Spécialisation du Coaching LLM par Fine-Tuning}
-
-L'une des contributions majeures de cette phase a été la mise en place d'un pipeline de \textit{Fine-Tuning} spécialisé pour la couche de coaching. L'objectif était de passer d'un modèle générique (souvent trop poli ou imprécis) à un modèle expert, fidèle aux calculs mathématiques de notre moteur.
-
-\subsection{Problématique et Motivation}
-Les modèles de langage (LLM) standards présentent un biais de politesse qui les pousse à minimiser les erreurs. Plus grave encore, une génération de données purement synthétique risque de créer une contradiction entre le score calculé par le moteur (ex: 40/100) et le texte produit par l'IA (ex: "Bravo, c'est excellent"). 
-
-Pour résoudre cela, nous avons adopté une approche \textbf{Engine-Centric} (centrée sur le moteur) garantissant une loyauté totale entre les chiffres et le texte.
-
-\subsection{Méthodologie de génération : l'approche par Sondage}
-Le jeu de données "Gold Standard" (v2) a été construit en quatre phases :
+\subsection{Méthodologie de construction du jeu de données}
+Le jeu de données de référence (v2) a été construit en quatre phases :
 \begin{enumerate}
-    \item \textbf{Phase Seed (Données Réelles)} : Utilisation de 14 sessions réelles annotées manuellement pour servir d'ancrage de vérité.
-    \item \textbf{Phase d'Expansion par Archétypes} : Définition de 15 modèles types (archétypes) couvrant tout le spectre pédagogique, du \textit{"Total Disaster"} (multi-erreurs) au \textit{"High Mastery"} (maîtrise totale).
-    \item \textbf{Phase de Sondage (Engine Probing)} : Génération de 144 scénarios synthétiques par un \textbf{échantillonnage stratifié} du domaine de définition des métriques. \textbf{Crucialement}, les sorties de ces scénarios ont été étiquetées par les classes réelles du moteur de scoring (\texttt{calculate\_scores}, \texttt{generate\_recommendations}). Cette approche traite le moteur comme une \textbf{fonction déterministe} $y = f(x)$, garantissant une cohérence mathématique de 100\% là où un échantillonnage aléatoire aurait introduit du bruit.
-    \item \textbf{Distillation (Teacher-Student)} : Utilisation d'un modèle "Enseignant" (\textit{Llama-3.3-70B} via l'API Groq) pour transformer ces scores bruts en coaching textuel. Cette technique de \textit{Knowledge Distillation} permet au modèle final d'hériter de la qualité rédactionnelle d'un modèle massif tout en restant localement efficace.
+    \item \textbf{Phase \textit{seed} (données réelles)} : ancrage sur des sessions réelles annotées manuellement ;
+    \item \textbf{Phase archétypes} : couverture du spectre pédagogique par des profils types (du scénario multi-failles à la haute maîtrise) ;
+    \item \textbf{Phase de sondage (\textit{engine probing})} : échantillonnage stratifié du domaine des métriques, avec étiquetage par le moteur vu comme une fonction déterministe $y = f(x)$ ;
+    \item \textbf{Distillation enseignant--élève} : un modèle enseignant de grande taille (\textit{Llama 3.3} via API) transforme les sorties chiffrées en formulations de coaching exploitables pour l'entraînement du petit modèle cible.
 \end{enumerate}
 
-\subsection{Protocole Technique et Entraînement}
-Le modèle retenu est \textbf{Qwen-2.5 1.5B}, choisi pour son excellent rapport performance/poids. L'entraînement a été réalisé sur Google Colab (GPU T4) selon le protocole suivant :
-\begin{itemize}
-    \item \textbf{Méthode} : QLoRA (Quantized LoRA) en 4-bits.
-    \item \textbf{Optimisation} : 100 étapes (steps) avec un planificateur de taux d'apprentissage \textit{cosine}.
-    \item \textbf{Format} : ChatML pour une structure de dialogue robuste.
-\end{itemize}
-
-\subsection{Résultats et Limites du Modèle Local}
-L'intégration du modèle \textbf{Qwen-2.5 1.5B} via Ollama a permis de valider le pipeline technique en mode 100\% local. Cependant, les tests en conditions réelles ont mis en évidence certaines limites intrinsèques à la taille réduite du modèle (1.5B) :
-\begin{itemize}
-    \item \textbf{Richesse sémantique} : les formulations peuvent parfois paraître répétitives ou "robotiques" sur plusieurs analyses consécutives.
-    \item \textbf{Nuance pédagogique} : la capacité du modèle à reformuler les conseils techniques de manière douce et humaine (ton coach) est limitée par son faible nombre de paramètres.
-    \item \textbf{Sensibilité au format} : le respect strict du JSON nécessite une température très basse, ce qui réduit encore la créativité du modèle local.
-\end{itemize}
-
-Le modèle local reste une solution de secours (\textit{fallback}) robuste, mais pour une expérience utilisateur premium, une montée en gamme s'est avérée nécessaire.
-
-\subsection{Pivot vers une architecture hybride : API Groq \& Llama-3.3}
-Afin de garantir des résultats "parfaits" pour la version finale du projet, nous avons fait évoluer le backend vers une architecture modulaire permettant d'utiliser l'API \textbf{Groq Cloud}.
-
-\begin{itemize}
-    \item \textbf{Puissance de raisonnement} : Le passage au modèle \textbf{Llama-3.3-70B} (70 milliards de paramètres) offre une profondeur d'analyse incomparablement supérieure. Le coaching devient plus humain, plus précis et capable de synthétiser des conseils complexes sans aucune erreur de syntaxe.
-    \item \textbf{Performance (LPPS)} : L'architecture LPU de Groq permet des vitesses d'inférence quasi-instantanées, supprimant toute attente supplémentaire par rapport au modèle local.
-    \item \textbf{Modularité stratégique} : Le système est désormais capable de basculer dynamiquement entre le moteur local (Ollama) et le moteur Cloud (Groq) via une simple configuration dans le fichier \texttt{.env}, offrant une flexibilité totale lors de la présentation finale.
-\end{itemize}
+\subsection{Désormais : Inférence Cloud haute performance (Groq \& Llama 3.3)}
+Bien que le fine-tuning local (Qwen-1.5B) ait validé l'alignement moteur-données, nous avons migré vers l'infrastructure \textbf{Groq} pour la production. La rapidité d'inférence exceptionnelle (LPU) et la puissance de raisonnement de \textbf{Llama 3.3 70B} \cite{meta2024llama} garantissent des missions de coaching d'une grande finesse, sans les répétitions observées sur les modèles compacts.
 
 \section{Optimisations techniques et calibration}
 
 \subsection{Intelligence temporelle}
-Mise en place d'un moteur de calibration dynamique sur le client. Le système calcule en temps réel la \textbf{vélocité de traitement} du serveur pour ajuster le compte à rebours. Cette approche remplace les estimations fixes par un suivi basé sur le \textit{Real-Time Factor} (RTF) constaté, garantissant une synchronisation plus crédible entre l'interface et le backend.
+Mise en place d'un moteur de calibration dynamique sur le client : estimation de la vélocité de traitement pour ajuster le compte à rebours, à partir du \textit{Real-Time Factor} (RTF) observé plutôt que d'une durée fixe.
 
 \subsection{Optimisation du pipeline ASR}
-Introduction d'un système de surcharge linguistique (\textit{override}). En permettant de spécifier la langue dès le départ, le pipeline effectue un \textbf{bypass de l'étape de détection automatique} de Whisper. Cela réduit la latence de démarrage et fiabilise la transcription pour les cas multilingues (français, anglais, arabe).
+Surcharge linguistique (\textit{override}) : si la langue est connue à l'envoi, la détection automatique Whisper peut être court-circuitée, ce qui réduit la latence de démarrage et stabilise la transcription (français, anglais, arabe).
+
+\subsection{Optimisation beam\_size=1}
+Une optimisation significative a été appliquée : réduction du paramètre \texttt{beam\_size} de 5 à 1 dans le modèle Whisper. Cette modification réduit le temps de traitement de 32--38\% avec un impact minimal sur la précision pour les cas standards. Pour une analyse détaillée des performances, voir section~\ref{sec:performance-analysis}. Pour le contexte sur la configuration ASR retenue, voir section~\ref{sec:asr-hesitations}.
 
 \subsection{Granularité du suivi IA}
 Décomposition modulaire de la phase finale d'enrichissement en sous-étapes distinctes (\textit{retrieval} et \textit{generation}). Cette granularité permet un monitoring plus précis des temps de réponse de chaque couche d'intelligence et assure un feedback visuel continu à l'utilisateur pendant les phases de calcul plus lourdes.
 
-\section{Architecture Hybride et Moteur de Coaching Avancé}
+\section{Architecture hybride et moteur de coaching}
 
-Afin de concilier une analyse contextuelle profonde (IA) avec une fluidité d'utilisation en production, l'architecture a été transformée en un système hybride asynchrone doté de garde-fous stricts.
+Le système concilie analyse contextuelle (IA) et fluidité d'usage en séparant le \emph{scoring} immédiat de l'enrichissement LLM asynchrone, puis en validant les sorties génératives avant persistance.
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.5cm and 2.5cm,
-        box/.style={rectangle, draw=blue!70!black, fill=blue!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, rounded corners},
-        data/.style={cylinder, draw=gray!70!black, fill=gray!5, thick, shape border rotate=90, aspect=0.25, minimum height=1.5cm, minimum width=3.8cm, align=center},
-        rag/.style={rectangle, draw=orange!70!black, fill=orange!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, dashed, rounded corners},
-        api/.style={rectangle, draw=red!70!black, fill=red!5, thick, minimum width=3.8cm, minimum height=1cm, align=center, rounded corners},
-        arrow/.style={->, >=stealth, thick, draw=black!80}
-    ]
+  \begin{tikzpicture}[
+    font=\fontsize{11}{13.2}\selectfont,
+    >={Stealth[length=2.5mm]},
+    node distance=6mm,
+    col/.style={rectangle, rounded corners=3pt, line width=0.7pt,
+      minimum width=3.8cm, text width=3.7cm, align=center, inner ysep=6pt, inner xsep=6pt},
+    main/.style={col, draw=blue!80!black, fill=blue!8, line width=0.8pt},
+    data/.style={col, draw=gray!70!black, fill=gray!12, text width=3.0cm,
+                 minimum width=3.1cm, inner xsep=5pt, line width=0.7pt},
+    rag/.style={col, draw=orange!75!black, fill=orange!8, dashed,
+                text width=3.0cm, minimum width=3.1cm, line width=0.7pt},
+    api/.style={col, draw=red!65!black, fill=red!6, line width=0.8pt},
+    guard/.style={col, draw=teal!65!black, fill=teal!8, line width=0.8pt},
+    arr/.style={-{Stealth}, thick, draw=black!60},
+    arrd/.style={-{Stealth}, thick, dashed, draw=blue!70!black},
+    arrf/.style={-{Stealth}, thick, dashed, draw=red!70!black},
+]
 
-    % --- LEFT COLUMN ---
-    \node[box] (ui) {Interface Frontend \\ (Dashboard)};
-    \node[box, below=1.5cm of ui] (scoring) {Moteur Déterministe \\ (\texttt{scoring.py})};
-    \node[box, below=6cm of scoring] (sanitizer) {Filtres Sécurité \\ \& Fallback};
+%% --- Colonne principale ---
+\node[main] (n1) {\textbf{1. Interface web}\\studio, tableau de bord};
+\node[main, below=of n1] (n2) {\textbf{2. Moteur déterministe}\\Analyse audio, vision et scores};
+\node[main, below=of n2] (n3) {\textbf{3. Worker Celery}\\Enrichissement asynchrone};
+\node[main, below=16mm of n3] (n4) {\textbf{4. Agent coaching}\\Prompt système + RAG};
+\node[api,  below=of n4] (n5) {\textbf{5. Inférence LLM}\\Groq, Llama 3.3};
+\node[guard,below=of n5] (n6) {\textbf{6. Garde-fous et formatage}\\Post-traitement et validation};
+\node[main, below=of n6] (n7) {\textbf{7. Rapport consolidé}\\API, PDF, interface};
 
-    % --- CENTER COLUMN ---
-    \node[box, right=2.5cm of scoring] (worker) {Worker Asynchrone \\ (\texttt{tasks.py})};
-    \node[data, below=1.5cm of worker] (db) {Base de Données \\ (Tendances \& Historique)};
-    \node[box, below=1.5cm of db] (agent) {Master Coach Agent \\ (\texttt{agent\_coach.py})};
+%% --- Flux principal ---
+\draw[arr] (n1) -- (n2);
+\draw[arr] (n2) -- (n3);
+\draw[arr] (n3) -- (n4);
+\draw[arr] (n4) -- (n5);
+\draw[arr] (n5) -- (n6);
+\draw[arr] (n6) -- (n7);
 
-    % --- RIGHT COLUMN ---
-    \node[rag, right=2.5cm of db] (raginfo) {Knowledge Base \\ RAG (\texttt{.json})};
-    \node[api, right=2.5cm of agent] (llm) {Groq API \\ (\texttt{Llama-3.3-70B})};
+%% --- Nœuds latéraux (légèrement remontés) ---
+\node[data, left=25mm of n3, yshift=-11mm]  (db) {\textbf{Historique}\\BDD (sessions)};
+\node[rag,  right=25mm of n3, yshift=-11mm] (kb) {\textbf{Base RAG}\\Base documentaire pédagogique};
+%% --- Connexions propres ---
+\draw[arr] (n3.west) -- ++(-2.5,0)
+    to[out=180, in=90] (db.north);
 
-    % --- WIRING / ROUTES ---
-    
-    % Phase 1: Upload (Left Column)
-    \draw[arrow] (ui) -- node[left, align=right, font=\scriptsize] {1. Envoi vidéo \\ (Synchrone)} (scoring);
-    \draw[arrow] (scoring) -- node[above, font=\scriptsize] {2. Déclenche Tâche Background} (worker);
-    
-    % Phase 2: Worker to Data (Center / Right)
-    \draw[arrow] (worker) -- node[left, align=right, font=\scriptsize] {3. Extraction des 3 \\ dernières sessions} (db);
-    \draw[arrow] (worker) -| node[above right, font=\scriptsize] {Requête base documentaire} (raginfo);
-    
-    % Phase 3: Data to Agent (Center Convergence)
-    \draw[arrow] (db) -- node[left, font=\scriptsize] {Historique injecté} (agent);
-    \draw[arrow] (raginfo.west) -- node[above, sloped, font=\scriptsize] {4. Règles d'oratoire exigées} (agent.north east);
-    
-    % Phase 4: Agent to LLM (Right Call)
-    \draw[arrow] (agent) -- node[above, align=center, font=\scriptsize] {5. Prompt (Contexte RAG \\ + Format JSON strict)} (llm);
-    
-    % Phase 5: LLM to Sanitizer (Bottom sweeping line)
-    \draw[arrow] (llm.south) |- node[below right, font=\scriptsize] {6. Génération LLM brute} (sanitizer.east);
-    
-    % Phase 6: Validation (Diagonal UP to DB)
-    \draw[arrow] (sanitizer.north east) -- node[above, sloped, font=\scriptsize] {7. Si Validé : Écriture Rapport Final} (db.south west);
-    
-    % Fallback Lane (Left vertical return)
-    \draw[arrow, dashed, draw=red!70] (sanitizer.north) -- node[left, align=right, font=\scriptsize] {Si Jargon / Tutoiement : \\ Repli Déterministe d'Urgence} (scoring.south);
-    
-    % Polling Lane (Far Left sweeping line)
-    \draw[arrow, dashed, draw=blue!70] (ui.west) -- ++(-1.5,0) |- node[above right, near start, font=\scriptsize] {Polling: Surveille le statut (\texttt{status\_router})} (db.west);
+\draw[arr] (n3.east) -- ++(+2.5,0)
+    to[out=0, in=90] (kb.north);
 
-    \end{tikzpicture}
-    \caption{Architecture hybride du moteur d'évaluation (Flux asynchrone sans croisement).}
+\draw[arr] (db.south) -- ++(0,-0.5)
+    to[out=-90, in=180] (n4.west);
+
+\draw[arr] (kb.south) -- ++(0,-0.5)
+    to[out=-90, in=0] (n4.east);
+
+%% --- Polling ---
+\draw[arrd]
+    (n1.west) -- ++(-7.0,0)
+    node[pos=0.4, above, font=\fontsize{8}{9}\selectfont\itshape,
+         text=blue!70!black] {polling}
+    |- (db.west);
+
+%% --- Fallback ---
+\draw[arrf]
+    (n6.east) -- ++(+7.0,0)
+    node[pos=0.4, above, font=\fontsize{8}{9}\selectfont\itshape,
+         text=red!70!black] {fallback}
+    |- (n2.east);
+
+\end{tikzpicture}
+    \caption{Vue d'ensemble du pipeline hybride (ordre de traitement).}
+    \begin{minipage}{0.94\linewidth}\footnotesize
+    \textbf{Lecture :} le traitement suit la colonne centrale de haut en bas. Le worker alimente l'agent à partir de l'historique (BDD) et de la base documentaire (RAG). Le \emph{polling} (ligne pointillée bleue) permet au client de suivre l'état via l'API de statut. Le \emph{repli} (ligne pointillée rouge) renvoie vers le moteur déterministe si la sortie LLM est invalide ou incohérente.
+    \end{minipage}
 \end{figure}
 
-\subsection{Work-flux Asynchrone : Analyse en 2 Temps}
-Le traitement est désormais découplé pour garantir une interface sans latence :
+\subsection{Workflow asynchrone : analyse en deux temps}
+Le traitement est découplé pour limiter la latence perçue sur l'interface :
 \begin{itemize}
-    \item \textbf{Phase 1 (Immédiate) - Scoring Déterministe :} Le moteur de calcul (\texttt{scoring.py}) chiffre instantanément les métriques brutes (WPM, FPS, Cadrage) et applique ses seuils de pénalités. Le tableau de bord et le rapport s'affichent sans bloquer l'utilisateur.
-    \item \textbf{Phase 2 (Asynchrone) - Enrichissement IA :} Un \textit{worker} Celery (\texttt{tasks.py}) consolide les données en tâche de fond. Il extrait l'historique utilisateur, interroge la base documentaire (RAG) et requiert un \textit{prompt} complexe à l'API LLM (Groq via authentification \texttt{GROQ\_API\_KEY}).
-    \item \textbf{Polling Intelligent :} Le frontend (React) interroge silencieusement la route \texttt{status\_router.py} et notifie l'utilisateur dès que le coaching personnalisé de l'Agent est prêt.
+    \item \textit{Phase immédiate — scoring.} Le moteur déterministe calcule les métriques brutes (débit, cadre vidéo, etc.) et applique les pénalités ; le tableau de bord peut s'actualiser sans attendre le LLM.
+    \item \textit{Phase différée — enrichissement.} Le worker Celery \cite{celery} agrège historique, RAG et appel API (Groq) pour produire le coaching via FastAPI \cite{fastapi}.
+    \item \textit{Suivi côté client.} Le frontend interroge l'API de statut jusqu'à disponibilité du bloc coaching.
 \end{itemize}
 
-\subsection{Intelligence Pédagogique (Master Coach Agent)}
-Le modèle LLM est contraint par des directives strictes au sein du contrôleur \texttt{agent\_coach.py} :
+\subsection{Intelligence pédagogique (agent ``Master Coach'')}
+Le LLM est piloté par un agent de coaching avec un rôle de coach SpeechCoach (références Toastmasters dans le \textit{system prompt}). Contraintes principales :
 \begin{itemize}
-    \item \textbf{Intégration RAG (Toastmasters) :} Le système s'appuie sur le document \texttt{knowledge\_base.json}. L'intelligence artificielle base son intervention \textit{uniquement} sur des standards d'art oratoire éprouvés, bloquant radicalement toute hallucination.
-    \item \textbf{Analyse des Tendances (Historique) :} L'Agent ingère de manière dynamique les 3 dernières sessions enregistrées. Son plan d'action réagit à une "trajectoire" (ex: stagnation, forte amélioration) et non plus à un incident technique isolé.
-    \item \textbf{Prompting JSON Sécurisé :} Format d'échange imposé (Bilan, Priorité, Exercice), incluant une interdiction formelle d'employer du jargon (comme "WPM") selon les lois d'instructions injectées dans l'API.
+    \item RAG : récupération depuis la base documentaire via embeddings Sentence-BERT \cite{reimers-2019-sentence-bert} et recherche vectorielle FAISS \cite{johnson2019billion}, sans recopie littérale des fiches.
+    \item Historique : synthèse des dernières sessions pour situer la progression.
+    \item Sortie JSON structurée : bilan global, point prioritaire, encouragement, exercice (titre et 3 étapes), axe de focus (voix, présence, gestuelle, scène) ; vocabulaire utilisateur sans jargon technique.
+\end{itemize}
+Le détail des injections de contexte et des garde-fous après génération est synthétisé en section~\ref{sec:prompt-guardrails}.
+
+\subsection{Sécurité et repli déterministe}
+Filet de sécurité autour des sorties LLM :
+\begin{itemize}
+    \item Filtre anti-tutoiement (expressions régulières sur le texte généré).
+    \item Rejet des bilans trop vagues (formulations génériques type ``le problème concerne le regard'').
+    \item Repli si panne, lenteur ou sortie invalide de l'API Groq : message déterministe pour éviter un rapport vide.
 \end{itemize}
 
-\subsection{Sécurité Industrielle et \textit{Fallback} Déterministe}
-L'architecture de production déploie un filet de sécurité rigide pour prévenir toute anomalie LLM :
+\subsection{Cohérence interface et moteur}
+Les plages affichées (débit, intensité gestuelle, etc.) reprennent les seuils du moteur déterministe. Les consignes d'exercice du LLM sont segmentées côté client en étapes numérotées. Lorsque l'ASR ne détecte aucune hésitation, l'interface le signale clairement (rassurance sur la métrique).
+
+\section{Ingénierie du prompt, profil utilisateur et garde-fous post-LLM}
+\label{sec:prompt-guardrails}
+
+\subsection{Rôle et mission assignés au modèle (\textit{system prompt})}
+Au-delà du simple résumé de scores, le \textit{system prompt} impose une mission de \textbf{transformation de métriques brutes en parcours d'entraînement} : bilan exécutif concis, comparaison explicite aux sessions précédentes sur les quatre axes, exercice de cinq minutes sans support, créativité (pas de copier-coller des fiches RAG), et focus sur un seul axe majeur. Le modèle doit vouvoyer, éviter le jargon technique, et placer les exemples de tics de langage dans la \textbf{langue détectée} de la vidéo lorsque pertinent.
+
+\subsection{Données et instructions injectées dans le message utilisateur}
+Le message utilisateur regroupe, dans l'ordre logique suivant :
 \begin{itemize}
-    \item \textbf{Filtre Anti-Tutoiement :} Un module basé sur expressions régulières examine le retour LLM. L'analyse est annulée et censurée si des pronoms familiers (\textit{tu, ton, fais}) sont observés.
-    \item \textbf{Validation Sémantique :} Un filtre exclut arbitrairement un bilan formulé de manière trop vague (ex: \textit{"Le problème concerne le regard"}).
-    \item \textbf{Repli Déterministe (Fallback) :} Si l'API distante Groq subit une panne, est trop lente, ou censure son output, le système bascule sur un algorithme interne calculant un feedback poli. Le compte-rendu ne restera de ce fait \textbf{jamais vide}.
+    \item \textbf{Contexte profil} : niveau d'expérience, objectif courant, langue de la vidéo ;
+    \item \textbf{Historique / tendance} : texte agrégé produit côté serveur à partir des analyses antérieures de l'utilisateur ;
+    \item \textbf{Domaines d'intérêt à l'adhésion} : liste optionnelle issue des préférences utilisateur (choix volontaires à l'onboarding ou dans les paramètres), présentée explicitement comme \textit{non diagnostique} pour éviter toute confusion avec les faiblesses détectées par le pipeline ;
+    \item \textbf{Métriques de la session} : score global, quatre axes chiffrés, points forts, faiblesses textuelles ;
+    \item \textbf{Ancrage déterministe} : catégorie de recommandation prioritaire calculée par le moteur, avec consigne de ne pas mélanger plusieurs axes dans la mission unique ;
+    \item \textbf{Bloc RAG} : titres, contenus pédagogiques et éventuelles étapes des documents récupérés.
+\end{itemize}
+Lors de l'enrichissement asynchrone, si le rapport ne contient pas encore les préférences utilisateur dans les métadonnées, le serveur recharge le profil en base afin de ne pas perdre une préférence enregistrée après coup. Par ailleurs, les préférences sont aussi écrites dans les métadonnées de session, ce qui assure une \textbf{traçabilité} des intentions utilisateur jointes au livrable d'analyse.
+
+\subsection{Post-traitement déterministe et cohérence}
+Le module de post-traitement \textbf{arbitre} entre texte génératif et règles métier} : il détecte et corrige les incohérences LLM (désalignement tag/priorité, mélange d'axes, conflit exercice/axe, mots ambigus) en replaçant les sorties problématiques par des formulations dérivées des recommandations déterministes. Des tests unitaires assurent la stabilité de ces heuristiques.
+
+\subsection{Difficultés rencontrées et résolutions}
+\begin{itemize}
+    \item \textbf{Faux ``multi-axes'' sur le texte LLM} : des termes polysémiques faisaient croire à un mélange voix/présence/scène ; la détection a été restreinte à des lexiques plus explicites et couverte par des tests de non-régression.
+    \item \textbf{Cohérence profil--rapport} : le rapport est écrit avant l'enrichissement LLM ; pour ne pas perdre les préférences utilisateur, le serveur recharge le profil lors de l'enrichissement si le champ est absent des métadonnées.
 \end{itemize}
 
-\subsection{Cohérence Frontend-Backend (UI "Executive")}
-L'interface finale n'est plus une vitrine indépendante, elle est le miroir exact du traitement scientifique :
-\begin{itemize}
-    \item Les objectifs cibles affichés à l'écran (ex: \textit{Maintenir entre 120 et 160 mots/min} ; \textit{Mouvement équilibré 2.5 à 6.5}) reproduisent avec une précision mathématique les seuils de pénalité de \texttt{scoring.py}.
-    \item \textbf{Moteur de Parsing Regex} : Côté Client, la "bouillie textuelle" produite par l'IA est scindée pour forcer l'affichage d'un "Plan d'Action" clair, aéré et numéroté (Étapes 1, 2, 3), ce qui annule toute surcharge cognitive pour l'orateur.
-    \item Affichage de la perfection des algorithmes : Si l'ASR détecte 0 Hésitation, la métrique est intentionnellement affichée et gratifiée d'un sigle \textit{(Excellent)} pour consolider la confiance dans l'outil de diagnostic.
-\end{itemize}
+\section{Professionnalisation de l'Expérience Utilisateur (UX/UI)}
+
+Au-delà des algorithmes, une attention particulière a été portée à la crédibilité visuelle et à la sécurité pour transformer le prototype en produit fini.
+
+\subsection{Design System et Onboarding}
+L'interface a été repensée autour d'une esthétique "Glassmorphism" moderne : flous d'arrière-plan, bordures semi-transparentes, dégradés subtils. L'inscription intègre un indicateur de force de mot de passe dynamique et des animations visuelles, augmentant la confiance dès le premier contact.
+
+Le parcours d'onboarding a été restructuré en wizard immersif de 5 étapes (Profil, Photo, Niveau, Préférences, Récapitulatif). L'utilisateur définit son niveau (Débutant, Intermédiaire, Avancé) et son objectif (Entretien, PFE, Pitch) via cartes cliquables. Ces choix ne sont pas purement cosmétiques : ils sont collectés dans le profil et réinjectés dans le prompt système du Master Coach pour adapter le ton et la complexité des exercices.
+.
+
+\subsection{Sécurité et flux utilisateur}
+Le backend s'appuie sur flux SMTP professionnel : envoi d'e-mails de vérification à l'inscription et liens sécurisés de réinitialisation. Les écrans Next.js \cite{nextjs} avec React \cite{react} complètent le flux, assurant gestion de compte autonome et sécurisée.
+
+Des ajustements d'interface lient plus fidèlement la session au rapport le plus récent, évitant incohérences de navigation. Le rapport respecte le mode d'exercice pour ne pas afficher de numérotation artificielle lorsqu'aucun plan n'est proposé.
+
+\subsection{Exports et feedback}
+Au-delà de l'affichage web, le backend expose des routes d'export : génération \textbf{PDF} (mise en page structurée), export \textbf{Markdown} pour archivage, et version \textbf{HTML} optimisée pour impression navigateur. Ces sorties s'appuient sur la même couche de génération que l'interface, garantissant cohérence entre écran, PDF et texte.
+
+Une API dédiée permet aux utilisateurs authentifiés d'enregistrer une note et un commentaire. Une page publique agrège statistiques et avis récents (avec noms et avatars lorsque le profil le permet), utile pour communication autour du projet et collecte qualitative pour itérations futures.
 
 \section{Synthèse}
 \begin{table}[H]
@@ -431,15 +311,18 @@ L'interface finale n'est plus une vitrine indépendante, elle est le miroir exac
         Benchmark CrisperWhisper & Rejeté & Trop lent et peu convaincant sur nos cas réels. \\
         Hésitations multilingues & Améliorées & Travail itératif sur prompts, regex et fallback acoustique. \\
         Répétitions & Améliorées & Détection plus robuste des répétitions simples et redémarrages. \\
-        Configuration ASR retenue & Validée & Retour à \texttt{medium + beam size 5}. \\
+        Configuration ASR retenue & Validée & \texttt{medium + beam size 1} (compromis optimal qualité/vitesse). \\
         Regard caméra par appareil & Implémenté & Profils distincts pour laptop, smartphone et tablette. \\
         Mode \texttt{unknown} & Validé & Auto-détection fonctionnelle par métadonnées, rotation, nom du fichier et heuristique paysage. \\
         Calibration adaptative & Implémentée & Décompte basé sur la vélocité réelle observée côté traitement. \\
         Override linguistique & Implémenté & Possibilité d'éviter la détection automatique pour accélérer et stabiliser l'ASR. \\
         Granularité IA & Implémentée & Séparation plus claire entre récupération documentaire et génération finale. \\
         \midrule
-        Coaching LLM (V1 Local) & Implémenté & Validé comme solution de repli (Ollama), mais limité en nuances sémantiques. \\
-        Coaching LLM (V2 Groq) & Implémenté & Utilisation de Llama-3.3-70B pour une qualité de coaching "humaine" et experte. \\
+        Dataset FT \textit{engine-centric} (Qwen 1.5B) & Documenté & Construction par sondage du moteur et distillation ; preuve de concept locale Ollama \cite{ollama,qwen25}. \\
+        Coaching LLM (V1 Local) & Implémenté & Repli Ollama \cite{ollama} ; utile hors connexion, limité en nuances sur le long terme. \\
+        Coaching LLM (V2 Groq) & Implémenté & Llama-3.3-70B via API Groq ; latence maîtrisée, meilleure fidélité au JSON et au rôle ``Master Coach''. \\
+        Prompt utilisateur enrichi & Implémenté & Profil (niveau, objectif), historique, axes, RAG, axe prioritaire déterministe, préférences optionnelles. \\
+        Tag de focus \& garde-fous & Implémenté & Arbitrage dans le post-traitement ; tests sur le classifieur lexical de repli. \\
         \midrule
         \textbf{Architecture \& IA} & & \\
         \midrule
@@ -448,20 +331,147 @@ L'interface finale n'est plus une vitrine indépendante, elle est le miroir exac
         Sécurité et Fallback & Validée & Filtre anti-tutoiement et repli déterministe (\textit{0 rapport vide}). \\
         Cohérence UI/Moteur & Validée & Objectifs mathématiques (\textit{sweet-spots}) calqués en frontend. \\
         Parsing Regex Plan d'Action & Implémenté & Affichage IA numéroté (1,2,3) réduisant la charge cognitive. \\
+        \midrule
+        \textbf{Produit \& compte} & & \\
+        \midrule
+        Design System "Premium" & Implémenté & Esthétique Glassmorphism, validations temps réel et onboarding par cartes. \\
+        E-mail (vérification / reset) & Implémenté & SMTP professionnel, pages dédiées Next.js. \\
+        Onboarding / Préférences & Implémenté & Choix volontaires repris en base, métadonnées de session et prompt LLM. \\
+        Exports rapport (PDF / MD / print) & Implémenté & Module d'export PDF + routes d'API ; alignés sur le module de génération de rapport. \\
+        Retours plateforme (page publique) & Implémenté & API de feedback, page publique d'avis. \\
         \bottomrule
     \end{tabularx}
     \caption{Résumé des travaux de cette phase.}
 \end{table}
 
-\section{Prochaines étapes}
+\section{Analyse de performance : chronométrage du pipeline d'analyse vidéo}
+\label{sec:performance-analysis}
+
+\subsection{Contexte expérimental}
+Des tests de performance ont été menés sur une vidéo de 5 minutes (299 secondes) dans deux configurations distinctes :
 \begin{itemize}
-    \item consolider l'interprétation posture/gestes sur les plans serrés smartphone et tablette ;
-    \item stabiliser la connexion Groq API et affiner le \textit{system prompt} pour exploiter la puissance des 70B paramètres ;
-    \item mener des tests de montée en charge pour vérifier la stabilité du moteur de calibration sous CPU plus sollicité ;
-    \item finaliser les supports de présentation visuels (slides) pour mettre en valeur la modularité Local vs Cloud ;
-    \item continuer à documenter les résultats backend afin de mieux valoriser la contribution de recherche.
+    \item \textbf{Cold run} : Premier traitement sans cache (modèles Whisper et RAG à charger).
+    \item \textbf{Hot run} : Traitement répété avec modèles déjà en cache.
 \end{itemize}
 
+L'objectif était d'identifier les goulots d'étranglement dans le pipeline et de quantifier l'impact du cache sur les temps de traitement.
+
+\subsection{Résultats détaillés par phase}
+
+\begin{table}[H]
+    \centering
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}lcccccX@{}}
+        \toprule
+        \textbf{Phase} & \textbf{Cold (bs=5)} & \textbf{Hot (bs=5)} & \textbf{Cold (bs=1)} & \textbf{Hot (bs=1)} & \textbf{Gain Cold} & \textbf{Gain Hot} \\
+        \midrule
+        \textbf{Ingestion} & 0:33 & 0:39 & 0:25 & 0:27 & 24.2\% & 30.8\% \\
+        \midrule
+        \textbf{Chargement Whisper} & 0:12 & 0:00 & 0:13 & 0:00 & -8.3\% & 0.0\% \\
+        \textbf{Transcription} & 10:47 & 11:16 & 6:00 & 6:52 & 42.6\% & 38.7\% \\
+        \textbf{Vision (parallèle)} & 0:42 & 0:45 & 0:38 & 0:42 & 9.5\% & 6.7\% \\
+        \textbf{Analyse audio} & 0:09 & 0:01 & 0:25 & 0:01 & -177.8\% & 0.0\% \\
+        \textbf{Génération sortie} & 0:01 & 0:01 & 0:01 & 0:01 & 0.0\% & 0.0\% \\
+        \midrule
+        \textbf{Sous-total analyse} & 11:53 & 11:57 & 7:50 & 7:21 & 33.3\% & 38.5\% \\
+        \midrule
+        \textbf{Initialisation RAG} & 0:17 & 0:00 & 0:15 & 0:00 & 11.8\% & 0.0\% \\
+        \textbf{Récupération RAG} & 0:00 & 0:01 & 0:00 & 0:00 & 0.0\% & 0.0\% \\
+        \textbf{Coaching LLM} & 0:02 & 0:01 & 0:04 & 0:02 & -100.0\% & -100.0\% \\
+        \textbf{Finalisation} & 0:00 & 0:00 & 0:08 & 0:00 & 0.0\% & 0.0\% \\
+        \midrule
+        \textbf{Sous-total enrichissement} & 0:19 & 0:02 & 0:27 & 0:02 & -42.1\% & 0.0\% \\
+        \midrule
+        \textbf{TOTAL} & \textbf{12:12} & \textbf{11:59} & \textbf{8:17} & \textbf{7:23} & \textbf{32.2\%} & \textbf{38.5\%} \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Comparaison chronométrique configuration originale vs optimisée (vidéo 5 minutes).}
+\end{table}
+
+\subsection{Classement des phases par temps de traitement (configuration production)}
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}clcc@{}}
+        \toprule
+        \textbf{Rang} & \textbf{Phase} & \textbf{Durée} & \textbf{\% Total} \\
+        \midrule
+        1 & \textbf{Transcription} & 6:52 & 93.1\% \\
+        2 & \textbf{Ingestion} & 0:27 & 6.1\% \\
+        3 & \textbf{Vision (parallèle)} & 0:42 & 9.4\% \\
+        4 & \textbf{Analyse audio} & 0:01 & 0.2\% \\
+        5 & \textbf{Coaching LLM} & 0:02 & 0.4\% \\
+        6 & \textbf{Génération sortie} & 0:01 & 0.1\% \\
+        7 & \textbf{Récupération RAG} & 0:00 & 0.0\% \\
+        8 & \textbf{Initialisation RAG} & 0:00 & 0.0\% \\
+        9 & \textbf{Finalisation} & 0:00 & 0.0\% \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Classement des phases par durée de traitement (configuration production).}
+\end{table}
+
+\subsection{Analyse comparative Cold vs Hot (configuration production)}
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}lcccc@{}}
+        \toprule
+        \textbf{Catégorie} & \textbf{Cold} & \textbf{Hot} & \textbf{Différence} & \textbf{Gain} \\
+        \midrule
+        \textbf{Chargement modèles} & 0:28 & 0:00 & -0:28 & 100.0\% \\
+        \quad \;-- Whisper & 0:13 & 0:00 & -0:13 & 100.0\% \\
+        \quad \;-- RAG & 0:15 & 0:00 & -0:15 & 100.0\% \\
+        \midrule
+        \textbf{Traitement vidéo} & 8:17 & 7:23 & -0:54 & 10.9\% \\
+        \midrule
+        \textbf{TOTAL} & 8:17 & 7:23 & -0:54 & 10.9\% \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Impact du cache sur les temps de traitement (configuration production).}
+\end{table}
+
+\subsection{Observations clés}
+
+\begin{itemize}
+    \item \textbf{Goulot d'étranglement :} La transcription Whisper représente 72--93\% du temps total (facteur limitant).
+    \item \textbf{Optimisation :} Réduction de 32--38\% du temps total avec impact minimal sur la précision.
+    \item \textbf{Impact du cache :} Réduction de 100\% du chargement modèles et 89.5\% de l'enrichissement.
+    \item \textbf{Parallélisme :} L'analyse vision s'exécute en parallèle avec la transcription.
+    \item \textbf{Enrichissement LLM :} Très rapide grâce au cache RAG et à Groq.
+    \item \textbf{Scalabilité :} Temps de transcription linéaire (environ 1.35x temps réel).
+    \item \textbf{Optimisations futures :} GPU (10--15x plus rapide), modèles plus légers (compromis qualité/vitesse), batch processing.
+\end{itemize}
+
+\subsection{Analyse de l'optimisation de la configuration}
+
+\begin{itemize}
+    \item \textbf{Gain significatif :} Réduction de 32--38\% du temps total. Configuration originale : 12:12 (cold) / 11:59 (hot) \textbf{versus} configuration optimisée : 8:17 (cold) / 7:23 (hot).
+    \item \textbf{Transcription accélérée :} Réduction de 39--43\% (10:47--11:16 \rightarrow 6:00--6:52).
+    \item \textbf{Impact sur la qualité :} Le décodage simplifié peut affecter certains mots (accents forts, bruit) ou manquer des hésitations subtils, mais l'impact reste acceptable pour les cas standards.
+    \item \textbf{Modèles plus légers non retenus :} Offriraient des gains de 2x--4x mais dégraderaient considérablement la qualité (surtout pour l'arabe et les fillers).
+    \item \textbf{RTF amélioré :} De ~2.25x à ~1.35x (5 min traitée en ~7 min).
+    \item \textbf{Trade-off acceptable :} Le compromis précision/vitesse est favorable car l'accent est mis sur la détection de fillers/hésitations/répétitions, bien détectées malgré l'optimisation.
+\end{itemize}
+
+\section{Prochaines étapes}
+
+\subsection{Support GPU pour accélération du traitement (Priorité 1)}
+Migrer vers GPU pour réduire les temps de traitement de 6--15x (de 7 min à 30--60 secondes pour une vidéo de 5 minutes). Plusieurs plateformes gratuites disponibles : Google Colab (T4), Kaggle (P100), Modal (serverless, 30\texteuro/mois gratuit), Hugging Face Spaces (T4 permanent), Lightning AI (15--30h/mois). Stratégie : offrir GPU gratuit avec quota mensuel affiché dans l'interface, avec fallback sur CPU après épuisement.
+
+\subsection{Intelligence Émotionnelle Avancée (EQ) (Priorité 2)}
+Intégrer la détection d'états émotionnels (stress, confiance, enthousiasme) en analysant conjointement micro-expressions faciales (MediaPipe Face Mesh) et prosodie vocale (librosa). Approche basée sur règles (2--3 semaines) ou ML avec modèles pré-entraînés (4--5 semaines). Ajoute une dimension "humaine" au coaching avec des feedbacks nuancés.
+
+\subsection{Interface multilingue (Arabe, Français, Anglais) (Priorité 3)}
+Étendre le support multilingue existant (ASR, LLM) à l'interface utilisateur : implémentation i18n Next.js, fichiers de traduction, support RTL pour l'arabe, sélecteur de langue. Élargit significativement la base d'utilisateurs.
+
+\subsection{Coaching en temps réel (Priorité 4)}
+Proposer un coaching pendant l'enregistrement/streaming vidéo plutôt qu'asynchrone post-upload : transcription streaming, analyse audio temps réel, détection posture/gestuelle live. Nécessite WebRTC et traitement audio temps réel, mais offre une expérience utilisateur supérieure.
+
+\subsection{Tâches techniques complémentaires}
+En parallèle : consolider posture/gestes smartphone/tablette, évaluer coaching Groq, documenter influence profil sur bilan, tests de montée en charge, finaliser supports de présentation, prolonger tests automatisés.
+\newpage
 \section{Références bibliographiques}
 \bibliographystyle{ieeetr}
 \bibliography{references}

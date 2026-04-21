@@ -246,7 +246,29 @@ def _append_plan_line(lines: List[str], candidate: str) -> None:
     lines.append(f"{normalized}.")
 
 
-def _recommendation_axis(category: str) -> str:
+def _axis_priority_boost(scores: Scores, axis: str) -> int:
+    axis_scores = {
+        "voice": scores.voice_score,
+        "presence": scores.presence_score,
+        "body": scores.body_language_score,
+        "scene": scores.scene_score,
+    }
+    axis_score = axis_scores.get(axis, 10.0)
+    # The weaker the axis, the stronger the ranking boost.
+    return int(round((10.0 - axis_score) * 3.0))
+
+
+def _axis_score(scores: Scores, axis: str) -> float:
+    axis_scores = {
+        "voice": scores.voice_score,
+        "presence": scores.presence_score,
+        "body": scores.body_language_score,
+        "scene": scores.scene_score,
+    }
+    return float(axis_scores.get(axis, 10.0))
+
+
+def _axis_from_category(category: str) -> str:
     category_lower = (category or "").lower()
     if "voix" in category_lower:
         return "voice"
@@ -259,16 +281,28 @@ def _recommendation_axis(category: str) -> str:
     return "general"
 
 
-def _axis_priority_boost(scores: Scores, axis: str) -> int:
-    axis_scores = {
-        "voice": scores.voice_score,
-        "presence": scores.presence_score,
-        "body": scores.body_language_score,
-        "scene": scores.scene_score,
-    }
-    axis_score = axis_scores.get(axis, 10.0)
-    # The weaker the axis, the stronger the ranking boost.
-    return int(round((10.0 - axis_score) * 3.0))
+def _estimated_minutes(audio: AudioMetrics) -> float:
+    # Use true audio duration; keep a 10s floor to avoid inflated rates on very short clips.
+    if audio.total_duration and audio.total_duration > 0:
+        return max(audio.total_duration / 60.0, 1.0 / 6.0)
+    return 1.0
+
+
+def _gap_above(value: float, target_max: float, span: float) -> float:
+    if value <= target_max:
+        return 0.0
+    return min((value - target_max) / max(span, 1e-6), 1.5)
+
+
+def _gap_below(value: float, target_min: float, span: float) -> float:
+    if value >= target_min:
+        return 0.0
+    return min((target_min - value) / max(span, 1e-6), 1.5)
+
+
+def _ranked_priority(base: int, gap: float, axis_bonus: int) -> int:
+    # Smoothly scale urgency by deviation while keeping deterministic ordering.
+    return int(round(base + axis_bonus + (gap * 14.0)))
 
 
 def _presence_tie_break_priority(
@@ -372,13 +406,10 @@ def build_exercise_payload(recommendations: List[Recommendation], scores: Scores
         }
 
     primary_doc = _find_fiche(primary.exercise_key)
-    secondary_doc = _find_fiche(secondary.exercise_key) if secondary and secondary.exercise_key else None
-
     primary_steps = _extract_steps(primary_doc["content"]) if primary_doc else []
     primary_summary = _extract_summary(primary_doc["content"]) if primary_doc else primary.message
     primary_title = _extract_exercise_name(primary_doc["content"]) if primary_doc else primary.category
 
-    secondary_title = _extract_exercise_name(secondary_doc["content"]) if secondary_doc else (secondary.category if secondary else "Consolidation")
     actionable_summary = _practice_summary_from_category(primary.category, primary.actionable_tip)
     cleaned_steps = _dedupe_steps(primary_steps, primary.actionable_tip)
     custom_steps = _practice_steps_from_category(primary.category, primary.actionable_tip, practice_mode)
@@ -395,7 +426,6 @@ def build_exercise_payload(recommendations: List[Recommendation], scores: Scores
         "self_check": _practice_self_check_from_category(primary.category),
         "focus_primary": primary.category.split(" & ")[0] if primary.category else "Progression generale",
         "focus_secondary": secondary.category.split(" & ")[0] if secondary else "Consolidation",
-        "secondary_title": secondary_title,
     }
 
     if practice_mode == "none":
@@ -461,9 +491,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
     scene_priority_bonus = _axis_priority_boost(scores, "scene")
 
     if audio.wpm < 110:
+        gap = _gap_below(audio.wpm, 110, 30)
         all_recs.append(
             (
-                80 + voice_priority_bonus,
+                _ranked_priority(74, gap, voice_priority_bonus),
                 Recommendation(
                     category="Voix & Debit",
                     severity="Critical",
@@ -474,9 +505,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             )
         )
     elif audio.wpm > 175:
+        gap = _gap_above(audio.wpm, 175, 35)
         all_recs.append(
             (
-                85 + voice_priority_bonus,
+                _ranked_priority(78, gap, voice_priority_bonus),
                 Recommendation(
                     category="Voix & Debit",
                     severity="Critical",
@@ -486,10 +518,25 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
                 ),
             )
         )
-    elif audio.wpm > 160:
+    elif audio.wpm > 168:
+        gap = _gap_above(audio.wpm, 168, 22)
         all_recs.append(
             (
-                65 + voice_priority_bonus,
+                _ranked_priority(58, gap, voice_priority_bonus),
+                Recommendation(
+                    category="Voix & Debit",
+                    severity="Warning",
+                    message=f"Votre debit de parole est un peu trop rapide ({round(audio.wpm)} mots/minute).",
+                    actionable_tip="Marquez une vraie pause en fin de phrase pour ralentir legerement et laisser le temps au message d'etre compris.",
+                    exercise_key="fiche-voix-002",
+                ),
+            )
+        )
+    elif audio.wpm > 160:
+        gap = _gap_above(audio.wpm, 160, 8)
+        all_recs.append(
+            (
+                _ranked_priority(46, gap, voice_priority_bonus),
                 Recommendation(
                     category="Voix & Debit",
                     severity="Warning",
@@ -500,12 +547,13 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             )
         )
 
-    estimated_mins = audio.wpm / 140.0 if audio.wpm > 0.1 else 1.0
+    estimated_mins = _estimated_minutes(audio)
     fillers_per_min = audio.filler_count / estimated_mins
     if fillers_per_min >= 3:
+        gap = _gap_above(fillers_per_min, 3, 4)
         all_recs.append(
             (
-                75 + voice_priority_bonus,
+                _ranked_priority(66, gap, voice_priority_bonus),
                 Recommendation(
                     category="Voix & Fluidite",
                     severity="Warning",
@@ -517,9 +565,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     if vision.face_presence_ratio < 0.8:
+        gap = _gap_below(vision.face_presence_ratio, 0.8, 0.8)
         frame_priority = _presence_tie_break_priority(
             vision,
-            88 + presence_priority_bonus,
+            _ranked_priority(76, gap, presence_priority_bonus),
             "frame",
         )
         all_recs.append(
@@ -536,9 +585,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     if vision.eye_contact_ratio < 0.4:
+        gap = _gap_below(vision.eye_contact_ratio, 0.7, 0.7)
         eye_priority = _presence_tie_break_priority(
             vision,
-            92 + presence_priority_bonus,
+            _ranked_priority(82, gap, presence_priority_bonus),
             "presence",
         )
         all_recs.append(
@@ -554,9 +604,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             )
         )
     elif vision.eye_contact_ratio < 0.6:
+        gap = _gap_below(vision.eye_contact_ratio, 0.7, 0.7)
         eye_priority = _presence_tie_break_priority(
             vision,
-            76 + presence_priority_bonus,
+            _ranked_priority(64, gap, presence_priority_bonus),
             "presence",
         )
         all_recs.append(
@@ -573,9 +624,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     if vision.hands_visibility_ratio < 0.2:
+        gap = _gap_below(vision.hands_visibility_ratio, 0.2, 0.5)
         all_recs.append(
             (
-                70 + body_priority_bonus,
+                _ranked_priority(62, gap, body_priority_bonus),
                 Recommendation(
                     category="Gestuelle",
                     severity="Warning",
@@ -586,9 +638,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
             )
         )
     elif vision.hands_activity_score > 8.0:
+        gap = _gap_above(vision.hands_activity_score, 8.0, 4.0)
         all_recs.append(
             (
-                65 + body_priority_bonus,
+                _ranked_priority(58, gap, body_priority_bonus),
                 Recommendation(
                     category="Gestuelle",
                     severity="Warning",
@@ -600,9 +653,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     if vision.avg_brightness < 70:
+        gap = _gap_below(vision.avg_brightness, 70, 70)
         all_recs.append(
             (
-                50 + scene_priority_bonus,
+                _ranked_priority(44, gap, scene_priority_bonus),
                 Recommendation(
                     category="Image & Lumiere",
                     severity="Info",
@@ -614,9 +668,10 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     if vision.avg_blur < 20:
+        gap = _gap_below(vision.avg_blur, 20, 20)
         all_recs.append(
             (
-                55 + scene_priority_bonus,
+                _ranked_priority(48, gap, scene_priority_bonus),
                 Recommendation(
                     category="Image & Nettete",
                     severity="Info",
@@ -628,6 +683,17 @@ def generate_recommendations(audio: AudioMetrics, vision: VisionMetrics, scores:
         )
 
     all_recs.sort(key=lambda item: item[0], reverse=True)
+    if len(all_recs) >= 2:
+        first_priority, first_rec = all_recs[0]
+        second_priority, second_rec = all_recs[1]
+        if abs(first_priority - second_priority) < 5:
+            first_axis = _axis_from_category(first_rec.category)
+            second_axis = _axis_from_category(second_rec.category)
+            first_axis_score = _axis_score(scores, first_axis)
+            second_axis_score = _axis_score(scores, second_axis)
+            # For close priorities, lead with the weaker pedagogical axis.
+            if second_axis_score + 0.2 < first_axis_score:
+                all_recs[0], all_recs[1] = all_recs[1], all_recs[0]
     top_3 = [recommendation for _, recommendation in all_recs[:3]]
 
     if not top_3:

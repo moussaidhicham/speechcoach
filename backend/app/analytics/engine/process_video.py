@@ -26,9 +26,13 @@ def process_video(
     source_name: Optional[str] = None,
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
+    weak_points: Optional[str] = None,
+    progress_callback=None,
 ):
     """
     Main orchestration function.
+    Args:
+        progress_callback: Optional function(session_id, progress, step) to update progress
     """
     start_time = time.time()
     video_path = os.path.abspath(video_path)
@@ -116,15 +120,29 @@ def process_video(
         generate_training_plan,
     )
 
-    # Initialize ASR with the current test configuration.
-    asr = ASRProcessor(model_size="medium", device="cpu", compute_type="int8", beam_size=5)
+    # Initialize ASR with absolute local path to guarantee zero-network booting
+    backend_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+    local_model_path = os.path.join(backend_root, "models", "whisper-medium")
+    model_to_load = local_model_path if os.path.exists(local_model_path) else "medium"
+    
+    asr = ASRProcessor(model_size=model_to_load, device="cpu", compute_type="int8", beam_size=1)
     
     def run_audio_pipeline():
         logger.info(f"Starting Audio Pipeline (ASR + Analytics) with forced_lang={forced_language}...")
+
+        if progress_callback:
+            progress_callback(custom_session_id, 30, "Transcription en cours...")
+
         t_segs, lang = asr.transcribe(audio_path, forced_language=forced_language)
+
         if not t_segs:
             logger.warning("Transcription returned empty. Check audio quality.")
+
+        if progress_callback:
+            progress_callback(custom_session_id, 55, "Analyse audio en cours...")
+
         a_metrics, e_curve = analyze_audio_file(audio_path, t_segs, language=lang)
+
         return t_segs, lang, a_metrics, e_curve
 
     def run_vision_pipeline():
@@ -134,18 +152,26 @@ def process_video(
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_audio = executor.submit(run_audio_pipeline)
         future_vision = executor.submit(run_vision_pipeline)
-        
+
         transcript_segments, language, audio_metrics, energy_curve = future_audio.result()
         vision_metrics, frame_data_list = future_vision.result()
+
+    if progress_callback:
+        progress_callback(custom_session_id, 65, "Calcul des scores...")
 
     resolved_device_type = normalized_device_type
     
     # Calculate Scores and Feedback
     scores = calculate_scores(audio_metrics, vision_metrics)
-    strengths, weaknesses = generate_feedback_summary(scores, audio_metrics, vision_metrics)
+    recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
+    strengths, weaknesses = generate_feedback_summary(
+        scores,
+        audio_metrics,
+        vision_metrics,
+        recommendations=recommendations,
+    )
     
     # Generate Recommendations and Training Plan
-    recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
     exercise_recommendation = build_exercise_payload(recommendations, scores=scores)
     training_plan = generate_training_plan(recommendations, scores=scores)
     fetched_docs = []
@@ -181,6 +207,7 @@ def process_video(
             model=os.getenv("SPEECHCOACH_LLM_MODEL", ""),
             experience_level=experience_level,
             current_goal=current_goal,
+            weak_points=weak_points,
         )
         if llm_coaching:
             logger.info("Coach text generated successfully.")
@@ -194,6 +221,9 @@ def process_video(
         logger.info(f"Video duration missing/zero. Using audio duration: {audio_metrics.total_duration}s")
         duration = audio_metrics.total_duration
 
+    # Calculate Execution Time for Metadata
+    total_time = time.time() - start_time
+    
     # Create the report object
     metadata = VideoMetadata(
         filename=video_name,
@@ -204,6 +234,8 @@ def process_video(
         device_type=resolved_device_type,
         experience_level=experience_level,
         current_goal=current_goal,
+        weak_points=weak_points,
+        processing_time=round(total_time, 2)
     )
     
     report = SpeechCoachReport(
@@ -307,125 +339,6 @@ def process_video(
         plt.savefig(os.path.join(session_dir, "vision_timeline.png"), dpi=150, bbox_inches='tight')
         plt.close()
         
-    # Generate Minimal Markdown Report (Sprint 1+2 Goal)
-    md_report_path = os.path.join(session_dir, "report_minimal.md")
-    with open(md_report_path, 'w', encoding='utf-8') as f:
-        f.write((f"# Rapport SpeechCoach : {video_name}\n\n"))
-        f.write((f"**Langue détectée** : {language.upper()}\n"))
-        f.write((f"**Durée** : {duration:.2f} secondes\n"))
-        f.write((f"**Vidéo Originale** : {resolution[0]}x{resolution[1]} @ {fps:.2f} fps\n"))
-        f.write((f"**Traitement Audio** : Whisper Medium (INT8) @ 16kHz Mono\n"))
-        f.write((f"**Traitement Vision** : 640x360 @ 1.00 fps\n"))
-        
-        # Calculate Execution Time & RTF
-        total_time = time.time() - start_time
-        rtf = total_time / duration if duration > 0 else 0
-        minutes = int(total_time // 60)
-        seconds = int(total_time % 60)
-        f.write((f"**Temps de traitement** : {minutes}m {seconds}s ({total_time:.1f}s) (x{rtf:.2f} RTF)\n\n"))
-
-        f.write("## Scores & Bilan\n")
-        f.write(f"**Score Global : {scores.overall_score}/100**\n")
-        f.write(f"- Voix/Débit : {scores.voice_score}/10\n")
-        f.write(f"- Posture/Gestes : {scores.body_language_score}/10\n")
-        f.write(f"- Regard/Présence : {scores.presence_score}/10\n")
-        f.write(f"- Qualité/Cadrage : {scores.scene_score}/10\n\n")
-
-        # LLM Agent Coaching Summary (Sprint 9)
-        if llm_coaching:
-            f.write("## 🤖 Bilan du Coach IA\n")
-            f.write("> *Ce bilan a été généré par un agent IA local basé sur vos métriques et les fiches pédagogiques récupérées.*\n\n")
-            f.write(f"{llm_coaching.get('bilan_global', '')}\n\n")
-            f.write(f"**Point Prioritaire :** {llm_coaching.get('point_prioritaire', '')}\n\n")
-            f.write(f"**💡 Encouragement :** *{llm_coaching.get('encouragement', '')}*\n\n")
-            f.write("---\n\n")
-
-        f.write("### Points Forts 💪\n")
-        for s in strengths:
-            f.write(f"- {s}\n")
-        f.write("\n")
-        
-        f.write("### Axes d'Amélioration 📈\n")
-        for w in weaknesses:
-            f.write(f"- {w}\n")
-        f.write("\n")
-        
-        f.write("## Recommandations Actionnables (Top 3)\n")
-        if recommendations:
-            for rec in recommendations:
-                icon = "🔴" if rec.severity.lower() == "critical" else "🟠" if rec.severity.lower() == "warning" else "🔵"
-                f.write(f"### {icon} {rec.category}\n")
-                f.write(f"**Diagnostic :** {rec.message}\n\n")
-                f.write(f"**Action terrain :** {rec.actionable_tip}\n\n")
-        else:
-            f.write("Aucune recommandation critique.\n\n")
-            
-        if fetched_docs:
-            f.write("## 📚 Références & Exercices Complémentaires (Base RAG)\n")
-            f.write("> *Le système a récupéré ces fiches pédagogiques basées sur votre point faible principal.*\n\n")
-            for doc in fetched_docs:
-                f.write(f"### Fiche : {doc['title']} ({doc['category']})\n")
-                f.write(f"{doc['content']}\n\n")
-            
-        f.write(f"{training_plan}\n\n")
-        
-        f.write("## Métriques Vocales (Audio)\n")
-        f.write(f"- **Débit (WPM)** : {audio_metrics.wpm} mots/min ")
-        if audio_metrics.wpm > 160: f.write("(Rapide)")
-        elif audio_metrics.wpm < 110: f.write("(Lent)")
-        else: f.write("(Bon rythme)")
-        f.write("\n")
-        
-        f.write(f"- **Pauses (>0.5s)** : {audio_metrics.pause_count} pauses\n")
-        f.write(f"- **Hésitations (Fillers)** : {audio_metrics.filler_count} détectées\n\n")
-        
-        f.write("### Dynamique Vocale\n")
-        f.write("![Audio Energy](audio_energy.png)\n\n")
-
-        f.write("\n")
-        f.write("### Qualité & Environnement (Sprint 3)\n")
-        f.write(f"- **Luminosité** : {vision_metrics.avg_brightness}/255 ")
-        if vision_metrics.avg_brightness < 50: f.write("(Sombre 🌑)")
-        elif vision_metrics.avg_brightness > 200: f.write("(Saturé ☀️)")
-        else: f.write("(OK ✅)")
-        f.write("\n")
-        
-        f.write(f"- **Netteté (Blur Score)** : {vision_metrics.avg_blur:.0f} ")
-        if vision_metrics.avg_blur < 100: f.write("(Flou 🌫️)")
-        else: f.write("(Net 📷)")
-        f.write("\n\n")
-
-        f.write("### Métriques Visuelles (Vision)\n")
-        f.write(f"- **Présence Visage** : {vision_metrics.face_presence_ratio:.0%} du temps ")
-        if vision_metrics.face_presence_ratio > 0.8: f.write("(OK)")
-        elif vision_metrics.face_presence_ratio < 0.5: f.write("(Faible)")
-        f.write("\n")
-        
-        f.write(f"- **Contact Visuel (Regard Caméra)** : {vision_metrics.eye_contact_ratio:.0%} ")
-        if vision_metrics.eye_contact_ratio > 0.6: f.write("(Bonne connexion)")
-        elif vision_metrics.eye_contact_ratio < 0.3: f.write("(Fuyant / Lecture notes)")
-        else: f.write("(Moyen)")
-        f.write("\n")
-        
-        f.write(f"- **Mains Visibles** : {vision_metrics.hands_visibility_ratio:.0%} du temps ")
-        if vision_metrics.hands_visibility_ratio > 0.4: f.write("(OK)")
-        elif vision_metrics.hands_visibility_ratio < 0.1: f.write("(Corps figé ?)")
-        else: f.write("(Moyen)")
-        f.write("\n")
-
-        f.write(f"- **Intensité Gestuelle** : {vision_metrics.hands_activity_score}/10 ")
-        if vision_metrics.hands_activity_score > 7: f.write("(Trop agité ?)")
-        elif vision_metrics.hands_activity_score < 1: f.write("(Statique)")
-        else: f.write("(Naturel)")
-        f.write("\n\n")
-        
-        f.write("### Timeline Visuelle\n")
-        f.write("![Vision Timeline](vision_timeline.png)\n\n")
-
-        f.write("## Transcription\n\n")
-        for seg in transcript_segments:
-            f.write((f"- **[{seg.start:.1f}s - {seg.end:.1f}s]** : {seg.text}\n"))
-            
     logger.info("Step 3: Output Generated.")
 
 if __name__ == "__main__":

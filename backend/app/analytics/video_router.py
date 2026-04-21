@@ -5,7 +5,7 @@ from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.auth.router import current_active_user
-from app.users.models import User
+from app.db.models import User
 from app.analytics.models import VideoSession
 from app.db.database import get_session
 from app.worker.tasks import process_video_task

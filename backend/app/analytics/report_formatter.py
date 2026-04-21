@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from html import escape
 import re
+import unicodedata
 from typing import Any, Dict, List, Tuple
 
 from app.analytics.models import AnalysisResult, VideoSession
@@ -279,6 +280,12 @@ def _sanitize_exercise_recommendation(
         return {}
 
     cleaned = dict(exercise_recommendation)
+    if str(cleaned.get('mode') or '').strip().lower() == 'setup_action':
+        # Setup actions are short by design (usually 1-2 steps); keep deterministic steps as-is.
+        setup_steps = [str(step).strip() for step in (cleaned.get('steps') or []) if str(step).strip()]
+        cleaned['steps'] = setup_steps[:2]
+        return cleaned
+
     references = [
         str(summary.get('narrative') or ''),
         str(summary.get('priority_focus') or ''),
@@ -359,6 +366,118 @@ def _sanitize_training_plan(
     }
 
 
+def _is_multi_focus_text(value: str) -> bool:
+    families = _families_in_text(str(value or ''))
+    return len(families) >= 2
+
+
+def _normalize_text(value: str) -> str:
+    raw = str(value or '')
+    normalized = unicodedata.normalize('NFD', raw)
+    normalized = ''.join(ch for ch in normalized if unicodedata.category(ch) != 'Mn')
+    return normalized
+
+
+def _families_in_text(value: str) -> set[str]:
+    text = _normalize_text(str(value or '')).lower()
+    families: set[str] = set()
+    if any(token in text for token in ['image', 'nettete', 'flou', 'mise au point', 'focus', 'lumiere', 'eclairage', 'cadre', 'cadrage', 'hors champ', 'champ', 'plan', 'camera', 'cam']):
+        families.add('scene')
+    if any(token in text for token in ['voix', 'debit', 'rythme', 'vitesse', 'parole', 'articulation', 'fluidite', 'hesitation', 'mots parasites', 'repetition']):
+        families.add('voice')
+    # "objectif/camera" are ambiguous here (lens vs eye-contact): only explicit
+    # gaze/presence words should classify to presence to avoid false multi-axis.
+    if any(token in text for token in ['regard', 'presence', 'contact visuel']):
+        families.add('presence')
+    if any(token in text for token in ['gestuelle', 'mains', 'posture', 'epaules', 'corps']):
+        families.add('body')
+    families.discard('scene') if 'scene' in families and 'presence' in families and any(token in text for token in ['regard', 'contact visuel']) else None
+    return families
+
+
+def _focus_family_labels(value: str) -> str:
+    text = _normalize_text(str(value or '')).strip().lower()
+    if any(token in text for token in ['image', 'nettete', 'flou', 'mise au point', 'focus', 'lumiere', 'eclairage', 'cadre', 'cadrage', 'scene', 'hors champ', 'champ', 'plan']):
+        return 'scene'
+    if any(token in text for token in ['voix', 'debit', 'rythme', 'vitesse', 'parole', 'articulation', 'fluidite', 'hesitation', 'mots parasites', 'repetition']):
+        return 'voice'
+    if any(token in text for token in ['regard', 'presence', 'contact visuel']):
+        return 'presence'
+    if any(token in text for token in ['gestuelle', 'mains', 'posture', 'epaules', 'corps']):
+        return 'body'
+    return 'general'
+
+
+def _normalize_focus_tag(value: Any) -> str:
+    raw = _normalize_text(str(value or '')).strip().lower().replace('-', '_')
+    aliases = {
+        'voix': 'voice',
+        'debit': 'voice',
+        'rythme': 'voice',
+        'presence': 'presence',
+        'regard': 'presence',
+        'gestes': 'body',
+        'gestuelle': 'body',
+        'posture': 'body',
+        'cadrage': 'scene',
+        'image': 'scene',
+        'nettet': 'scene',
+    }
+    if raw in {'voice', 'presence', 'body', 'scene', 'general'}:
+        return raw
+    for key, mapped in aliases.items():
+        if key in raw:
+            return mapped
+    return ''
+
+
+def _llm_exercise_conflicts_with_primary(
+    primary_focus: str,
+    title: str,
+    consigne: str,
+    llm_focus_family: str = '',
+) -> bool:
+    primary_family = _focus_family_labels(primary_focus)
+    if primary_family == 'general':
+        return False
+
+    normalized_llm_focus = _normalize_focus_tag(llm_focus_family)
+    if normalized_llm_focus and normalized_llm_focus != primary_family:
+        return True
+
+    llm_text = f"{title} {consigne}"
+    mentioned_families = _families_in_text(llm_text)
+    if not mentioned_families:
+        return False
+
+    if normalized_llm_focus == primary_family:
+        # Canonical focus tag is trusted when coherent; only reject explicit multi-axis mix.
+        return any(family != primary_family for family in mentioned_families)
+
+    if primary_family not in mentioned_families:
+        return True
+    return any(family != primary_family for family in mentioned_families)
+
+
+def _is_frame_critical(metrics: Dict[str, Any]) -> bool:
+    face_presence = _safe_int(metrics.get('face_presence_ratio'))
+    return face_presence < 80
+
+
+def _deterministic_priority_sentence(recommendations: List[Dict[str, str]], fallback_focus: str) -> str:
+    if recommendations:
+        top = recommendations[0]
+        message = str(top.get('message') or '').strip()
+        tip = str(top.get('tip') or '').strip()
+        if message and tip:
+            return f"{message} {tip}"
+        if message:
+            return message
+        if tip:
+            return tip
+    return fallback_focus or 'Progression generale'
+
+
 def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Dict[str, Any]:
     metrics = analysis.metrics_json or {}
     scores = metrics.get('scores') or {}
@@ -371,6 +490,20 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     strengths = [str(item).strip() for item in (metrics.get('strengths') or []) if str(item).strip()]
     weaknesses = [str(item).strip() for item in (metrics.get('weaknesses') or []) if str(item).strip()]
     recommendations = _normalize_recommendations(metrics.get('recommendations') or [])
+    deterministic_primary_focus = (
+        recommendations[0]['category']
+        if recommendations and recommendations[0].get('category')
+        else 'Progression generale'
+    )
+    deterministic_priority_text = _deterministic_priority_sentence(recommendations, deterministic_primary_focus)
+    deterministic_secondary_focus = (
+        recommendations[1]['category']
+        if len(recommendations) > 1 and recommendations[1].get('category')
+        else 'Consolidation'
+    )
+    deterministic_primary_family = _focus_family_labels(deterministic_primary_focus)
+    llm_focus_primary = _normalize_focus_tag(llm_coaching.get('focus_primary'))
+
     transcript = _normalize_transcript(metrics.get('transcript') or [])
     training_plan_markdown = str(metrics.get('training_plan') or '')
     training_plan = _parse_training_plan(training_plan_markdown)
@@ -385,17 +518,36 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     language = str(metadata.get('detected_language') or 'unknown').strip() or 'unknown'
 
     overall_score = _safe_int(getattr(analysis, 'overall_score', 0))
-    summary_narrative = str(llm_coaching.get('bilan_global') or '').strip() or _fallback_narrative(strengths, weaknesses)
+    llm_bilan = str(llm_coaching.get('bilan_global') or '').strip()
+    summary_narrative = llm_bilan or _fallback_narrative(strengths, weaknesses)
     priority_focus = str(llm_coaching.get('point_prioritaire') or '').strip()
+    priority_origin = 'llm'
+    priority_reason = ''
     if not priority_focus:
+        priority_origin = 'fallback'
+        priority_reason = 'llm_missing'
         if recommendations:
             priority_focus = recommendations[0]['category']
         elif weaknesses:
             priority_focus = weaknesses[0]
         else:
             priority_focus = 'Progression generale'
+    elif llm_focus_primary and deterministic_primary_family != 'general' and llm_focus_primary != deterministic_primary_family:
+        priority_origin = 'fallback'
+        priority_reason = 'llm_focus_tag_mismatch'
+        priority_focus = deterministic_priority_text
+    elif not llm_focus_primary and _is_multi_focus_text(priority_focus):
+        # Keep one coherent focus sentence rather than raw category labels.
+        priority_origin = 'fallback'
+        priority_reason = 'llm_multi_axis'
+        priority_focus = deterministic_priority_text
 
     encouragement = _sanitize_encouragement(llm_coaching.get('encouragement'), weaknesses, recommendations)
+    encouragement_origin = 'llm' if encouragement else 'fallback'
+    encouragement_reason = '' if encouragement else 'llm_missing'
+
+    bilan_origin = 'llm' if llm_bilan else 'fallback'
+    bilan_reason = '' if llm_bilan else 'llm_missing'
 
     summary_payload = {
         'overall_score': overall_score,
@@ -405,28 +557,53 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         'encouragement': encouragement,
         'exercice_titre': llm_coaching.get('exercice_titre'),
         'exercice_consigne': llm_coaching.get('exercice_consigne'),
+        'focus_primary': llm_focus_primary,
     }
     exercise_recommendation = _sanitize_exercise_recommendation(exercise_recommendation, summary_payload, recommendations)
     training_plan = _sanitize_training_plan(training_plan, summary_payload, recommendations)
 
     if llm_coaching and 'exercice_titre' in llm_coaching and 'exercice_consigne' in llm_coaching:
+        llm_title = str(llm_coaching.get('exercice_titre', 'Pratique Ciblée'))
+        consigne = str(llm_coaching.get('exercice_consigne', ''))
+        llm_conflict = _llm_exercise_conflicts_with_primary(
+            deterministic_primary_focus,
+            llm_title,
+            consigne,
+            llm_focus_primary,
+        )
+        exercise_origin = 'llm'
+        exercise_reason = ''
+        # Hard guard: when frame presence is critical, keep a strict mono-axis exercise.
+        if _is_frame_critical(metrics) and _focus_family_labels(deterministic_primary_focus) == 'presence':
+            llm_conflict = True
+            exercise_origin = 'fallback'
+            exercise_reason = 'frame_critical'
+        elif llm_conflict:
+            exercise_origin = 'fallback'
+            exercise_reason = 'llm_focus_mismatch_or_multi_axis'
+
+        exercise_recommendation['focus_primary'] = deterministic_primary_focus
+        exercise_recommendation['focus_secondary'] = deterministic_secondary_focus
         exercise_recommendation['mode'] = 'single_exercise'
         exercise_recommendation['should_display'] = True
-        exercise_recommendation['title'] = str(llm_coaching.get('exercice_titre', 'Pratique Ciblée'))
-        
-        consigne = str(llm_coaching.get('exercice_consigne', ''))
-        steps = [s.strip() for s in consigne.split(' | ') if s.strip()]
-        if len(steps) < 2:
-             steps = [s.strip() for s in consigne.split('\n') if s.strip()]
-             
-        exercise_recommendation['summary'] = 'Une action concrète à tester dès la prochaine répétition.'
-        exercise_recommendation['steps'] = steps if steps else [consigne]
-        
-        # Override legacy 3-day plan so the UI prioritizes the AI mission
-        training_plan['days'] = []
+
+        if not llm_conflict:
+            steps = [s.strip() for s in consigne.split(' | ') if s.strip()]
+            if len(steps) < 2:
+                 steps = [s.strip() for s in consigne.split('\n') if s.strip()]
+            exercise_recommendation['title'] = llm_title
+            exercise_recommendation['summary'] = 'Une action concrète à tester dès la prochaine répétition.'
+            exercise_recommendation['steps'] = steps if steps else [consigne]
+            # Override legacy 3-day plan so the UI prioritizes the AI mission
+            training_plan['days'] = []
+    else:
+        exercise_origin = 'fallback'
+        exercise_reason = 'llm_missing'
 
     if exercise_recommendation.get('should_display') and not training_plan.get('days') and not exercise_recommendation.get('summary') and not exercise_recommendation.get('steps'):
         exercise_recommendation['should_display'] = False
+        exercise_origin = 'fallback'
+        exercise_reason = 'empty_exercise_payload'
 
     return {
         'session': {
@@ -438,8 +615,15 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
             'language': language,
             'fps': round(fps, 2),
             'resolution': [resolution[0], resolution[1]],
+            'processing_time': round(_safe_float(metadata.get('processing_time')), 2),
         },
         'summary': summary_payload,
+        'fallbacks': {
+            'bilan': {'origin': bilan_origin, 'reason': bilan_reason},
+            'priorite': {'origin': priority_origin, 'reason': priority_reason},
+            'encouragement': {'origin': encouragement_origin, 'reason': encouragement_reason},
+            'exercice': {'origin': exercise_origin, 'reason': exercise_reason},
+        },
         'scores': {
             'overall': overall_score,
             'voice': _safe_int(_safe_float(scores.get('voice_score')) * 10),
@@ -484,25 +668,31 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     metrics = report.get('metrics') or {}
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
-    training_plan = report.get('training_plan') or {}
     exercise_recommendation = report.get('exercise_recommendation') or {}
     transcript = report.get('transcript') or []
 
     lines: List[str] = [
         '# Rapport SpeechCoach',
         '',
-        '## Session',
-        f"- Titre : {session.get('title', 'Rapport')}",
-        f"- Date : {_format_date(str(session.get('created_at', '')))}",
-        f"- Duree : {_format_duration(session.get('duration_seconds', 0))}",
-        f"- Langue : {_format_language(str(session.get('language', 'unknown')))}",
-        '',
         '## Resume executif',
-        f"- Score global : {summary.get('overall_score', scores.get('overall', 0))}/100",
-        f"- Positionnement : {summary.get('headline', '')}",
-        f"- Priorite : {summary.get('priority_focus', '')}",
+        str(summary.get('headline', '')).strip() or 'Synthese du coach',
         '',
         str(summary.get('narrative', '')).strip() or 'Resume indisponible.',
+        '',
+        f"**Priorite :** {summary.get('priority_focus', '') or 'Progression generale'}",
+        '',
+        '## Session',
+        f"- Date de session : {_format_date(str(session.get('created_at', '')))}",
+        f"- Duree video : {_format_duration(session.get('duration_seconds', 0))}",
+        f"- Langue : {_format_language(str(session.get('language', 'unknown')))}",
+        f"- Temps d'analyse : {_format_duration(session.get('processing_time', 0))}",
+        '',
+        '## Scores & bilan',
+        f"- Score global : {summary.get('overall_score', scores.get('overall', 0))}/100",
+        f"- Voix / Debit : {_format_axis_score(scores.get('voice', 0))}",
+        f"- Posture / Gestes : {_format_axis_score(scores.get('body_language', 0))}",
+        f"- Regard / Presence : {_format_axis_score(scores.get('presence', 0))}",
+        f"- Qualite / Cadrage : {_format_axis_score(scores.get('scene', 0))}",
         '',
     ]
 
@@ -511,15 +701,7 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         lines.extend([f'> {encouragement}', ''])
 
     lines.extend([
-        '## Scores & bilan',
-        '',
-        f"**Evaluation generale : {summary.get('overall_score', scores.get('overall', 0))}/100**",
-        f"- Voix et rythme : {_format_axis_score(scores.get('voice', 0))}",
-        f"- Gestes et posture : {_format_axis_score(scores.get('body_language', 0))}",
-        f"- Regard camera et stabilite : {_format_axis_score(scores.get('presence', 0))}",
-        f"- Qualite video : {_format_axis_score(scores.get('scene', 0))}",
-        '',
-        '## Ce qui fonctionne deja bien',
+        '## Points forts',
         '',
     ])
 
@@ -528,72 +710,89 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     else:
         lines.append('- Aucun point fort detaille n a ete fourni.')
 
-    lines.extend(['', '## Ce que je vous conseille de corriger ensuite', ''])
+    lines.extend(['', '## Axes de progression', ''])
     if weaknesses:
         lines.extend([f'- {item}' for item in weaknesses])
     else:
         lines.append('- Aucun point de vigilance detaille n a ete fourni.')
 
     lines.extend([
-        '',
-        '## Votre priorite pour la prochaine repetition',
-        '',
-        f"- Focus principal : {summary.get('priority_focus', '') or training_plan.get('focus_primary', '') or 'Progression generale'}",
-    ])
-    if summary.get('encouragement'):
-        lines.append(f"- Encouragement : {summary.get('encouragement')}")
-    lines.append('')
-
-    practice_mode = str(exercise_recommendation.get('mode') or '')
-    # --- MISSION MASTER COACH (AI) ---
-    if enrichment_status == 'completed' and summary.get('exercice_titre'):
-        lines.extend([
-            f"## Plan d'action : {summary.get('exercice_titre')}",
-            '',
-            summary.get('exercice_consigne', ''),
-            '',
-        ])
-    else:
-        # Fallback to legacy training plan if AI mission is missing
-        lines.extend([
-            '## Séquence d\'entraînement recommandée',
-            '',
-        ])
-        if training_plan.get('days'):
-            for day in training_plan.get('days', []):
-                lines.append(f"### {day.get('title', 'Bloc de pratique')}")
-                for item in day.get('items', []):
-                    lines.append(f'- {item}')
-                lines.append('')
-        else:
-            lines.append(f"- {exercise_recommendation.get('summary', 'Reprenez votre discours en appliquant le conseil prioritaire.')}")
-            for step in exercise_recommendation.get('steps', []):
-                lines.append(f"- {step}")
-            lines.append('')
-
-    lines.extend([
         '## Details des mesures',
         '',
         '### Voix',
         f"- Rythme de parole : {metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
+        "- Objectif : Entre 120 et 160 mots/min (Maitrise)",
         f"- Pauses marquées (>0.5s) : {metrics.get('pause_count', 0)}",
+        "- Objectif : Moins de 4 pauses longues par minute",
         f"- Hésitations détectées : {metrics.get('filler_count', 0)} ({'Excellent !' if metrics.get('filler_count', 0) == 0 else 'A réduire'})",
+        "- Objectif : Moins de 2 mots parasites par minute",
         f"- Répétitions détectées : {metrics.get('stutter_count', 0)} ({'Excellent !' if metrics.get('stutter_count', 0) == 0 else 'A surveiller'})",
+        "- Objectif : Aucune repetition pour un score optimal",
         '',
         '### Qualite video',
-        f"- Eclairage : {_format_lighting_label(metrics.get('brightness', 0))}",
-        f"- Nettete de l image : {_format_sharpness_label(metrics.get('blur', 0))}",
+        f"- Luminosite : {metrics.get('brightness', 0)} ({_format_lighting_label(metrics.get('brightness', 0))})",
+        "- Objectif : Entre 70 et 210 pour eviter l'eblouissement",
+        f"- Nettete : {metrics.get('blur', 0)} ({_format_sharpness_label(metrics.get('blur', 0))})",
+        "- Objectif : Score superieur a 40 pour une image nette",
         '',
         '### Presence a l ecran',
         f"- Visage visible dans le cadre : {metrics.get('face_presence_ratio', 0)}%",
+        "- Objectif : Superieure a 80% dans le cadre",
         f"- Regard vers la caméra : {metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
+        "- Objectif : Soutenir la camera (> 70% du temps)",
         f"- Mains visibles : {metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
+        "- Objectif : Mains dans le cadre (> 60% du temps)",
         f"- Intensité gestuelle : {metrics.get('hands_activity_score', 0)}/10 ({metrics.get('hands_intensity_label', 'N/A')})",
-        '',
-        '## Transcription automatique',
+        "- Objectif : Mouvement equilibre (2.5 a 6.5/10)",
         '',
     ])
 
+    lines.extend([
+        '## Prochain exercice',
+        '',
+    ])
+    focus_primary = (
+        exercise_recommendation.get('focus_primary')
+        or training_plan.get('focus_primary')
+        or summary.get('priority_focus')
+        or 'Progression generale'
+    )
+    lines.append(f"- Focus : {focus_primary}")
+
+    if summary.get('exercice_titre'):
+        lines.append(f"- Exercice : {summary.get('exercice_titre')}")
+
+    exercise_summary = str(exercise_recommendation.get('summary') or '').strip()
+    if exercise_summary:
+        lines.append(f"- Objectif : {exercise_summary}")
+
+    lines.append('')
+    if summary.get('exercice_consigne'):
+        consigne = str(summary.get('exercice_consigne') or '')
+        steps = [step.strip() for step in consigne.split(' | ') if step.strip()]
+        if not steps:
+            steps = [step.strip() for step in consigne.split('\n') if step.strip()]
+        for idx, step in enumerate(steps, start=1):
+            lines.append(f"{idx}. {step}")
+        lines.append('')
+    elif exercise_recommendation.get('steps'):
+        for idx, step in enumerate(exercise_recommendation.get('steps', []), start=1):
+            lines.append(f"{idx}. {step}")
+        lines.append('')
+    elif training_plan.get('days'):
+        for day in training_plan.get('days', []):
+            lines.append(f"### {day.get('title', 'Bloc de pratique')}")
+            for item in day.get('items', []):
+                lines.append(f'- {item}')
+            lines.append('')
+    else:
+        lines.append('- Reprenez votre discours en appliquant le conseil prioritaire.')
+        lines.append('')
+
+    lines.extend([
+        '## Transcription automatique',
+        '',
+    ])
     if transcript:
         for segment in transcript:
             lines.append(
@@ -658,24 +857,6 @@ def _render_coaching_block(summary: Dict[str, Any], training_plan: Dict[str, Any
     """
 
 
-def _render_training_days(days: List[Dict[str, Any]]) -> str:
-    if not days:
-        return '<div class="note">Le plan detaille n a pas encore ete structure pour cette session.</div>'
-
-    blocks = []
-    for day in days:
-        items = ''.join(f'<li>{escape(str(item))}</li>' for item in day.get('items', [])) or '<li>Pas de detail supplementaire pour ce bloc.</li>'
-        blocks.append(
-            f"""
-            <article class=\"training-day\">
-              <h4>{escape(str(day.get('title', 'Bloc de pratique')))}</h4>
-              <ul>{items}</ul>
-            </article>
-            """
-        )
-    return ''.join(blocks)
-
-
 def _render_transcript(transcript: List[Dict[str, Any]]) -> str:
     if not transcript:
         return '<div class="note">Aucune transcription disponible pour cette session.</div>'
@@ -710,8 +891,6 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     duration = _format_duration(session.get('duration_seconds', 0))
     language = _format_language(str(session.get('language', 'unknown')))
     encouragement = str(summary.get('encouragement') or '').strip()
-    practice_mode = str(exercise_recommendation.get('mode') or '')
-
     practice_title = "Plan d'action"
     practice_section = ''
     
@@ -729,18 +908,18 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
         </article>
         """
     elif exercise_recommendation.get('should_display', True):
-        practice_title = 'Plan de pratique'
-        if practice_mode == 'light_tip':
-            practice_title = 'Conseil de répétition'
-        
-        practice_body = _render_training_days(training_plan.get('days', []))
-        if not training_plan.get('days'):
-            practice_body = f"<div class=\"note\">{escape(str(exercise_recommendation.get('summary') or 'Reprenez votre discours en appliquant le conseil prioritaire.'))}</div>"
-            
+        steps = [escape(str(step)) for step in (exercise_recommendation.get('steps') or []) if str(step).strip()]
+        summary = escape(str(exercise_recommendation.get('summary') or 'Reprenez votre discours en appliquant le conseil prioritaire.'))
+        if steps:
+            numbered_steps = ''.join(f'<li>{step}</li>' for step in steps)
+            practice_body = f'<div class="note">{summary}</div><ol style="margin: 12px 0 0; padding-left: 20px;">{numbered_steps}</ol>'
+        else:
+            practice_body = f'<div class="note">{summary}</div>'
+
         practice_section = f"""
         <article class=\"card\">
           <div class=\"section-title\"><h2>{escape(practice_title)}</h2></div>
-          <div class=\"training-grid\">{practice_body}</div>
+          {practice_body}
         </article>
         """
 

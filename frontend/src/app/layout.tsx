@@ -5,22 +5,10 @@ import "./globals.css";
 import { AuthProvider } from "@/context/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
-/*
-  Font strategy — calm, refined, human:
-  ─ Cormorant Garamond  →  display / headings
-      Elegant old-style serif. Gives headings warmth and presence without
-      feeling corporate. Pairs beautifully with the teal-and-sand palette.
-  ─ DM Sans             →  body / UI
-      Geometric but soft — readable at every size, never tiring on the eye.
-      Much more relaxed than Source Sans.
-  ─ IBM Plex Mono       →  code / data
-      Retained — it's excellent and matches the understated tone.
-*/
-
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   display: "swap",
 });
@@ -28,22 +16,22 @@ const cormorant = Cormorant_Garamond({
 const dmSans = DM_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f5f3ee" },
-    { media: "(prefers-color-scheme: dark)",  color: "#131b23" },
-  ],
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export const metadata: Metadata = {
@@ -54,11 +42,6 @@ export const metadata: Metadata = {
   description:
     "Plateforme intelligente d'analyse et de coaching pour vos présentations orales. Obtenez un feedback personnalisé sur votre rythme, clarté et impact.",
   metadataBase: new URL("https://speechcoach.app"),
-  openGraph: {
-    type: "website",
-    locale: "fr_FR",
-    siteName: "SpeechCoach",
-  },
 };
 
 export default function RootLayout({
@@ -73,8 +56,14 @@ export default function RootLayout({
       className={`${cormorant.variable} ${dmSans.variable} ${ibmPlexMono.variable}`}
     >
       <body className="font-sans antialiased" suppressHydrationWarning>
+        <a href="#main-content" className="skip-link">
+          Passer au contenu principal
+        </a>
+
         <AuthProvider>
-          {children}
+          <div id="main-content" tabIndex={-1} className="outline-none">
+            {children}
+          </div>
           <Toaster position="top-right" expand={false} richColors />
         </AuthProvider>
       </body>

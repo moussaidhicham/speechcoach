@@ -41,134 +41,55 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: 0.5rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 }
 
-/* ─── Light mode ─────────────────────────────────────────────────── */
-/*
-  Philosophy: warm white base, soft sage-teal primary, dusty rose accent.
-  Low saturation throughout — nothing shouts. Contrast is achieved through
-  lightness, not color intensity.
-*/
-
+/* ─── Light mode (clean, airy) ───────────────────────────────────── */
 :root {
-  /* Surfaces */
-  --background:         45 28% 96%;   /* warm off-white, like uncoated paper  */
-  --card:               0  0% 100%;
-  --popover:            0  0% 100%;
-
-  /* Text */
-  --foreground:         220 18% 18%;  /* soft near-black, easier than #000    */
-  --card-foreground:    220 18% 18%;
-  --popover-foreground: 220 18% 18%;
-
-  /* Primary — sage teal, desaturated and calm */
-  --primary:            172 38% 34%;
-  --primary-foreground: 172  18% 97%;
-
-  /* Secondary — warm sand */
-  --secondary:          40  22% 92%;
-  --secondary-foreground: 220 16% 22%;
-
-  /* Muted — barely-there warm grey */
-  --muted:              40  14% 90%;
-  --muted-foreground:   220  8% 48%;
-
-  /* Accent — dusty warm sand, used sparingly */
-  --accent:             30  35% 86%;
-  --accent-foreground:  220 16% 22%;
-
-  /* Destructive */
-  --destructive:        5  45% 48%;
-  --destructive-foreground: 40 30% 97%;
-
-  /* Borders & inputs — very subtle */
-  --border:             40  14% 84%;
-  --input:              40  14% 84%;
-  --ring:               172 38% 54%;
-  --radius:             0.875rem;
-
-  /* Sidebar — slightly warmer than page */
-  --sidebar:            42  22% 98%;
-  --sidebar-foreground: 220 18% 18%;
-  --sidebar-primary:    172 38% 34%;
-  --sidebar-primary-foreground: 172 18% 97%;
-  --sidebar-accent:     40  22% 92%;
-  --sidebar-accent-foreground:  220 16% 22%;
-  --sidebar-border:     40  14% 84%;
-  --sidebar-ring:       172 38% 54%;
-
-  /* Charts — muted, harmonious */
-  --chart-1: 172 38% 38%;  /* sage teal    */
-  --chart-2: 30  40% 62%;  /* warm sand    */
-  --chart-3: 210 22% 42%;  /* slate blue   */
-  --chart-4: 148 28% 44%;  /* muted green  */
-  --chart-5: 5   40% 50%;  /* dusty red    */
-}
-
-/* ─── Dark mode ──────────────────────────────────────────────────── */
-/*
-  Deep blue-grey base — warmer than pure black, easier to read for hours.
-  Primary becomes a lighter sage so it has enough contrast without being harsh.
-*/
-
-.dark {
-  --background:         218 24% 11%;
-  --card:               218 20% 14%;
-  --popover:            218 20% 14%;
-
-  --foreground:         44  28% 92%;
-  --card-foreground:    44  28% 92%;
-  --popover-foreground: 44  28% 92%;
-
-  --primary:            172 44% 52%;
-  --primary-foreground: 218 24% 10%;
-
-  --secondary:          218 16% 20%;
-  --secondary-foreground: 44  28% 92%;
-
-  --muted:              218 16% 20%;
-  --muted-foreground:   210 10% 62%;
-
-  --accent:             34  30% 26%;
-  --accent-foreground:  44  28% 92%;
-
-  --destructive:        5   52% 54%;
-  --destructive-foreground: 44 28% 92%;
-
-  --border:             218 14% 22%;
-  --input:              218 14% 22%;
-  --ring:               172 44% 52%;
-
-  --sidebar:            218 22% 12%;
-  --sidebar-foreground: 44  28% 92%;
-  --sidebar-primary:    172 44% 52%;
-  --sidebar-primary-foreground: 218 24% 10%;
-  --sidebar-accent:     218 16% 20%;
-  --sidebar-accent-foreground:  44  28% 92%;
-  --sidebar-border:     218 14% 22%;
-  --sidebar-ring:       172 44% 52%;
-
-  --chart-1: 172 44% 52%;
-  --chart-2: 34  44% 58%;
-  --chart-3: 44  28% 88%;
-  --chart-4: 148 36% 50%;
-  --chart-5: 5   50% 56%;
+  --background: 0 0% 100%;       /* #FFFFFF */
+  --foreground: 222 47% 11%;     /* #0F172A - Deep Slate */
+  
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  
+  --primary: 258 91% 66%;        /* #8B5CF6 - Violet */
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 210 40% 98%;      /* #F8FAFC - Light Gray */
+  --secondary-foreground: 222 47% 11%;
+  
+  --muted: 210 40% 98%;
+  --muted-foreground: 215 16% 47%; /* #64748B - Slate Muted */
+  
+  --accent: 258 91% 66%;
+  --accent-foreground: 0 0% 100%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 214 32% 91%;         /* #E2E8F0 - Soft Gray */
+  --input: 214 32% 91%;
+  --ring: 258 91% 66%;
+  
+  --radius: 1.5rem;
 }
 
 /* ─── Base layer ─────────────────────────────────────────────────── */
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
 
   html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-    /* Improve text rendering across platforms */
+    @apply font-sans scroll-smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -176,123 +97,134 @@
 
   body {
     @apply min-h-screen bg-background text-foreground;
-    /*
-      Calm, near-flat background.
-      A single gentle radial wash top-left adds depth without visual noise.
-      No grid lines — they create unnecessary busyness.
-    */
-    background-image:
-      radial-gradient(ellipse 80% 50% at 0% 0%, hsl(var(--accent) / 0.18), transparent),
-      radial-gradient(ellipse 60% 40% at 100% 100%, hsl(var(--primary) / 0.06), transparent);
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 0% 0%, hsl(var(--primary) / 0.05), transparent 50%),
+      radial-gradient(ellipse 80% 50% at 100% 100%, hsl(274 84% 56% / 0.03), transparent 50%);
+    background-attachment: fixed;
   }
 
-  h1, h2, h3, h4 {
-    font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    line-height: 1.2;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight leading-[1.1];
   }
 
-  /* Softer focus ring — visible but not jarring */
   :focus-visible {
-    outline: 2px solid hsl(var(--ring) / 0.7);
-    outline-offset: 2px;
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
   }
 
   ::selection {
     background: hsl(var(--primary) / 0.15);
     color: hsl(var(--foreground));
   }
-
-  /* Smooth transitions when switching themes */
-  *, *::before, *::after {
-    transition-property: background-color, border-color, color;
-    transition-duration: 0.15s;
-    transition-timing-function: ease;
-  }
 }
 
-/* ─── Layout shells ───────────────────────────────────────────────── */
-
-/*
-  editorial-shell: main page container.
-  Barely-there top glow — gives the page a light source without distraction.
-*/
-.editorial-shell {
-  background-image:
-    radial-gradient(ellipse 70% 35% at 50% -8%, hsl(var(--primary) / 0.09), transparent);
+/* ─── Glassmorphism utilities ────────────────────────────────────── */
+.glass {
+  background: hsla(0, 0%, 100%, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
 }
 
-/*
-  editorial-hero: prominent feature card / hero section.
-  Elevated white surface, soft shadow, subtle warm tint in corner.
-*/
-.editorial-hero {
+.glass-heavy {
+  background: hsla(0, 0%, 100%, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(var(--border) / 0.6);
+}
+
+/* ─── Bento grid utilities ───────────────────────────────────────── */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+
+.bento-card {
+  @apply relative overflow-hidden bg-white border border-border rounded-[var(--radius-lg)] p-8 transition-all duration-300;
+}
+
+.bento-card:hover {
+  @apply border-primary/20 shadow-xl shadow-primary/5 -translate-y-1;
+}
+
+/* ─── Gradient text ──────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #8B5CF6 0%, #9333EA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Hero glow effects ──────────────────────────────────────────── */
+.hero-glow {
   position: relative;
-  overflow: hidden;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 1px 2px hsl(220 18% 10% / 0.04),
-    0 8px 32px hsl(220 18% 10% / 0.06),
-    0 32px 64px hsl(220 18% 10% / 0.04);
 }
 
-/* Gentle warm blush in top-left corner of hero */
-.editorial-hero::before {
+.hero-glow::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse 55% 45% at 0% 0%, hsl(var(--accent) / 0.18), transparent);
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, hsl(var(--primary) / 0.03), transparent 70%);
   pointer-events: none;
 }
 
-/*
-  paper-panel: secondary content surfaces (sidebars, info boxes).
-  Slightly off-white, quieter than the hero.
-*/
-.paper-panel {
-  background: hsl(var(--card) / 0.92);
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius-md);
-  box-shadow:
-    0 1px 2px hsl(220 18% 10% / 0.03),
-    0 4px 16px hsl(220 18% 10% / 0.05);
+/* ─── Soft color surfaces ─────────────────────────────────────────── */
+.surface-violet {
+  background:
+    linear-gradient(165deg, hsl(var(--primary) / 0.12) 0%, hsl(var(--card)) 38%, hsl(var(--card)) 100%);
 }
 
-/*
-  data-ribbon: banners, callouts, stat bars.
-  Solid primary — used sparingly so it stays meaningful.
-*/
-.data-ribbon {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  border-radius: var(--radius-sm);
+.surface-teal {
+  background:
+    linear-gradient(165deg, hsl(188 58% 52% / 0.13) 0%, hsl(var(--card)) 42%, hsl(var(--card)) 100%);
 }
 
-/*
-  studio-stage: dark presentation areas (charts on dark bg, demo areas).
-  Deep and calm, not harsh black.
-*/
-.studio-stage {
+.surface-amber {
+  background:
+    linear-gradient(165deg, hsl(35 95% 58% / 0.14) 0%, hsl(var(--card)) 44%, hsl(var(--card)) 100%);
+}
+
+.surface-mixed {
+  background:
+    radial-gradient(90% 120% at 0% 0%, hsl(var(--primary) / 0.13), transparent 52%),
+    radial-gradient(120% 120% at 100% 0%, hsl(35 95% 58% / 0.10), transparent 55%),
+    hsl(var(--card));
+}
+
+/* ─── Animated gradient border ───────────────────────────────────── */
+.gradient-border {
   position: relative;
-  overflow: hidden;
-  background: hsl(218 24% 10%);
+  background: #fff;
   border-radius: var(--radius-lg);
 }
 
-/* Very subtle dot grid — atmospheric, not distracting */
-.studio-stage::after {
+.gradient-border::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background-image: radial-gradient(circle, hsl(0 0% 100% / 0.06) 1px, transparent 1px);
-  background-size: 24px 24px;
-  pointer-events: none;
+  inset: -1px;
+  border-radius: calc(var(--radius-lg) + 1px);
+  padding: 1px;
+  background: linear-gradient(135deg, #8B5CF6, #9333EA);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-/* ─── Accessibility ───────────────────────────────────────────────── */
+.gradient-border:hover::before {
+  opacity: 0.5;
+}
 
+/* ─── Stats counter styles ───────────────────────────────────────── */
+.stat-number {
+  @apply font-display text-5xl font-bold leading-none bg-clip-text text-transparent;
+  background-image: linear-gradient(135deg, #0F172A 0%, #8B5CF6 100%);
+}
+
+/* ─── Accessibility ──────────────────────────────────────────────── */
 .skip-link {
   position: fixed;
   left: 1rem;
@@ -302,9 +234,8 @@
   border-radius: var(--radius-sm);
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.5rem;
   font-weight: 500;
-  font-size: 0.875rem;
   transition: transform 0.15s ease;
 }
 
@@ -312,58 +243,23 @@
   transform: translateY(0);
 }
 
-/* ─── Reduced motion ──────────────────────────────────────────────── */
-
+/* ─── Reduced motion ─────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
 }
 
-/* ─── Print ───────────────────────────────────────────────────────── */
-
+/* ─── Print ──────────────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
-  .print-only { display: block !important; }
-
-  body {
-    background: white !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    color: black !important;
-  }
-
-  .print-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
-
+  body { background: white !important; color: black !important; }
   .print-card {
-    border: 1px solid #d1d5db !important;
+    border: 1px solid #ddd !important;
     box-shadow: none !important;
     break-inside: avoid;
-    margin-bottom: 2rem;
-    background: white !important;
-    color: black !important;
-  }
-
-  .print-break-before { break-before: page; }
-
-  canvas, svg { max-width: 100% !important; height: auto !important; }
-
-  header, footer, nav, aside, .fixed, .sticky { display: none !important; }
-
-  main { padding-top: 0 !important; margin-top: 0 !important; }
-
-  .bg-primary {
-    background-color: #2a7d6e !important;
-    color: white !important;
-    -webkit-print-color-adjust: exact;
   }
 }

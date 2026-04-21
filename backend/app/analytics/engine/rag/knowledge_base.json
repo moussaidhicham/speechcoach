@@ -2,8 +2,8 @@
   {
     "id": "fiche-voix-001",
     "category": "Voix & Débit",
-    "title": "La Ponctuation Mentale (Débit Lent)",
-    "problem_keywords": ["lent", "endormir", "bas", "rythme"],
+    "title": "La Ponctuation Mentale (Correction Débit Lent)",
+    "problem_keywords": ["débit", "lent", "lenteur", "mou", "endormir", "bas", "rythme"],
     "curriculum_level": 1,
     "content": "Un débit trop lent peut donner une impression de manque d'énergie. L'objectif est de dynamiser vos phrases pour captiver votre auditoire, même sans texte sous les yeux.",
     "exercise_steps": [
@@ -15,8 +15,8 @@
   {
     "id": "fiche-voix-002",
     "category": "Voix & Débit",
-    "title": "Le Rythme Respiratoire (Débit Rapide)",
-    "problem_keywords": ["rapide", "vite", "précipité", "respirer", "rythme"],
+    "title": "Le Rythme Respiratoire (Correction Débit Rapide)",
+    "problem_keywords": ["débit", "rapide", "vite", "vitesse", "précipité", "respirer", "rythme"],
     "curriculum_level": 1,
     "content": "Parler trop vite sature l'attention du public. La méthode 'Toastmasters' consiste à utiliser le silence comme un outil pour laisser respirer vos idées.",
     "exercise_steps": [

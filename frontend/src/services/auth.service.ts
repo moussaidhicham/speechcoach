@@ -60,6 +60,28 @@ export const authService = {
     await api.delete('/user/account');
   },
 
+  async requestPasswordReset(email: string): Promise<void> {
+    await api.post('/auth/forgot-password', { email });
+  },
+
+  async resetPassword(password: string, token: string): Promise<void> {
+    await api.post('/auth/reset-password', { password, token });
+  },
+
+  async verifyEmail(token: string): Promise<{ access_token: string; user: User }> {
+    const { data } = await api.post('/auth/verify', { token });
+    return data;
+  },
+
+  async requestVerification(email: string): Promise<void> {
+    await api.post('/auth/request-verify', { email });
+  },
+
+  async getStatus(): Promise<User & { is_verified: boolean }> {
+    const { data } = await api.get('/auth/status');
+    return data;
+  },
+
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

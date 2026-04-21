@@ -19,7 +19,7 @@ from app.analytics.report_formatter import (
 )
 from app.auth.router import current_active_user
 from app.db.database import get_session
-from app.users.models import User
+from app.db.models import User
 
 status_router = APIRouter()
 

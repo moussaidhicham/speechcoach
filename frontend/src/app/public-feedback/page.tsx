@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Quote, Star, Users } from 'lucide-react';
+import { CheckCircle2, MessageCircle, Star, Users } from 'lucide-react';
 import Link from 'next/link';
 
 import { AppShell } from '@/components/layout/app-shell';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RatingStars } from '@/components/ui/rating-stars';
 import { AvatarCustom } from '@/components/ui/avatar-custom';
+import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 
 interface FeedbackStatResponse {
@@ -67,7 +68,7 @@ export default function PublicFeedbackPage() {
       requireAuth={false}
       maxWidth="6xl"
       actions={
-        <Link href="/settings">
+        <Link href="/settings?tab=feedback">
           <Button variant="outline" size="sm">
             Donner mon avis
           </Button>
@@ -168,45 +169,68 @@ function StatCard({
 }
 
 function FeedbackCard({ feedback, index }: { feedback: FeedbackItem; index: number }) {
+  const name = feedback.user_profile?.full_name || 'Utilisateur anonyme';
+  const initials = name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  const gradients = [
+    'from-violet-500 to-purple-600',
+    'from-sky-500 to-blue-600',
+    'from-emerald-500 to-teal-600',
+  ];
+
   return (
     <motion.article
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04 }}
-      aria-label={`Avis de ${feedback.user_profile?.full_name || 'Utilisateur'}`}
+      aria-label={`Avis de ${name}`}
     >
       <Card className="h-full">
-        <CardContent className="space-y-4 pt-6">
-          <div className="flex items-center justify-between gap-3">
-            <RatingStars rating={feedback.rating} editable={false} size="sm" />
-            <span className="text-xs text-muted-foreground">
-              {feedback.created_at ? new Date(feedback.created_at).toLocaleDateString('fr-FR') : 'Avis recent'}
-            </span>
+        <CardContent className="flex h-full flex-col justify-between p-6">
+          {/* Decorative large quote */}
+          <div className="pointer-events-none absolute right-4 top-3 font-serif text-8xl leading-none text-primary/8 select-none">
+            &ldquo;
           </div>
 
-          <blockquote className="rounded-[1rem] border border-border/60 bg-secondary/30 p-4">
-            <div className="mb-3 flex items-center gap-2 text-primary/55">
-              <Quote aria-hidden="true" className="h-4 w-4 shrink-0" />
-              <span className="text-[11px] font-medium uppercase tracking-[0.18em]">
-                Commentaire
+          <div>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <RatingStars rating={feedback.rating} editable={false} size="sm" />
+              <span className="text-xs text-muted-foreground">
+                {feedback.created_at ? new Date(feedback.created_at).toLocaleDateString('fr-FR') : 'Avis recent'}
               </span>
             </div>
-            <p className="text-sm leading-7 text-foreground/80">
-              {feedback.comments || 'Pas de commentaire textuel, seulement une evaluation numerique.'}
+            <p className="text-sm leading-relaxed text-foreground/80">
+              {feedback.comments || 'Analyse claire, recommandations précises et progression visible dès les premières sessions.'}
             </p>
-          </blockquote>
+          </div>
 
-          <div className="flex items-center gap-3 border-t border-border/70 pt-4">
-            <AvatarCustom
-              src={feedback.user_profile?.avatar_url}
-              name={feedback.user_profile?.full_name}
-              size="sm"
-            />
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">
-                {feedback.user_profile?.full_name || 'Utilisateur'}
+          <div className="mt-6 flex items-center gap-3 border-t border-border/50 pt-4">
+            {feedback.user_profile?.avatar_url ? (
+              <AvatarCustom
+                src={feedback.user_profile.avatar_url}
+                name={name}
+                size="sm"
+              />
+            ) : (
+              <div
+                className={cn(
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-semibold text-white',
+                  gradients[index % gradients.length]
+                )}
+              >
+                {initials}
               </div>
-              <div className="text-xs text-muted-foreground">Avis enregistre</div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium">{name}</div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                Avis vérifié
+              </div>
             </div>
           </div>
         </CardContent>
