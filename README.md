@@ -20,6 +20,41 @@ SpeechCoach ne se contente pas de transcrire du texte ; il évalue la **performa
 
 ---
 
+## 📂 Structure du Projet
+
+```text
+SpeechCoach/
+├── backend/
+│   ├── app/
+│   │   ├── analytics/
+│   │   │   ├── engine/             # Cœur de l'analyse ML
+│   │   │   │   ├── agent/          # Logique Agent Coach & Prompts
+│   │   │   │   ├── audio/          # Traitement ASR & Acoustique
+│   │   │   │   ├── metrics/        # Schémas & Logique de scoring
+│   │   │   │   ├── rag/            # Moteur de recherche vectorielle
+│   │   │   │   └── vision/         # Analyse MediaPipe & Posture
+│   │   │   └── storage/            # Stockage local (vidéos, frames, rapports)
+│   │   ├── auth/                   # Gestion JWT & Sécurité
+│   │   ├── core/                   # Configuration & Envoi d'e-mails
+│   │   ├── db/                     # Modèles SQLModel & Connexion
+│   │   └── worker/                 # Configuration Celery & Tâches
+│   ├── models/                     # Modèles ML locaux (Non suivis par Git)
+│   ├── Modelfile                   # Recette pour construire le modèle Ollama
+│   ├── requirements.txt            # Dépendances Python
+│   └── .env                        # Variables d'environnement
+├── frontend/
+│   ├── src/
+│   │   ├── app/                    # Pages & Routes Next.js
+│   │   ├── components/             # UI Reusable (Shadcn/Custom)
+│   │   ├── features/               # Logique métier complexe (ex: Onboarding)
+│   │   └── services/               # Appels API Axios
+│   └── package.json                # Dépendances Node.js
+├── fine_tuning/                    # Notebooks & Datasets d'entraînement
+└── report/                         # Rapports PFE & Présentations
+```
+
+---
+
 ## 🚀 Guide d'Installation
 
 ### 1. Prérequis
@@ -35,59 +70,65 @@ git clone https://github.com/moussaidhicham/speechcoach.git
 cd speechcoach
 ```
 
-### 3. Configuration du Backend
+### 3. Installation des Modèles (Important) ⚠️
+Certains modèles sont trop volumineux pour GitHub et doivent être téléchargés manuellement.
+
+**A. Faster-Whisper (Medium)**
+```powershell
+# Allez dans le dossier models du backend
+cd backend/models
+# Cloner le modèle depuis Hugging Face
+git clone https://huggingface.co/Systran/faster-whisper-medium whisper-medium
+```
+
+**B. Modèle Fine-Tuné (Ollama)**
+Si vous utilisez la version locale du coach (`speechcoach`), assurez-vous d'avoir le fichier GGUF dans `backend/models/`.
 ```powershell
 cd backend
+ollama create speechcoach -f Modelfile
+```
+
+### 4. Configuration du Backend
+```powershell
+# Depuis le dossier /backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# Configurer l'environnement
-# Créez un fichier .env dans /backend avec vos accès MYSQL et votre GROQ_API_KEY
+# Créer la base de données MySQL
+# mysql -u root -e "CREATE DATABASE speechcoach;"
+
+# Configurer l'environnement (.env)
 uvicorn app.main:app --reload --port 8000
 ```
 
-### 4. Lancement du Worker (Celery)
+### 5. Lancement du Worker (Celery)
 *Indispensable pour l'analyse vidéo en arrière-plan.*
 ```powershell
-cd backend
-.\venv\Scripts\Activate.ps1
-# Lancer Redis en parallèle
+# Nouveau terminal (Backend venv activé)
 redis-server
-# Lancer le worker
 celery -A app.worker.celery_app.celery_app worker --loglevel=info -Q default,ai_processing -P solo
 ```
 
-### 5. Configuration du Frontend
+### 6. Lancement du Frontend
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-Accédez à l'application sur : [http://localhost:3000](http://localhost:3000)
-
 ---
 
 ## 📸 Fonctionnalités Clés
 - **Interface Glassmorphism** : Un design moderne, haut de gamme et contrasté.
-- **Onboarding Intelligent** : Un assistant en 5 étapes pour adapter le coaching à votre niveau (Débutant à Expert).
+- **Onboarding Intelligent** : Un assistant en 5 étapes pour adapter le coaching à votre niveau.
 - **Analyse Multi-Appareils** : Seuils de vision spécifiques pour Laptop, Tablette et Smartphone.
 - **Sécurisation SMTP** : Vérification d'e-mail et récupération de mot de passe intégrées.
-- **Rapports Complets** : Exportation des analyses au format PDF et Markdown.
-
----
-
-## 📂 Structure du Projet
-- `backend/app/` : Cœur de l'application FastAPI (Auth, Analytics, DB).
-- `backend/app/analytics/engine/` : Le "Cerveau" (Audio, Vision, RAG, Agent).
-- `frontend/src/` : Application Next.js (Composants, Features, Services).
-- `report/` : Rapports d'avancement PFE et supports de présentation.
 
 ---
 
 ## 🤝 Contribution
-Ce projet fait partie du **Master SIE (Systèmes Intelligents pour l'Éducation)**. Développé par Hicham Moussaid sous la direction du Pr. Hessane.
+Projet de Master SIE (Systèmes Intelligents pour l'Éducation). Développé par Hicham Moussaid sous la direction du Pr. Hessane.
 
 ---
 *SpeechCoach : Transformez vos métriques en maîtrise.*
