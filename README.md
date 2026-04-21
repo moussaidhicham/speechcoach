@@ -1,78 +1,93 @@
 # 🎙️ SpeechCoach
 
-SpeechCoach is a premium AI-powered speaking-coach platform. It analyzes presentation videos through a sophisticated hybrid pipeline—combining deterministic signal processing with agentic AI coaching—to provide actionable pedagogical feedback.
+SpeechCoach est une plateforme de coaching en prise de parole propulsée par l'IA. Elle analyse les vidéos de présentation via un pipeline hybride sophistiqué — combinant le traitement déterministe du signal et le coaching agentique par IA — pour fournir des retours pédagogiques actionnables.
 
 ---
 
-## 🏛️ Architecture: The Hybrid Master Coach
-SpeechCoach doesn't just transcribe text; it evaluates the **holistic performance** of an orator:
-1.  **Deterministic Engine**: Uses **MediaPipe** (Vision) and **Librosa** (Audio) to measure eye contact, posture, vocal energy, and filler counts.
-2.  **Agentic AI (Master Coach)**: A **Groq/Llama-3.3-70B** agent processes raw metrics and contextual data from a **FAISS RAG** (Knowledge Base) to curate a unique "Master Coach Mission" for each session.
-3.  **Governance**: A post-processing layer ensures AI feedback is perfectly aligned with mathematical metrics before delivery.
+## 🏛️ Architecture : Le "Master Coach" Hybride
+SpeechCoach ne se contente pas de transcrire du texte ; il évalue la **performance holistique** de l'orateur :
+1.  **Moteur Déterministe** : Utilise **MediaPipe** (Vision) et **Librosa** (Audio) pour mesurer le contact visuel, la posture, l'énergie vocale et le comptage des mots de remplissage.
+2.  **IA Agentique (Master Coach)** : Un agent **Groq/Llama-3.3-70B** traite les métriques brutes et les données contextuelles d'une base **RAG FAISS** (base de connaissances) pour concevoir une "Mission Master Coach" unique pour chaque session.
+3.  **Gouvernance** : Une couche de post-traitement assure que les retours de l'IA sont parfaitement alignés avec les métriques mathématiques avant la livraison.
 
 ---
 
-## 🛠️ Tech Stack
-- **Backend**: FastAPI (Python), Celery + Redis (Worker Queue), SQLAlchemy + MySQL (Database).
-- **Frontend**: Next.js 15, Tailwind CSS, Framer Motion (Glassmorphism UI).
-- **Core AI**: Faster-Whisper (ASR), MediaPipe (Pose/Face), FAISS (Vector Store).
-- **Inference**: Groq LPU (Production) / Ollama (Local Fallback).
+## 🛠️ Stack Technique
+- **Backend** : FastAPI (Python), Celery + Redis (File d'attente), SQLAlchemy + MySQL (Base de données).
+- **Frontend** : Next.js 15, Tailwind CSS, Framer Motion (Interface Glassmorphism).
+- **IA Core** : Faster-Whisper (ASR), MediaPipe (Pose/Face), FAISS (Vector Store).
+- **Inférence** : Groq LPU (Production) / Ollama (Fallback local).
 
 ---
 
-## 🚀 Quick Start (Local Development)
+## 🚀 Guide d'Installation
 
-### 1. Prerequisites
+### 1. Prérequis
+Assurez-vous d'avoir installé :
 - **Python 3.10+** & **Node.js 20+**
-- **FFmpeg** (Ensure it's in your PATH)
+- **FFmpeg** (Indispensable pour l'audio/vidéo, doit être dans le PATH)
 - **MySQL** & **Redis**
 
-### 2. Backend Setup
+### 2. Installation du Projet
+```powershell
+# Cloner le dépôt
+git clone https://github.com/moussaidhicham/speechcoach.git
+cd speechcoach
+```
+
+### 3. Configuration du Backend
 ```powershell
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-# Configure backend/.env with your MYSQL_DB and GROQ_API_KEY
-uvicorn app.main:app --reload
+
+# Configurer l'environnement
+# Créez un fichier .env dans /backend avec vos accès MYSQL et votre GROQ_API_KEY
+uvicorn app.main:app --reload --port 8000
 ```
 
-### 3. Worker Setup (Celery)
-*Required for video analysis.*
+### 4. Lancement du Worker (Celery)
+*Indispensable pour l'analyse vidéo en arrière-plan.*
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1
+# Lancer Redis en parallèle
+redis-server
+# Lancer le worker
 celery -A app.worker.celery_app.celery_app worker --loglevel=info -Q default,ai_processing -P solo
 ```
 
-### 4. Frontend Setup
+### 5. Configuration du Frontend
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
----
-
-## 📸 Key Features
-- **Glassmorphism UI**: A high-contrast, premium interface for a professional user experience.
-- **Smart Onboarding**: 5-step wizard to tailor coaching to your level (Beginner to Expert).
-- **Device-Aware Analysis**: Specific vision thresholds for Laptop, Tablet, and Smartphone recording.
-- **Secure Auth**: SMTP-integrated email verification and password recovery.
-- **Deep Insights**: Exportable reports in PDF and Markdown formats.
+Accédez à l'application sur : [http://localhost:3000](http://localhost:3000)
 
 ---
 
-## 📂 Project Structure
-- `backend/app/`: FastAPI application cores (Auth, Analytics, DB).
-- `backend/app/analytics/engine/`: The "Brain" (Audio, Vision, RAG, Agent).
-- `frontend/src/`: Next.js application (Components, Features, Services).
-- `report/`: PFE Progress reports and presentation assets.
+## 📸 Fonctionnalités Clés
+- **Interface Glassmorphism** : Un design moderne, haut de gamme et contrasté.
+- **Onboarding Intelligent** : Un assistant en 5 étapes pour adapter le coaching à votre niveau (Débutant à Expert).
+- **Analyse Multi-Appareils** : Seuils de vision spécifiques pour Laptop, Tablette et Smartphone.
+- **Sécurisation SMTP** : Vérification d'e-mail et récupération de mot de passe intégrées.
+- **Rapports Complets** : Exportation des analyses au format PDF et Markdown.
+
+---
+
+## 📂 Structure du Projet
+- `backend/app/` : Cœur de l'application FastAPI (Auth, Analytics, DB).
+- `backend/app/analytics/engine/` : Le "Cerveau" (Audio, Vision, RAG, Agent).
+- `frontend/src/` : Application Next.js (Composants, Features, Services).
+- `report/` : Rapports d'avancement PFE et supports de présentation.
 
 ---
 
 ## 🤝 Contribution
-This project is part of the **Master SIE (Systèmes Intelligents pour l'Éducation)** PFE. Developed by Hicham Moussaid.
+Ce projet fait partie du **Master SIE (Systèmes Intelligents pour l'Éducation)**. Développé par Hicham Moussaid sous la direction du Pr. Hessane.
 
 ---
-*SpeechCoach: Transform your metrics into mastery.*
+*SpeechCoach : Transformez vos métriques en maîtrise.*
