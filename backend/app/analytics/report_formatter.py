@@ -459,8 +459,8 @@ def _llm_exercise_conflicts_with_primary(
     return any(family != primary_family for family in mentioned_families)
 
 
-def _is_frame_critical(metrics: Dict[str, Any]) -> bool:
-    face_presence = _safe_int(metrics.get('face_presence_ratio'))
+def _is_frame_critical(vision_metrics: Dict[str, Any]) -> bool:
+    face_presence = _safe_int(_safe_float(vision_metrics.get('face_presence_ratio')) * 100)
     return face_presence < 80
 
 
@@ -574,7 +574,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         exercise_origin = 'llm'
         exercise_reason = ''
         # Hard guard: when frame presence is critical, keep a strict mono-axis exercise.
-        if _is_frame_critical(metrics) and _focus_family_labels(deterministic_primary_focus) == 'presence':
+        if _is_frame_critical(vision) and _focus_family_labels(deterministic_primary_focus) == 'presence':
             llm_conflict = True
             exercise_origin = 'fallback'
             exercise_reason = 'frame_critical'
