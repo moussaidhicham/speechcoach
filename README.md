@@ -16,7 +16,9 @@ SpeechCoach ne se contente pas de transcrire du texte ; il évalue la **performa
 - **Backend** : FastAPI (Python), Celery + Redis (File d'attente), SQLAlchemy + MySQL (Base de données).
 - **Frontend** : Next.js 15, Tailwind CSS, Framer Motion (Interface Glassmorphism).
 - **IA Core** : Faster-Whisper (ASR), MediaPipe (Pose/Face), FAISS (Vector Store).
-- **Inférence** : Groq LPU (Production) / Ollama (Fallback local).
+- **Inférence** : 
+    - **Mode Cloud (Défaut)** : Groq LPU + Llama 3.3 (Haute performance).
+    - **Mode Local (Optionnel)** : Ollama + Fine-tuned Qwen (Usage hors-ligne).
 
 ---
 
@@ -71,22 +73,26 @@ cd speechcoach
 ```
 
 ### 3. Installation des Modèles (Important) ⚠️
-Certains modèles sont trop volumineux pour GitHub et doivent être téléchargés manuellement.
+Les modèles ML sont volumineux et ne sont pas stockés sur GitHub.
 
 **A. Faster-Whisper (Medium)**
+Le backend utilise Whisper en local pour une confidentialité totale de l'audio.
 ```powershell
-# Allez dans le dossier models du backend
 cd backend/models
 # Cloner le modèle depuis Hugging Face
 git clone https://huggingface.co/Systran/faster-whisper-medium whisper-medium
 ```
 
-**B. Modèle Fine-Tuné (Ollama)**
-Si vous utilisez la version locale du coach (`speechcoach`), assurez-vous d'avoir le fichier GGUF dans `backend/models/`.
-```powershell
-cd backend
-ollama create speechcoach -f Modelfile
-```
+**B. Configuration de l'Inférence (Groq vs Ollama)**
+Le projet est configuré par défaut pour utiliser **Groq API** (Llama 3.3) pour le coaching, offrant une réponse quasi-instantanée.
+
+*   **Option 1 (Recommandée - Cloud)** : Ajoutez votre `GROQ_API_KEY` dans le fichier `backend/.env`.
+*   **Option 2 (Alternative - Local)** : Si vous souhaitez fonctionner à 100% hors-ligne, installez Ollama et préparez le modèle local :
+    ```powershell
+    cd backend
+    # Nécessite le fichier GGUF dans backend/models/
+    ollama create speechcoach -f Modelfile
+    ```
 
 ### 4. Configuration du Backend
 ```powershell
@@ -94,9 +100,6 @@ ollama create speechcoach -f Modelfile
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# Créer la base de données MySQL
-# mysql -u root -e "CREATE DATABASE speechcoach;"
 
 # Configurer l'environnement (.env)
 uvicorn app.main:app --reload --port 8000
@@ -120,10 +123,10 @@ npm run dev
 ---
 
 ## 📸 Fonctionnalités Clés
-- **Interface Glassmorphism** : Un design moderne, haut de gamme et contrasté.
-- **Onboarding Intelligent** : Un assistant en 5 étapes pour adapter le coaching à votre niveau.
-- **Analyse Multi-Appareils** : Seuils de vision spécifiques pour Laptop, Tablette et Smartphone.
-- **Sécurisation SMTP** : Vérification d'e-mail et récupération de mot de passe intégrées.
+- **Interface Glassmorphism** : Design moderne et ergonomique.
+- **Onboarding Intelligent** : Assistant de configuration en 5 étapes.
+- **Analyse Multi-Appareils** : Ajustement automatique selon l'appareil de capture.
+- **Master Coach Mission** : Coaching personnalisé généré par IA agentique.
 
 ---
 
