@@ -28,6 +28,16 @@ librosa
 soundfile
 ffmpeg-python
 
+# Protobuf & TensorFlow (Locked for MediaPipe stability on Windows)
+protobuf==3.20.3
+tensorflow<2.16
+keras<3.0
+tf-keras
+
+# Model-Based Emotion Detection
+hsemotion-onnx
+onnxruntime
+
 # LLM & RAG
 faiss-cpu>=1.8.0
 sentence-transformers>=3.0.0

@@ -11,15 +11,21 @@ from typing import Any, Dict, List
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 os.environ['ABSL_LOGGING_LEVEL'] = 'error'
 os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '1'
+os.environ['HF_HUB_VERBOSITY'] = 'error'
+os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
 os.environ['TRANSFORMERS_VERBOSITY'] = 'error'
 
 import logging
 # Set external libraries to ERROR level to eliminate noisy ML prints
 logging.getLogger("urllib3").setLevel(logging.ERROR)
 logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub.utils._http").setLevel(logging.ERROR)
 logging.getLogger("sentence_transformers").setLevel(logging.ERROR)
+logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.ERROR)
 logging.getLogger("whisper").setLevel(logging.ERROR)
 logging.getLogger("transformers").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("httpcore").setLevel(logging.ERROR)
 
 # Add backend/ folder to sys.path to allow imports from `ml` and `db` cleanly
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
@@ -295,6 +301,7 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
 
     llm_started_at = time.perf_counter()
     llm_coaching = None
+    eq_metrics = report_dict.get('eq_metrics') if isinstance(report_dict.get('eq_metrics'), dict) else None
     try:
         llm_coaching = generate_coaching_text(
             scores=scores,
@@ -307,7 +314,8 @@ def run_report_enrichment(session_id: str, report_dict: Dict[str, Any]) -> Dict[
             experience_level=experience_level,
             current_goal=current_goal,
             weak_points=weak_points,
-            history_context=history_context
+            history_context=history_context,
+            eq_metrics=eq_metrics,
         )
     except Exception as e:
         logger.error(f"LLM Enrichment failed: {e}")

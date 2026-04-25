@@ -38,6 +38,8 @@ def process_video(
     video_path = os.path.abspath(video_path)
     output_dir = os.path.abspath(output_dir)
     normalized_device_type = "unknown"
+    device_source = "fallback"
+    device_confidence = 0.0
     
     # 0. Setup
     video_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -57,17 +59,26 @@ def process_video(
     logger.info("Step 1: Ingestion...")
     from app.analytics.engine.vision.analysis import normalize_device_type
     normalized_device_type = normalize_device_type(device_type)
-    if normalized_device_type == "unknown":
+    if normalized_device_type != "unknown":
+        device_source = "provided"
+        device_confidence = 1.0
+    else:
         inferred_device = infer_device_type(video_path, source_name=source_name)
         inferred_type = normalize_device_type(inferred_device.get("device_type"))
         if inferred_type != "unknown":
             normalized_device_type = inferred_type
+            device_source = str(inferred_device.get("source") or "inference")
+            try:
+                device_confidence = float(inferred_device.get("confidence") or 0.0)
+            except (TypeError, ValueError):
+                device_confidence = 0.0
             logger.info(
                 "Unknown device_type auto-resolved to '%s' via %s.",
                 normalized_device_type,
                 inferred_device.get("source", "inference"),
             )
         else:
+            device_source = str(inferred_device.get("source") or "fallback")
             logger.info("Unknown device_type could not be inferred. Keeping fallback profile.")
     target_frame_fps = 2.0 if normalized_device_type == "smartphone" else 1.0
 
@@ -114,10 +125,15 @@ def process_video(
     from app.analytics.engine.audio.analytics import analyze_audio_file
     from app.analytics.engine.vision.analysis import analyze_frames
     from app.analytics.engine.metrics.scoring import calculate_scores, generate_feedback_summary
+    from app.analytics.engine.metrics.eq_fusion import compute_eq_metrics
     from app.analytics.engine.metrics.recommendations import (
         build_exercise_payload,
         generate_recommendations,
         generate_training_plan,
+    )
+    from app.analytics.engine.metrics.eq_emotion import (
+        compute_model_based_emotions,
+        compute_rule_based_emotions,
     )
 
     # Initialize ASR with absolute local path to guarantee zero-network booting
@@ -147,7 +163,11 @@ def process_video(
 
     def run_vision_pipeline():
         logger.info("Starting Vision Pipeline...")
-        return analyze_frames(frames_dir, device_type=normalized_device_type)
+        return analyze_frames(
+            frames_dir,
+            device_type=normalized_device_type,
+            frame_sampling_fps=target_frame_fps,
+        )
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_audio = executor.submit(run_audio_pipeline)
@@ -163,6 +183,36 @@ def process_video(
     
     # Calculate Scores and Feedback
     scores = calculate_scores(audio_metrics, vision_metrics)
+    eq_metrics = compute_eq_metrics(
+        audio_metrics,
+        vision_metrics,
+        device_type=normalized_device_type,
+        device_source=device_source,
+        device_confidence=device_confidence,
+    )
+    
+    # Run Model-Based Emotion Detection (AI Intuition track)
+    logger.info("Step 2b: Model-Based Emotion Detection (AI Intuition)...")
+    model_based_emotions = compute_model_based_emotions(
+        audio_path=audio_path,
+        frames_dir=frames_dir,
+        language=language,
+        device_type=normalized_device_type
+    )
+    
+    # Extract Rule-Based Emotions (Rigid Math track) for comparison
+    rule_based_emotions = compute_rule_based_emotions(
+        audio_metrics=audio_metrics,
+        vision_metrics=vision_metrics,
+        eq_metrics=eq_metrics
+    )
+    
+    # Add emotion scores to eq_metrics for unified reporting
+    eq_metrics["emotion_scores"] = {
+        "rule_based": rule_based_emotions,
+        "model_based": model_based_emotions
+    }
+    
     recommendations = generate_recommendations(audio_metrics, vision_metrics, scores)
     strengths, weaknesses = generate_feedback_summary(
         scores,
@@ -208,6 +258,7 @@ def process_video(
             experience_level=experience_level,
             current_goal=current_goal,
             weak_points=weak_points,
+            eq_metrics=eq_metrics,
         )
         if llm_coaching:
             logger.info("Coach text generated successfully.")
@@ -232,6 +283,8 @@ def process_video(
         resolution=resolution,
         detected_language=language,
         device_type=resolved_device_type,
+        device_source=device_source,
+        device_confidence=round(device_confidence, 3),
         experience_level=experience_level,
         current_goal=current_goal,
         weak_points=weak_points,
@@ -247,7 +300,8 @@ def process_video(
         strengths=strengths,
         weaknesses=weaknesses,
         recommendations=recommendations,
-        retrieved_documents=fetched_docs
+        retrieved_documents=fetched_docs,
+        eq_metrics=eq_metrics,
     )
     
     # Add training plan and llm coaching to report dict output

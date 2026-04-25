@@ -100,7 +100,7 @@ def _detect_device_from_text(strings: List[str]) -> Optional[str]:
     return None
 
 
-def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dict[str, str]:
+def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dict[str, Any]:
     """
     Best-effort device inference for unknown mode.
 
@@ -108,7 +108,7 @@ def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dic
     1. Metadata / ffprobe tags / filename keywords
     2. Conservative geometry heuristics
     """
-    result = {"device_type": "unknown", "source": "fallback"}
+    result: Dict[str, Any] = {"device_type": "unknown", "source": "fallback", "confidence": 0.0}
 
     try:
         probe = ffmpeg.probe(video_path)
@@ -123,7 +123,7 @@ def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dic
 
     detected_from_text = _detect_device_from_text(probe_strings)
     if detected_from_text:
-        return {"device_type": detected_from_text, "source": "metadata"}
+        return {"device_type": detected_from_text, "source": "metadata", "confidence": 0.95}
 
     video_streams = [stream for stream in probe.get('streams', []) if stream.get('codec_type') == 'video']
     video_stream = video_streams[0] if video_streams else {}
@@ -139,19 +139,19 @@ def infer_device_type(video_path: str, source_name: Optional[str] = None) -> Dic
     aspect_ratio = (long_side / short_side) if short_side else 0.0
 
     if rotation in {90, 270} and aspect_ratio >= 1.55:
-        return {"device_type": "smartphone", "source": "heuristic_rotation"}
+        return {"device_type": "smartphone", "source": "heuristic_rotation", "confidence": 0.9}
 
     # Strong signal: portrait selfie videos are overwhelmingly phone footage.
     if height > width and aspect_ratio >= 1.55:
-        return {"device_type": "smartphone", "source": "heuristic_portrait"}
+        return {"device_type": "smartphone", "source": "heuristic_portrait", "confidence": 0.85}
 
     # Conservative guess for landscape clips that resemble handheld tablets.
     if width > height and 1.2 <= aspect_ratio <= 1.55 and long_side <= 2800:
-        return {"device_type": "tablet", "source": "heuristic_aspect"}
+        return {"device_type": "tablet", "source": "heuristic_aspect", "confidence": 0.65}
 
     # Final fallback for standard landscape: if it's wider than a tablet, it's a laptop/desktop.
     if width > height and aspect_ratio >= 1.55:
-        return {"device_type": "laptop_desktop", "source": "heuristic_aspect"}
+        return {"device_type": "laptop_desktop", "source": "heuristic_aspect", "confidence": 0.6}
 
     return result
 

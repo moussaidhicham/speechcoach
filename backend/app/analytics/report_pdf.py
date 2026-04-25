@@ -135,6 +135,17 @@ def _cell_value_with_target(value_text: str, target_text: str, styles: Any, para
     )
 
 
+def _cell_value_with_indicators(value_text: str, indicators_text: str, styles: Any, paragraph_cls: Any) -> Any:
+    return paragraph_cls(
+        f"{escape(value_text)}<br/><font size='9' color='#5E6B76'>Indicateurs : {escape(indicators_text)}</font>",
+        styles['BodyTextCustom'],
+    )
+
+
+def _cell_empty(styles: Any, paragraph_cls: Any) -> Any:
+    return paragraph_cls('', styles['BodyTextCustom'])
+
+
 def build_report_pdf(report: Dict[str, Any]) -> bytes:
     try:
         from reportlab.lib import colors
@@ -150,6 +161,7 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     summary = report.get('summary') or {}
     scores = report.get('scores') or {}
     metrics = report.get('metrics') or {}
+    eq_metrics = report.get('eq_metrics') or {}
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
     training_plan = report.get('training_plan') or {}
@@ -161,6 +173,7 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
         'muted': colors.HexColor('#5E6B76'),
         'primary': colors.HexColor('#0E6B66'),
         'primary_soft': colors.HexColor('#E6F3F1'),
+        'secondary_soft': colors.HexColor('#F0F4F8'),
         'accent': colors.HexColor('#F2E2CD'),
         'border': colors.HexColor('#D9E1E5'),
         'surface': colors.HexColor('#FFFFFF'),
@@ -417,117 +430,377 @@ def build_report_pdf(report: Dict[str, Any]) -> bytes:
     story.append(Spacer(1, 10))
 
     story.append(Paragraph('Details techniques', styles['SectionTitle']))
-    metrics_table = Table(
-        [
-            [
-                _cell_label('Debit (WPM)', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
-                    'Entre 120 et 160 mots/min (Maitrise)',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Pauses (>0.5s)', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('pause_count', 0)} pause(s)",
-                    'Moins de 4 pauses longues par minute',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Hesitations', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('filler_count', 0)} detectee(s)",
-                    'Moins de 2 mots parasites par minute',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Repetitions', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('stutter_count', 0)} detectee(s)",
-                    'Aucune repetition pour un score optimal',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Luminosite', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('brightness', 0)} ({_format_lighting_label(metrics.get('brightness', 0))})",
-                    "Entre 70 et 210 pour eviter l'eblouissement",
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Nettete', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('blur', 0)} ({_format_sharpness_label(metrics.get('blur', 0))})",
-                    'Score superieur a 40 pour une image nette',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Presence visage', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('face_presence_ratio', 0)}%",
-                    'Superieure a 80% dans le cadre',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Contact visuel', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
-                    'Soutenir la camera (> 70% du temps)',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Mains visibles', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
-                    'Mains dans le cadre (> 60% du temps)',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-            [
-                _cell_label('Intensite gestuelle (mains)', styles, Paragraph),
-                _cell_value_with_target(
-                    f"{metrics.get('hands_activity_score', 0)}/10 ({_format_activity_label(metrics.get('hands_activity_score', 0))})",
-                    'Mouvement equilibre (2.5 a 6.5/10)',
-                    styles,
-                    Paragraph,
-                ),
-            ],
-        ],
-        colWidths=[62 * mm, 100 * mm],
-    )
+
+    # Build metrics table with categories
+    table_data = []
+
+    # Helper function to create category headers
+    def _category_header(text: str):
+        return [
+            Paragraph(f"<b>{text}</b>", styles['BodyText']),
+            Paragraph('', styles['BodyText']),
+            Paragraph('', styles['BodyText']),
+            Paragraph('', styles['BodyText']),
+            Paragraph('', styles['BodyText'])
+        ]
+
+    # Metriques vocales
+    table_data.append(_category_header('Metriques vocales'))
+    table_data.append([
+        _cell_label('Debit (WPM)', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
+            'Entre 120 et 160 mots/min (Maitrise)',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Pauses (>0.5s)', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('pause_count', 0)} pause(s)",
+            'Moins de 4 pauses longues par minute',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Hesitations', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('filler_count', 0)} detectee(s)",
+            'Moins de 2 mots parasites par minute',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Repetitions', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('stutter_count', 0)} detectee(s)",
+            'Aucune repetition pour un score optimal',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+
+    # Qualite visuelle
+    table_data.append(_category_header('Qualite visuelle'))
+    table_data.append([
+        _cell_label('Luminosite', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('brightness', 0)} ({_format_lighting_label(metrics.get('brightness', 0))})",
+            "Entre 70 et 210 pour eviter l'eblouissement",
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Nettete', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('blur', 0)} ({_format_sharpness_label(metrics.get('blur', 0))})",
+            'Score superieur a 40 pour une image nette',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+
+    # Metriques visuelles
+    table_data.append(_category_header('Metriques visuelles'))
+    table_data.append([
+        _cell_label('Presence visage', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('face_presence_ratio', 0)}%",
+            'Superieure a 80% dans le cadre',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Contact visuel', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
+            'Soutenir la camera (> 70% du temps)',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Mains visibles', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
+            'Mains dans le cadre (> 60% du temps)',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+    table_data.append([
+        _cell_label('Intensite gestuelle (mains)', styles, Paragraph),
+        _cell_value_with_target(
+            f"{metrics.get('hands_activity_score', 0)}/10 ({_format_activity_label(metrics.get('hands_activity_score', 0))})",
+            'Mouvement equilibre (2.5 a 6.5/10)',
+            styles,
+            Paragraph,
+        ),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+        _cell_empty(styles, Paragraph),
+    ])
+
+    # Indicateurs emotionnels (EQ metrics) - at the end since they're derived from other metrics
+    if eq_metrics and isinstance(eq_metrics, dict):
+        eq_scores = eq_metrics.get('scores') or {}
+        eq_objectives = eq_metrics.get('objectives') or {}
+        emotion_scores = eq_metrics.get('emotion_scores') or {}
+
+        table_data.append(_category_header('Indicateurs emotionnels'))
+
+        stress_score = int(eq_scores.get('stress') or 0)
+        stress_data = eq_objectives.get('stress') or {}
+        stress_aspects = ', '.join(stress_data.get('aspects') or [])
+        table_data.append([
+            _cell_label('Stress', styles, Paragraph),
+            _cell_value_with_indicators(
+                f"{stress_score}/100",
+                stress_aspects if stress_aspects else '-',
+                styles,
+                Paragraph,
+            ),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+        ])
+
+        confidence_score = int(eq_scores.get('confidence') or 0)
+        confidence_data = eq_objectives.get('confidence') or {}
+        confidence_aspects = ', '.join(confidence_data.get('aspects') or [])
+        table_data.append([
+            _cell_label('Confiance', styles, Paragraph),
+            _cell_value_with_indicators(
+                f"{confidence_score}/100",
+                confidence_aspects if confidence_aspects else '-',
+                styles,
+                Paragraph,
+            ),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+        ])
+
+        articulation_score = int(eq_scores.get('articulation') or 0)
+        articulation_data = eq_objectives.get('articulation') or {}
+        articulation_aspects = ', '.join(articulation_data.get('aspects') or [])
+        table_data.append([
+            _cell_label('Articulation', styles, Paragraph),
+            _cell_value_with_indicators(
+                f"{articulation_score}/100",
+                articulation_aspects if articulation_aspects else '-',
+                styles,
+                Paragraph,
+            ),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+            _cell_empty(styles, Paragraph),
+        ])
+
+        # Add comparison table if emotion_scores available
+        if emotion_scores and isinstance(emotion_scores, dict):
+            rule_based = emotion_scores.get('rule_based') or {}
+            model_based = emotion_scores.get('model_based') or {}
+
+            rule_eq = rule_based.get('eq_scores') or {}
+            model_eq = model_based.get('eq_scores') or {}
+
+            if rule_eq and model_eq:
+                table_data.append(_category_header('Comparaison des méthodes d\'analyse'))
+
+                # Comparison table header
+                table_data.append([
+                    _cell_label('Méthode', styles, Paragraph),
+                    _cell_label('Stress', styles, Paragraph),
+                    _cell_label('Confiance', styles, Paragraph),
+                    _cell_label('Articulation', styles, Paragraph),
+                    _cell_empty(styles, Paragraph),
+                ])
+
+                # Rule-based row
+                table_data.append([
+                    _cell_value('Règles (Librosa/MediaPipe)', styles, Paragraph),
+                    _cell_value(f"{int(rule_eq.get('stress') or 0)}/100", styles, Paragraph),
+                    _cell_value(f"{int(rule_eq.get('confidence') or 0)}/100", styles, Paragraph),
+                    _cell_value(f"{int(rule_eq.get('articulation') or 0)}/100", styles, Paragraph),
+                    _cell_empty(styles, Paragraph),
+                ])
+
+                # Model-based row
+                table_data.append([
+                    _cell_value('IA (Wav2Vec2/HSEmotion)', styles, Paragraph),
+                    _cell_value(f"{int(model_eq.get('stress') or 0)}/100", styles, Paragraph),
+                    _cell_value(f"{int(model_eq.get('confidence') or 0)}/100", styles, Paragraph),
+                    _cell_value(f"{int(model_eq.get('articulation') or 0)}/100", styles, Paragraph),
+                    _cell_empty(styles, Paragraph),
+                ])
+
+                # Show top emotions from model-based approach
+                fused_emotions = model_based.get('fused_emotions') or {}
+                if fused_emotions:
+                    # Filter out None values before sorting
+                    valid_emotions = {k: v for k, v in fused_emotions.items() if v is not None}
+                    if valid_emotions:
+                        top_emotions = sorted(valid_emotions.items(), key=lambda x: x[1], reverse=True)[:3]
+                        emotion_text = ', '.join([f"{label} ({int(prob*100)}%)" for label, prob in top_emotions])
+                        table_data.append([
+                            _cell_label('Émotions détectées (IA)', styles, Paragraph),
+                            _cell_value(emotion_text, styles, Paragraph),
+                            _cell_empty(styles, Paragraph),
+                            _cell_empty(styles, Paragraph),
+                            _cell_empty(styles, Paragraph),
+                        ])
+
+    metrics_table = Table(table_data, colWidths=[55 * mm, 35 * mm, 24 * mm, 24 * mm, 24 * mm])
+
+    # Calculate row indices for styling
+    eq_rows = []
+    vocal_rows = []
+    visual_quality_rows = []
+    visual_metrics_rows = []
+
+    current_row = 0
+
+    vocal_start = current_row
+    current_row += 1  # Category header
+    current_row += 4  # WPM, Pauses, Hesitations, Repetitions
+    vocal_end = current_row - 1
+
+    visual_quality_start = current_row
+    current_row += 1  # Category header
+    current_row += 2  # Luminosite, Nettete
+    visual_quality_end = current_row - 1
+
+    visual_metrics_start = current_row
+    current_row += 1  # Category header
+    current_row += 4  # Presence, Contact, Mains, Intensite
+    visual_metrics_end = current_row - 1
+
+    if eq_metrics and isinstance(eq_metrics, dict):
+        eq_start = current_row
+        current_row += 1  # Category header
+        current_row += 3  # Stress, Confidence, Articulation
+        eq_end = current_row - 1
+
+        # Check if we have emotion_scores for comparison
+        comparison_start = None
+        emotion_scores = eq_metrics.get('emotion_scores') or {}
+        if emotion_scores and isinstance(emotion_scores, dict):
+            comparison_start = current_row
+            current_row += 1  # Comparison category header
+            current_row += 1  # Comparison table header
+            current_row += 2  # Rule-based and Model-based rows
+            # Check if we have emotion labels
+            model_based = emotion_scores.get('model_based') or {}
+            if model_based.get('fused_emotions'):
+                current_row += 1  # Emotions detected row
+            comparison_end = current_row - 1
+
     metrics_table.setStyle(
         TableStyle(
             [
                 ('BOX', (0, 0), (-1, -1), 0.75, palette['border']),
                 ('INNERGRID', (0, 0), (-1, -1), 0.5, palette['border']),
                 ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                ('LEFTPADDING', (0, 0), (-1, -1), 10),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('LEFTPADDING', (0, 0), (-1, -1), 6),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 6),
                 ('TOPPADDING', (0, 0), (-1, -1), 6),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
                 ('BACKGROUND', (0, 0), (-1, -1), palette['surface']),
-                ('TEXTCOLOR', (0, 0), (0, -1), palette['ink']),
-                ('TEXTCOLOR', (1, 0), (1, -1), palette['ink']),
             ]
         )
     )
+
+    # Add background colors for category headers
+    style_updates = []
+    if eq_metrics and isinstance(eq_metrics, dict):
+        style_updates.append(('BACKGROUND', (0, eq_start), (-1, eq_start), palette['primary_soft']))
+        style_updates.append(('TEXTCOLOR', (0, eq_start), (-1, eq_start), palette['ink']))
+        style_updates.append(('BOTTOMPADDING', (0, eq_start), (-1, eq_start), 8))
+        style_updates.append(('TOPPADDING', (0, eq_start), (-1, eq_start), 8))
+
+        # Style comparison section if present
+        emotion_scores = eq_metrics.get('emotion_scores') or {}
+        if emotion_scores and isinstance(emotion_scores, dict):
+            rule_based = emotion_scores.get('rule_based') or {}
+            model_based = emotion_scores.get('model_based') or {}
+            if rule_based.get('eq_scores') and model_based.get('eq_scores') and comparison_start is not None:
+                style_updates.append(('BACKGROUND', (0, comparison_start), (-1, comparison_start), palette['secondary_soft']))
+                style_updates.append(('TEXTCOLOR', (0, comparison_start), (-1, comparison_start), palette['ink']))
+                style_updates.append(('BOTTOMPADDING', (0, comparison_start), (-1, comparison_start), 8))
+                style_updates.append(('TOPPADDING', (0, comparison_start), (-1, comparison_start), 8))
+
+    style_updates.append(('BACKGROUND', (0, vocal_start), (-1, vocal_start), palette['primary_soft']))
+    style_updates.append(('TEXTCOLOR', (0, vocal_start), (-1, vocal_start), palette['ink']))
+    style_updates.append(('BOTTOMPADDING', (0, vocal_start), (-1, vocal_start), 8))
+    style_updates.append(('TOPPADDING', (0, vocal_start), (-1, vocal_start), 8))
+
+    style_updates.append(('BACKGROUND', (0, visual_quality_start), (-1, visual_quality_start), palette['primary_soft']))
+    style_updates.append(('TEXTCOLOR', (0, visual_quality_start), (-1, visual_quality_start), palette['ink']))
+    style_updates.append(('BOTTOMPADDING', (0, visual_quality_start), (-1, visual_quality_start), 8))
+    style_updates.append(('TOPPADDING', (0, visual_quality_start), (-1, visual_quality_start), 8))
+
+    style_updates.append(('BACKGROUND', (0, visual_metrics_start), (-1, visual_metrics_start), palette['primary_soft']))
+    style_updates.append(('TEXTCOLOR', (0, visual_metrics_start), (-1, visual_metrics_start), palette['ink']))
+    style_updates.append(('BOTTOMPADDING', (0, visual_metrics_start), (-1, visual_metrics_start), 8))
+    style_updates.append(('TOPPADDING', (0, visual_metrics_start), (-1, visual_metrics_start), 8))
+
+    # Apply dynamic spanning to handle the mixed column layout (metrics vs comparison)
+    for i in range(len(table_data)):
+        # Identify if this row is a category header
+        is_header = i in [vocal_start, visual_quality_start, visual_metrics_start]
+        if eq_metrics and isinstance(eq_metrics, dict):
+            if i == eq_start:
+                is_header = True
+            if comparison_start is not None and i == comparison_start:
+                is_header = True
+
+        if is_header:
+            # Full span for headers
+            style_updates.append(('SPAN', (0, i), (-1, i)))
+        elif comparison_start is not None and i in [comparison_start + 1, comparison_start + 2, comparison_start + 3]:
+            # Comparison table header/rows: span last two columns to ensure text fits
+            style_updates.append(('SPAN', (3, i), (4, i)))
+        else:
+            # Regular metrics rows: span col 1 to the end for the value/target description
+            style_updates.append(('SPAN', (1, i), (-1, i)))
+
+    # Apply the additional styles
+    for style_update in style_updates:
+        metrics_table.setStyle(TableStyle([style_update]))
+
     story.append(metrics_table)
     story.append(Spacer(1, 8))
 

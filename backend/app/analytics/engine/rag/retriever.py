@@ -63,6 +63,11 @@ class RAGRetriever:
         # Silence huggingface and urllib3 logs
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+        logging.getLogger("sentence_transformers.SentenceTransformer").setLevel(logging.ERROR)
+        logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+        logging.getLogger("huggingface_hub.utils._http").setLevel(logging.ERROR)
+        logging.getLogger("httpx").setLevel(logging.ERROR)
+        logging.getLogger("httpcore").setLevel(logging.ERROR)
         
         logger.info("Loading SentenceTransformer model: %s", self.model_name)
         self.model = SentenceTransformer(self.model_name)

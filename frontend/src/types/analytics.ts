@@ -30,6 +30,9 @@ export interface ReportSession {
   language: string;
   fps: number;
   resolution: [number, number];
+  device_type?: 'unknown' | 'laptop_desktop' | 'tablet' | 'smartphone';
+  device_source?: string;
+  device_confidence?: number;
   processing_time?: number;
 }
 
@@ -95,6 +98,42 @@ export interface ReportTranscriptSegment {
   text: string;
 }
 
+export interface ReportEqMetrics {
+  version: string;
+  device_profile: string;
+  device_source: string;
+  device_confidence: number;
+  reliability: {
+    overall: number;
+    face_track: number;
+    image_clarity: number;
+    audio_duration: number;
+    device_certainty: number;
+  };
+  scores: {
+    stress: number;
+    confidence: number;
+    articulation: number;
+  };
+  objectives?: {
+    stress?: { direction: string; aspects: string[] };
+    confidence?: { direction: string; aspects: string[] };
+    articulation?: { direction: string; aspects: string[] };
+  };
+  interpretation?: {
+    label: 'strong' | 'cautious' | 'weak' | string;
+    should_interpret: boolean;
+    threshold: number;
+  };
+  explanations?: {
+    stress_drivers?: string[];
+    confidence_limiters?: string[];
+    confidence_boosters?: string[];
+    articulation_limiters?: string[];
+  };
+  flags: string[];
+}
+
 export interface ReportResult {
   session: ReportSession;
   summary: ReportSummary;
@@ -112,6 +151,7 @@ export interface ReportResult {
   exercise_recommendation?: ReportExerciseRecommendation;
   training_plan_markdown: string;
   transcript: ReportTranscriptSegment[];
+  eq_metrics?: ReportEqMetrics;
   visuals?: {
     audio_energy: string;
     vision_timeline: string;

@@ -320,7 +320,8 @@ def _build_prompt_payload(
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
     weak_points: Optional[str] = None,
-    history_context: str = "Aucun historique disponible."
+    history_context: str = "Aucun historique disponible.",
+    eq_metrics: Optional[Dict[str, Any]] = None,
 ) -> Tuple[str, str]:
     top_category, top_message, top_tip = _top_recommendation(recommendations, weaknesses)
     strengths_text = " | ".join(strengths[:3]) if strengths else "Bases de présentation correctes."
@@ -369,6 +370,18 @@ def _build_prompt_payload(
         "sinon privilégiez les métriques et l'axe déterministe ci-dessous."
     )
     weak_points_block = _format_user_weak_points(weak_points)
+    eq_block = "EQ indisponible."
+    if isinstance(eq_metrics, dict):
+        eq_scores = eq_metrics.get("scores") or {}
+        eq_reliability = (eq_metrics.get("reliability") or {}).get("overall")
+        eq_flags = eq_metrics.get("flags") or []
+        eq_block = (
+            f"Stress proxy: {eq_scores.get('stress', 'N/A')}/100 | "
+            f"Confiance proxy: {eq_scores.get('confidence', 'N/A')}/100 | "
+            f"Articulation proxy: {eq_scores.get('articulation', 'N/A')}/100 | "
+            f"Fiabilite signal: {eq_reliability if eq_reliability is not None else 'N/A'} | "
+            f"Flags: {', '.join(str(flag) for flag in eq_flags[:5]) if eq_flags else 'aucun'}"
+        )
     user = (
         f"--- CONTEXTE UTILISATEUR ---\n"
         f"Niveau: {normalized_level} | Objectif: {normalized_goal}\n"
@@ -384,6 +397,8 @@ def _build_prompt_payload(
         f"Défauts: {weaknesses_text}\n\n"
         f"Axe prioritaire déterministe à respecter: {top_category}\n"
         f"Règle stricte: ne pas mélanger plusieurs axes dans point_prioritaire et exercice_consigne.\n\n"
+        f"--- SIGNAUX EQ (PROXIES NON CLINIQUES) ---\n"
+        f"{eq_block}\n\n"
         f"--- SOURCE PÉDAGOGIQUE (RAG) ---\n"
         f"{pedagogical_info or 'Utilisez votre expertise générale.'}"
     )
@@ -414,7 +429,8 @@ def generate_coaching_text(
     experience_level: Optional[str] = None,
     current_goal: Optional[str] = None,
     weak_points: Optional[str] = None,
-    history_context: str = "Première session."
+    history_context: str = "Première session.",
+    eq_metrics: Optional[Dict[str, Any]] = None,
 ) -> Optional[Dict[str, str]]:
 
     from app.core.config import settings
@@ -439,7 +455,8 @@ def generate_coaching_text(
         experience_level=experience_level,
         current_goal=current_goal,
         weak_points=weak_points,
-        history_context=history_context
+        history_context=history_context,
+        eq_metrics=eq_metrics,
     )
 
     try:

@@ -113,6 +113,20 @@ function formatActivityLabel(score: number) {
   return 'Figé';
 }
 
+type EqAxisKey = 'stress' | 'confidence' | 'articulation';
+
+function formatEqScoreLabel(metric: EqAxisKey, score: number) {
+  if (metric === 'stress') {
+    if (score >= 70) return 'Eleve';
+    if (score >= 45) return 'Modere';
+    return 'Maitrise';
+  }
+
+  if (score >= 70) return 'Fort';
+  if (score >= 50) return 'Moyen';
+  return 'Faible';
+}
+
 function getMeaningfulTokens(value: string) {
   return value
     .toLowerCase()
@@ -251,6 +265,18 @@ export default function ReportPage() {
   const coachingEncouragement = isEnrichmentRunning || isEnrichmentReadyForRefresh ? null : report?.summary.encouragement;
   const displayEncouragement = coachingEncouragement;
   const exerciseRecommendation = report?.exercise_recommendation;
+  const eqMetrics = report?.eq_metrics;
+  const eqReliabilityPct = eqMetrics ? Math.round((eqMetrics.reliability?.overall || 0) * 100) : null;
+  const eqShouldInterpret = eqMetrics?.interpretation?.should_interpret ?? ((eqMetrics?.reliability?.overall || 0) >= 0.55);
+  const eqStressFactors = eqMetrics?.objectives?.stress?.aspects?.length
+    ? eqMetrics.objectives.stress.aspects.join(', ')
+    : 'pauses/fillers/stutters, stabilite tete, agitation gestuelle';
+  const eqConfidenceFactors = eqMetrics?.objectives?.confidence?.aspects?.length
+    ? eqMetrics.objectives.confidence.aspects.join(', ')
+    : 'stabilite voix, contact visuel, stabilite tete';
+  const eqArticulationFactors = eqMetrics?.objectives?.articulation?.aspects?.length
+    ? eqMetrics.objectives.articulation.aspects.join(', ')
+    : 'pauses/fillers/stutters, rythme de parole, stabilite voix';
   const focusPrimaryRaw = report?.training_plan.focus_primary || exerciseRecommendation?.focus_primary || 'Progression generale';
   const focusPrimary = focusPrimaryRaw === 'Cadre' ? 'Presence' : focusPrimaryRaw;
   const focusSecondary = report?.training_plan.focus_secondary || exerciseRecommendation?.focus_secondary || null;
@@ -543,15 +569,15 @@ export default function ReportPage() {
                     <div className="rounded-xl border border-border/60 bg-background/80 p-4">
                       <div className="text-sm font-medium text-foreground">Qualité visuelle</div>
                       <div className="mt-3 grid gap-3">
-                        <ContextRow 
-                          label="Luminosité" 
-                          value={`${Number(report.metrics.brightness).toFixed(0)} (${formatLightingLabel(report.metrics.brightness)})`} 
-                          target="Entre 70 et 210 pour éviter l'éblouissement" 
+                        <ContextRow
+                          label="Luminosité"
+                          value={`${Number(report.metrics.brightness).toFixed(0)} (${formatLightingLabel(report.metrics.brightness)})`}
+                          target="Entre 70 et 210 pour éviter l'éblouissement"
                         />
-                        <ContextRow 
-                          label="Netteté" 
-                          value={`${Number(report.metrics.blur).toFixed(0)} (${formatSharpnessLabel(report.metrics.blur)})`} 
-                          target="Score supérieur à 40 pour une image nette" 
+                        <ContextRow
+                          label="Netteté"
+                          value={`${Number(report.metrics.blur).toFixed(0)} (${formatSharpnessLabel(report.metrics.blur)})`}
+                          target="Score supérieur à 40 pour une image nette"
                         />
                       </div>
                     </div>
@@ -565,6 +591,108 @@ export default function ReportPage() {
                         <ContextRow label="Intensité gestuelle (mains)" value={`${report.metrics.hands_activity_score}/10 (${formatActivityLabel(report.metrics.hands_activity_score)})`} target="Mouvement équilibré (2.5 à 6.5/10)" />
                       </div>
                     </div>
+
+                    {eqMetrics ? (
+                      <div className="rounded-xl border border-border/60 bg-background/80 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">Indicateurs émotionnels</div>
+                            <div className="mt-0.5 text-[10px] text-muted-foreground">Indicateurs comportementaux, pas émotions réelles</div>
+                          </div>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary">
+                            {eqMetrics.version}
+                          </Badge>
+                        </div>
+                        {!eqShouldInterpret ? (
+                          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                            Signal EQ encore fragile: interpretation prudente recommandee (fiabilite {eqReliabilityPct ?? 0}%).
+                          </div>
+                        ) : null}
+                        <div className="mt-3 grid gap-3">
+                          <ContextRow
+                            label="Stress"
+                            value={`${eqMetrics.scores.stress}/100 (${formatEqScoreLabel('stress', eqMetrics.scores.stress)})`}
+                            target={eqStressFactors}
+                            targetLabel="Facteurs"
+                          />
+                          <ContextRow
+                            label="Confiance"
+                            value={`${eqMetrics.scores.confidence}/100 (${formatEqScoreLabel('confidence', eqMetrics.scores.confidence)})`}
+                            target={eqConfidenceFactors}
+                            targetLabel="Facteurs"
+                          />
+                          <ContextRow
+                            label="Articulation"
+                            value={`${eqMetrics.scores.articulation}/100 (${formatEqScoreLabel('articulation', eqMetrics.scores.articulation)})`}
+                            target={eqArticulationFactors}
+                            targetLabel="Facteurs"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {/* Model-Based Emotion Comparison */}
+                    {eqMetrics?.emotion_scores ? (
+                      <div className="rounded-xl border border-border/60 bg-background/80 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="text-sm font-medium text-foreground">Comparaison des méthodes d'analyse</div>
+                            <div className="mt-0.5 text-[10px] text-muted-foreground">Comparaison entre l'analyse par règles (math rigide) et l'analyse par IA (intuition)</div>
+                          </div>
+                          <Badge variant="secondary" className="bg-secondary/10 text-secondary">
+                            Dual-Track
+                          </Badge>
+                        </div>
+                        <div className="mt-3 overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-border/60">
+                                <th className="py-2 text-left font-medium">Méthode</th>
+                                <th className="py-2 text-center font-medium">Stress</th>
+                                <th className="py-2 text-center font-medium">Confiance</th>
+                                <th className="py-2 text-center font-medium">Articulation</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b border-border/40">
+                                <td className="py-2 font-medium">Règles (Librosa/MediaPipe)</td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.rule_based?.eq_scores?.stress || 0}/100</td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.rule_based?.eq_scores?.confidence || 0}/100</td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.rule_based?.eq_scores?.articulation || 0}/100</td>
+                              </tr>
+                              <tr>
+                                <td className="py-2 font-medium">
+                                  IA (Wav2Vec2{eqMetrics.emotion_scores.model_based?.vision_available ? '/HSEmotion' : ''})
+                                </td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.model_based?.eq_scores?.stress || 0}/100</td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.model_based?.eq_scores?.confidence || 0}/100</td>
+                                <td className="py-2 text-center">{eqMetrics.emotion_scores.model_based?.eq_scores?.articulation || 0}/100</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        {!eqMetrics.emotion_scores.model_based?.vision_available && (
+                          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                            Note : Analyse visuelle non disponible (problème de compatibilité), basée sur l'audio uniquement.
+                          </div>
+                        )}
+                        {eqMetrics.emotion_scores.model_based?.fused_emotions && (
+                          <div className="mt-3">
+                            <div className="text-xs font-medium mb-2">Émotions détectées (IA) :</div>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(eqMetrics.emotion_scores.model_based.fused_emotions)
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 3)
+                                .map(([emotion, prob]) => (
+                                  <Badge key={emotion} variant="secondary" className="bg-primary/10 text-primary">
+                                    {emotion} ({Math.round(prob * 100)}%)
+                                  </Badge>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </details>
               </CardContent>
@@ -783,18 +911,52 @@ function SessionMetaCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ContextRow({ label, value, target, mono = false }: { label: string; value: string; target?: string; mono?: boolean }) {
+function ContextRow({
+  label,
+  value,
+  target,
+  targetLabel = 'Objectif',
+  mono = false,
+  tone = 'default',
+  valueAsParagraph = false,
+}: {
+  label: string;
+  value: string;
+  target?: string;
+  targetLabel?: string;
+  mono?: boolean;
+  tone?: 'default' | 'quality' | 'signals' | 'positive';
+  valueAsParagraph?: boolean;
+}) {
+  const toneClass =
+    tone === 'quality'
+      ? 'border-sky-500/30 bg-sky-500/10'
+      : tone === 'signals'
+        ? 'border-amber-500/30 bg-amber-500/10'
+        : tone === 'positive'
+          ? 'border-emerald-500/30 bg-emerald-500/10'
+          : 'border-border/60 bg-background/70';
+
   return (
-    <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-background/70 px-4 py-3 text-sm">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-muted-foreground">{label}</span>
-        <span className={cn('font-medium text-foreground', mono && 'font-mono text-xs')}>
-          {value}
-        </span>
-      </div>
+    <div className={cn('flex flex-col gap-1 rounded-lg border px-4 py-3 text-sm', toneClass)}>
+      {valueAsParagraph ? (
+        <>
+          <div className="text-muted-foreground">{label}</div>
+          <div className={cn('text-foreground/90 leading-relaxed', mono && 'font-mono text-xs')}>
+            {value}
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-muted-foreground">{label}</span>
+          <span className={cn('font-medium text-foreground', mono && 'font-mono text-xs')}>
+            {value}
+          </span>
+        </div>
+      )}
       {target ? (
         <div className="text-[10px] font-medium tracking-tight text-muted-foreground/60">
-          Objectif : <span className="text-primary/70">{target}</span>
+          {targetLabel} : <span className="text-primary/70">{target}</span>
         </div>
       ) : null}
     </div>
@@ -1056,8 +1218,3 @@ function PracticeFocusCard({
     </div>
   );
 }
-
-
-
-
-

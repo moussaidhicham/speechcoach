@@ -469,7 +469,7 @@ export default function StudioPage() {
     try {
       const res = await videoService.uploadVideo(
         file, 
-        deviceType === 'unknown' ? 'laptop_desktop' : deviceType,
+        deviceType,
         language,
         (p) => setProgress(p)
       );

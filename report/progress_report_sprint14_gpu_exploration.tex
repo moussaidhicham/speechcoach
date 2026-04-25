@@ -1,0 +1,396 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Rapport d'Avancement n\textdegree5 \textemdash{} SpeechCoach}
+\rhead{Master SIE \textemdash{} 2026}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries\color{blue!70!black}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\bfseries\color{blue!50!black}}{}{0em}{}
+\titleformat{\subsubsection}{\bfseries\color{blue!35!black}}{}{0em}{}
+
+\title{
+    \vspace{-2cm}
+    \large Master Systèmes Intelligents pour l'Éducation (SIE)\\
+    \vspace{0.5cm}
+    \huge \textbf{Rapport d'État d'Avancement n\textdegree5}\\
+    \large \textit{Exploration GPU : évaluation des solutions d'accélération pour transcription Whisper}
+}
+\author{\textbf{Étudiant :} Hicham Moussaid \\ \textbf{Encadrant :} Pr. Abdelaaziz Hessane}
+\date{Période : 21 avril 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Objectif de la phase}
+Cette phase visait deux objectifs : (1) explorer des solutions GPU pour accélérer la transcription Whisper (réduction 6--15x), et (2) développer des indicateurs émotionnels (EQ) basés sur les métriques audio/visuelles existantes.
+
+\section{Exploration GPU}
+
+\subsection{Matériel local}
+GPU Intel HD Graphics 520 non compatible CUDA, inutilisable pour PyTorch/Whisper GPU.
+
+\subsection{Solutions cloud évaluées}
+\begin{itemize}
+    \item \textbf{Modal (Rejeté)} : GPU T4/A10G/A100, \$30/mois gratuit, mais carte bancaire requise.
+    \item \textbf{Google Colab (Rejeté)} : GPU T4 gratuit, mais notebook (pas backend), timeout 90 min.
+    \item \textbf{Kaggle (Évalué)} : GPU P100/T4, 30h/semaine. Architecture : Kaggle + ngrok. Limitations : solution hacky, URL dynamique, timeout 12h.
+    \item \textbf{Hugging Face Spaces (Évalué)} : GPU T4 gratuit, API REST. Limitations : timeout 1h, cold start 30-60s, ressources partagées.
+    \item \textbf{NVIDIA NIM (Évalué)} : GPU A100/H100, gratuit 6 mois, Whisper Large V3. Problèmes : protocol gRPC complexe (pas REST), conversion audio requise, complexité élevée.
+\end{itemize}
+
+\subsection{Décision : Abandon GPU}
+Complexité disproportionnée (gRPC, ngrok, fallback), pas de solution production-ready sans carte bancaire, optimisations CPU suffisantes (-32--38\% déjà excellent), temps mieux investi sur EQ/multilingue/tests.
+
+\subsection{Alternatives CPU}
+\textbf{Existant :} beam\_size=1 (-32--38\%), cache modèles (-100\% chargement), parallélisme (vision $\parallel$ transcription), RTF amélioré (2.25x $\rightarrow$ 1.35x).
+
+\textbf{Futures :} batch processing, profiling CPU, modèles légers (tiny/base Whisper), compression audio.
+
+\section{Expérimentation EQ (Indicateurs Émotionnels)}
+
+\subsection{Objectif}
+Développer des indicateurs comportementaux (pas émotions réelles) basés sur métriques audio/visuelles pour mesurer stress, confiance et articulation lors des présentations vidéo.
+
+\subsection{Approche initiale : Règles avec Librosa et MediaPipe}
+
+\subsubsection{Outils utilisés et leurs détections}
+\begin{itemize}
+    \item \textbf{Librosa (Audio)} : Analyse du signal audio pour détecter :
+    \begin{itemize}
+        \item Caractéristiques prosodiques : pitch (hauteur de voix), énergie (volume), rythme de parole
+        \item Disfluences vocales : fillers (mots de remplissage), pauses, bégaiements
+        \item Qualité vocale : stabilité du pitch, dynamique énergétique, couverture vocale
+    \end{itemize}
+    \item \textbf{MediaPipe (Vision)} : Analyse vidéo pour détecter :
+    \begin{itemize}
+        \item Caractéristiques faciales : landmarks du visage (468 points), expression faciale (sourire, froncement des sourcils), clignement des yeux
+        \item Comportement visuel : contact visuel avec la caméra, direction du regard
+        \item Posture : pose de la tête (pitch, yaw, roll), stabilité de la tête
+        \item Gestuelle : position des mains, mouvement des mains, agitation gestuelle
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Méthodologie de calcul}
+
+Les trois indicateurs EQ sont calculés en combinant des métriques audio et visuelles avec des pondérations spécifiques.
+
+\textbf{Répartition Audio/Vision :}
+\begin{itemize}
+    \item \textbf{Audio (Librosa)} : 50--60\% du poids total selon l'indicateur
+    \item \textbf{Vision (MediaPipe)} : 40--50\% du poids total selon l'indicateur
+\end{itemize}
+
+\textbf{Détail des composantes audio (Librosa) :}
+\begin{itemize}
+    \item \textbf{Disfluences} : Fillers/min, pauses/min, stutters/min (calculés à partir de la transcription)
+    \item \textbf{Rythme} : Mots par minute (wpm), dérivé de la transcription et de la durée audio
+    \item \textbf{Stabilité vocale} : Écart-type du pitch (demi-tons), dynamique énergétique (dB)
+    \item \textbf{Support vocal} : Ratio de segments avec voix active (voiced ratio)
+\end{itemize}
+
+\textbf{Détail des composantes vision (MediaPipe) :}
+\begin{itemize}
+    \item \textbf{Contact visuel} : Ratio de frames avec regard dirigé vers la caméra (calculé via landmarks des yeux)
+    \item \textbf{Stabilité tête} : Écart-type de pitch et yaw (angles en degrés)
+    \item \textbf{Agitation gestuelle} : Somme des mouvements des poignets entre frames successives
+    \item \textbf{Clignement} : Taux de clignement par minute (détecté via landmarks des yeux)
+    \item \textbf{Tension sourcils} : Distance sourcils-yeux (calculée via landmarks faciaux)
+    \item \textbf{Sourire} : Ratio de frames avec sourire détecté (via landmarks des lèvres)
+\end{itemize}
+
+\textbf{Formule de calcul des indicateurs :}
+
+\begin{itemize}
+    \item \textbf{Stress} (plus bas = mieux) : 8 composantes
+    \begin{itemize}
+        \item Audio (50\%) : Disfluences (22\% du total), Pitch (9\%), Énergie (9\%)
+        \item Vision (50\%) : Contact visuel (25\%), Stabilité tête (14\%), Agitation (5\%), Clignement (8\%), Tension sourcils (8\%)
+    \end{itemize}
+    \item \textbf{Confiance} (plus haut = mieux) : 7 composantes
+    \begin{itemize}
+        \item Audio (45\%) : Rythme (18\%), Fluidité (20\%), Voix (7\%)
+        \item Vision (55\%) : Contact visuel (40\%), Stabilité tête (15\%), Sourire (3\%)
+    \end{itemize}
+    \item \textbf{Articulation} (plus haut = mieux) : 6 composantes
+    \begin{itemize}
+        \item Audio (70\%) : Fluidité (45\%), Rythme (18\%), Voix (17\%)
+        \item Vision (30\%) : Taux pauses (10\%), Durée pauses (10\%), Support vocal (10\%)
+    \end{itemize}
+\end{itemize}
+
+\textbf{Profils périphériques} : Seuils adaptés selon type (laptop strict, smartphone souple).
+
+\subsection{Ajustements}
+Réduction poids agitation gestuelle (10\% $\rightarrow$ 5\%), augmentation poids contact visuel (30\% $\rightarrow$ 40\%), augmentation seuils pauses (7 $\rightarrow$ 15/min), pondération dynamique agitation.
+
+\subsection{Résultats}
+Indicateurs EQ intégrés dans interface, rapports PDF/Markdown. Scores plus cohérents avec qualité réelle des présentations.
+
+\section{Comparaison des méthodes d'analyse émotionnelle : Métriques observables vs Modèles de deep learning}
+
+\subsection{Contexte et progression chronologique}
+
+Après avoir développé l'approche par métriques observables avec Librosa et MediaPipe, nous avons décidé de pousser l'expérimentation plus loin en testant une approche basée sur des modèles de deep learning. L'objectif était de déterminer si l'utilisation de modèles pré-entraînés pour la détection émotionnelle pourrait améliorer la qualité et la fiabilité des indicateurs EQ.
+
+\subsection{Les deux approches comparées}
+
+\subsubsection{Approche par métriques observables (implémentée initialement)}
+\begin{itemize}
+    \item \textbf{Librosa (Audio)} : Analyse du signal audio pour extraire des caractéristiques prosodiques (pitch, énergie, rythme), détecter les disfluences (fillers, pauses, bégaiements), et évaluer la qualité vocale.
+    \item \textbf{MediaPipe (Vision)} : Analyse vidéo pour détecter les caractéristiques faciales (landmarks, expressions), le comportement visuel (contact visuel), la posture (pose de la tête), et la gestuelle (mouvement des mains).
+    \item \textbf{Calculs} : Formules déterministes basées sur des seuils et pondérations empiriques.
+\end{itemize}
+
+\subsubsection{Approche par modèles de deep learning (implémentée ensuite)}
+\begin{itemize}
+    \item \textbf{Wav2Vec2 (Audio)} : Modèle de deep learning pré-entraîné pour détecter les émotions dans l'audio (happy, sad, angry, neutral, disgust, fear, surprise).
+    \item \textbf{HSEmotion ONNX (Vision)} : Modèle de deep learning pour détecter les émotions faciales à partir des images (happy, sad, angry, neutral, disgust, fear, surprise).
+    \item \textbf{Fusion} : Combinaison des probabilités émotionnelles audio et vision pour obtenir une émotion globale.
+    \item \textbf{Calculs} : Probabilités émotionnelles issues des modèles, converties en scores EQ via des règles de mappage.
+\end{itemize}
+
+\textbf{Méthodologie de calcul détaillée :}
+
+\textbf{Répartition Audio/Vision :}
+\begin{itemize}
+    \item \textbf{Audio (Wav2Vec2)} : 50\% du poids total (fusion égale)
+    \item \textbf{Vision (HSEmotion)} : 50\% du poids total (fusion égale)
+\end{itemize}
+
+\textbf{Étapes de calcul :}
+
+\textbf{1. Détection émotionnelle audio (Wav2Vec2) :}
+\begin{itemize}
+    \item L'audio est découpé en segments de 5 secondes
+    \item Chaque segment est passé dans Wav2Vec2 Large V3
+    \item Le modèle retourne 7 probabilités émotionnelles (happy, sad, angry, neutral, disgust, fear, surprise)
+    \item Les probabilités sont moyennées sur tous les segments
+\end{itemize}
+
+\textbf{2. Détection émotionnelle vision (HSEmotion) :}
+\begin{itemize}
+    \item 30 frames sont échantillonnées (1 frame toutes les 10 secondes)
+    \item Chaque frame est passée dans HSEmotion ONNX
+    \item Le modèle retourne 7 probabilités émotionnelles pour chaque frame
+    \item Les probabilités sont moyennées sur toutes les frames
+\end{itemize}
+
+\textbf{3. Fusion des émotions :}
+\begin{itemize}
+    \item Probabilité finale pour chaque émotion = (Probabilité\_audio + Probabilité\_vision) / 2
+    \item Exemple : P(disgust) = (P\_audio(disgust) + P\_vision(disgust)) / 2
+\end{itemize}
+
+\textbf{4. Conversion en scores EQ :}
+
+\textbf{Mapping Émotions $\rightarrow$ Stress (plus bas = mieux) :}
+\begin{itemize}
+    \item Emotions négatives = Stress élevé : angry (80), disgust (80), sad (70), fear (70)
+    \item Emotions neutre = Stress moyen : neutral (50)
+    \item Emotions positives = Stress faible : happy (20), surprise (30)
+\end{itemize}
+
+\textbf{Mapping Émotions $\rightarrow$ Confiance (plus haut = mieux) :}
+\begin{itemize}
+    \item Emotions positives = Confiance élevée : happy (80), surprise (70)
+    \item Emotion neutre = Confiance moyenne : neutral (50)
+    \item Emotions négatives = Confiance faible : angry (20), disgust (20), sad (30), fear (30)
+\end{itemize}
+
+\textbf{Mapping Émotions $\rightarrow$ Articulation (plus haut = mieux) :}
+\begin{itemize}
+    \item Emotions positives = Articulation élevée : happy (70), surprise (60)
+    \item Emotion neutre = Articulation moyenne : neutral (50)
+    \item Emotions négatives = Articulation faible : angry (30), disgust (30), sad (40), fear (35)
+\end{itemize}
+
+\textbf{5. Calcul final :}
+\begin{itemize}
+    \item Score EQ = $\sum$ (Probabilité(émotion) $\times$ Valeur\_mapping(émotion))
+    \item Exemple Stress = P(angry)$\times$80 + P(disgust)$\times$80 + P(sad)$\times$70 + P(fear)$\times$70 + P(neutral)$\times$50 + P(happy)$\times$20 + P(surprise)$\times$30
+\end{itemize}
+
+\subsection{Méthodologie d'évaluation}
+L'évaluation porte sur deux critères : \textbf{temps de traitement} et \textbf{qualité des résultats}. Quatre sessions de présentation réelles ont été analysées avec les deux méthodes sur une configuration CPU standard (Intel Core i5, 8GB RAM).
+
+\subsection{Comparaison : Temps de traitement}
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}lccc@{}}
+        \toprule
+        \textbf{Méthode} & \textbf{Durée} & \textbf{\% Total} & \textbf{Observation} \\
+        \midrule
+        \textbf{Métriques observables} & 0:43 & 6.3\% & Excellente, parallèle \\
+        \textbf{Modèles de deep learning} & 12:47 & 66.3\% & Wav2Vec2 = goulot d'étranglement \\
+        \midrule
+        \textbf{TOTAL} & \textbf{19:20} & \textbf{100.0\%} & \textbf{19.3 minutes} \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Chronométrage des deux méthodes (vidéo 5 minutes).}
+\end{table}
+
+\textbf{Impact UX :} L'approche par modèles de deep learning est 18x plus lente. Pour une vidéo de 10 minutes : ~14 min (métriques observables) vs ~38 min (modèles de deep learning).
+
+\subsection{Comparaison : Qualité des résultats}
+
+\begin{table}[H]
+    \centering
+    \scriptsize
+    \begin{tabularx}{\textwidth}{@{}lcccccc@{}}
+        \toprule
+        \textbf{Session} & \textbf{Global} & \textbf{Métriques obs.} & & \textbf{Métriques obs.} & & \textbf{Métriques obs.} & & \textbf{Modèles DL} & & \textbf{Modèles DL} & & \textbf{Modèles DL} & \\
+        & \textbf{Score} & \textbf{Stress} & \textbf{Confiance} & \textbf{Articulation} & \textbf{Stress} & \textbf{Confiance} & \textbf{Articulation} & \textbf{Top Émotions} \\
+        \midrule
+        Session 1 & 69/100 & 48/100 & 56/100 & 67/100 & 65/100 & 35/100 & 31/100 & disgust (31\%), angry (18\%), neutral (17\%) \\
+        Session 2 & 79/100 & 39/100 & 68/100 & 79/100 & 63/100 & 37/100 & 31/100 & disgust (29\%), angry (18\%), neutral (16\%) \\
+        Session 3 & 35/100 & 72/100 & 26/100 & 36/100 & 54/100 & 46/100 & 29/100 & disgust (20\%), surprise (17\%), angry (15\%) \\
+        Session 4 & 88/100 & 35/100 & 79/100 & 76/100 & 61/100 & 39/100 & 30/100 & disgust (26\%), sad (16\%), neutral (16\%) \\
+        \midrule
+        \textbf{Moyenne} & \textbf{67.75/100} & \textbf{48.5/100} & \textbf{57.25/100} & \textbf{64.5/100} & \textbf{60.75/100} & \textbf{39.25/100} & \textbf{30.25/100} & \textbf{disgust dominant} \\
+        \textbf{Écart-type} & \textbf{18.6} & \textbf{15.3} & \textbf{22.5} & \textbf{19.1} & \textbf{4.5} & \textbf{4.6} & \textbf{0.9} & \textbf{biais négatif} \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Scores EQ par méthode et par session.}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}lcc@{}}
+        \toprule
+        \textbf{Indicateur} & \textbf{Métriques obs.} & \textbf{Modèles DL} \\
+        \midrule
+        \textbf{Corrélation avec Global} & Forte (0.92) & Faible (0.15) \\
+        \textbf{Plage (Stress)} & 35--72 (large) & 54--65 (étroite) \\
+        \textbf{Plage (Confiance)} & 26--79 (large) & 35--46 (étroite) \\
+        \textbf{Plage (Articulation)} & 31--79 (large) & 29--31 (très étroite) \\
+        \textbf{Discrimination} & Oui & Non \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Cohérence avec la qualité objective.}
+\end{table}
+
+\textbf{Observations clés :}
+\begin{itemize}
+    \item \textbf{Métriques observables} : Scores dynamiques (35--79), forte corrélation avec qualité réelle, explicables via métriques observables (fillers, contact visuel, stabilité).
+    \item \textbf{Modèles de deep learning} : Scores constants (plage étroite), corrélation faible, émotion \textit{disgust} détectée dans 100\% des sessions (même pour présentations excellentes 79/100 et 88/100).
+\end{itemize}
+
+\subsection{Problème identifié : Biais émotionnel des modèles de deep learning}
+
+Le modèle Wav2Vec2 détecte systématiquement \textbf{disgust} comme émotion dominante (moyenne 26.5\%), indépendamment de la qualité de présentation. Ce biais s'explique par :
+\begin{itemize}
+    \item \textbf{Dataset inadapté} : Wav2Vec2 entraîné sur IEMOCAP (données d'expression émotionnelle), non calibré pour présentations professionnelles.
+    \item \textbf{Interprétation erronée} : \textit{disgust}, \textit{angry}, \textit{sad} ne sont pas des indicateurs pertinents pour évaluer la qualité d'une présentation orale.
+\end{itemize}
+
+\subsection{Synthèse comparative}
+
+\begin{table}[H]
+    \centering
+    \footnotesize
+    \begin{tabularx}{\textwidth}{@{}lccc@{}}
+        \toprule
+        \textbf{Critère} & \textbf{Métriques obs.} & \textbf{Modèles DL} & \textbf{Gagnant} \\
+        \midrule
+        \textbf{Temps} & 0:43 (6.3\%) & 12:47 (66.3\%) & Métriques obs. (18x plus rapide) \\
+        \textbf{Cohérence} & 0.92 & 0.15 & Métriques obs. (6x plus cohérent) \\
+        \textbf{Plage dynamique} & 35--79 & 29--46 & Métriques obs. (2.5x plus discriminant) \\
+        \textbf{Explicabilité} & Oui & Non & Métriques obs. \\
+        \textbf{Scalabilité} & CPU & CPU lent/GPU requis & Métriques obs. \\
+        \bottomrule
+    \end{tabularx}
+    \caption{Synthèse comparative.}
+\end{table}
+
+\subsection{Recommandation finale}
+
+\textbf{Décision :} Conserver l'approche par métriques observables, abandonner l'approche par modèles de deep learning.
+
+\textbf{Justification :}
+\begin{enumerate}
+    \item \textbf{Performance} : 18x plus rapide, UX acceptable (7 min vs 19 min pour 5 min).
+    \item \textbf{Qualité} : Corrélation 6x plus forte avec la qualité réelle, discrimination des niveaux de performance.
+    \item \textbf{Pertinence} : Modèles de deep learning détectent des émotions non pertinentes (disgust) pour ce contexte.
+    \item \textbf{Explicabilité} : Métriques observables basées sur des caractéristiques actionnables.
+\end{enumerate}
+
+\textbf{Justification scientifique :} L'approche par métriques observables repose sur des indicateurs comportementaux validés (fillers, contact visuel, stabilité) \cite{bavelas2014gestures,pennebaker1999linguistic}, avec calculs déterministes et reproductibles. L'approche par modèles de deep learning souffre d'un biais de dataset (IEMOCAP) et d'un manque de calibrage pour le contexte de présentation.
+
+\subsection{Valeur de l'expérimentation}
+
+Bien que l'approche par modèles de deep learning n'ait pas été retenue, l'expérimentation a permis :
+\begin{itemize}
+    \item Validation rigoureuse de l'approche par métriques observables
+    \item Documentation scientifique de la décision
+    \item Apprentissage technique (Wav2Vec2, HSEmotion, gestion dépendances)
+    \item Architecture modulaire pour évolutions futures
+\end{itemize}
+
+\subsection{Leçons apprises}
+
+\begin{itemize}
+    \item \textbf{Contexte} : Les modèles généralistes nécessitent un calibrage approfondi pour des cas d'usage spécifiques.
+    \item \textbf{Sophistication $\neq$ qualité} : Le deep learning n'est pas automatiquement supérieur à une approche déterministe bien conçue.
+    \item \textbf{Explicabilité} : Critique pour un outil pédagogique.
+    \item \textbf{Comparaison systématique} : Essentielle pour des décisions informées.
+\end{itemize}
+
+\section{Conclusion et recommandations}
+
+\subsection{Synthèse des travaux}
+Cette phase a permis : (1) une exploration exhaustive des solutions GPU (Modal, Colab, Kaggle, Hugging Face, NVIDIA NIM), (2) le développement et l'affinement d'indicateurs EQ basés sur des métriques comportementales, (3) une comparaison systématique entre approche par métriques observables et modèles de deep learning pour l'analyse émotionnelle.
+
+\subsection{Décisions prises}
+\begin{itemize}
+    \item \textbf{GPU} : Abandonné (complexité excessive, pas production-ready sans carte bancaire, optimisations CPU suffisantes).
+    \item \textbf{EQ} : Approche par métriques observables conservée (18x plus rapide, 6x plus cohérente avec qualité réelle, explicabilité pédagogique).
+    \item \textbf{Modèles de deep learning} : Abandonnés (biais dataset IEMOCAP, détection \textit{disgust} non pertinente, scores constants non discriminants).
+\end{itemize}
+
+\subsection{Recommandations futures}
+\begin{enumerate}
+    \item \textbf{Priorité 1} : Interface multilingue (i18n Next.js + RTL).
+    \item \textbf{Priorité 2} : Tests et documentation pour présentation.
+    \item \textbf{Priorité 3} : GPU comme future étape (documenté dans slides, nécessite budget/carte bancaire).
+\end{enumerate}
+
+\subsection{Leçons globales}
+\begin{itemize}
+    \item Importance de focus sur priorités réalisables vs complexité disproportionnée.
+    \item Optimisation CPU avant GPU (32--38\% gain déjà excellent).
+    \item Comparaison temps/qualité systématique pour décisions informées.
+    \item Explicabilité critique pour outils pédagogiques.
+    \item Validation empirique (4 sessions réelles) vs sophistication théorique.
+\end{itemize}
+
+\end{document}

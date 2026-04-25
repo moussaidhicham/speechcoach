@@ -1,5 +1,15 @@
 from celery import Celery
 from app.core.celery_config import celery_settings
+import logging
+import os
+
+os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("httpcore").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub").setLevel(logging.ERROR)
+logging.getLogger("huggingface_hub.utils._http").setLevel(logging.ERROR)
 
 celery_app = Celery(
     "speechcoach_worker",

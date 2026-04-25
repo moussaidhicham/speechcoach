@@ -190,6 +190,57 @@ def _estimate_hum_like_fillers(y: np.ndarray, sr: int, non_silent_intervals: np.
     return count
 
 
+def _extract_light_prosody_features(y: np.ndarray, sr: int) -> Tuple[float, float, float, float]:
+    """
+    Lightweight prosody descriptors for EQ:
+    - pitch_mean_hz
+    - pitch_std_semitones (pitch stability proxy)
+    - voiced_ratio
+    - rms_dynamic_range_db
+    """
+    if y.size == 0:
+        return 0.0, 0.0, 0.0, 0.0
+
+    frame_length = 2048
+    hop_length = 512
+
+    rms_data = librosa.feature.rms(y=y, frame_length=frame_length, hop_length=hop_length)
+    rms = rms_data[0] if rms_data.size > 0 else np.array([], dtype=np.float32)
+    if rms.size == 0:
+        return 0.0, 0.0, 0.0, 0.0
+
+    # YIN is lightweight and robust enough for coaching-level stability signals.
+    try:
+        f0 = librosa.yin(y, fmin=75, fmax=350, sr=sr, frame_length=frame_length, hop_length=hop_length)
+    except Exception:
+        return 0.0, 0.0, 0.0, 0.0
+
+    min_len = min(len(f0), len(rms))
+    if min_len == 0:
+        return 0.0, 0.0, 0.0, 0.0
+    f0 = f0[:min_len]
+    rms = rms[:min_len]
+
+    rms_threshold = max(float(np.percentile(rms, 30)) * 0.9, 1e-5)
+    voiced_mask = (rms > rms_threshold) & np.isfinite(f0) & (f0 >= 75) & (f0 <= 350)
+    voiced_f0 = f0[voiced_mask]
+
+    voiced_ratio = float(np.mean(voiced_mask)) if voiced_mask.size > 0 else 0.0
+    if voiced_f0.size == 0:
+        pitch_mean_hz = 0.0
+        pitch_std_st = 0.0
+    else:
+        pitch_mean_hz = float(np.median(voiced_f0))
+        safe_ref = max(pitch_mean_hz, 1e-6)
+        semitone_offsets = 12.0 * np.log2(voiced_f0 / safe_ref)
+        pitch_std_st = float(np.std(semitone_offsets))
+
+    rms_db = librosa.amplitude_to_db(np.maximum(rms, 1e-8), ref=1.0)
+    rms_dynamic_range_db = float(np.percentile(rms_db, 95) - np.percentile(rms_db, 5))
+
+    return pitch_mean_hz, pitch_std_st, voiced_ratio, rms_dynamic_range_db
+
+
 def analyze_audio_file(
     audio_path: str,
     transcript: List[TranscriptionSegment],
@@ -266,8 +317,11 @@ def analyze_audio_file(
     else:
         energy_curve = [0.0]
 
+    pitch_mean_hz, pitch_std_st, voiced_ratio, rms_dynamic_range_db = _extract_light_prosody_features(y, sr)
+
     logger.info(
-        "Audio Analysis - WPM: %.1f, Pauses >0.5s: %s, Fillers: %s (lexical=%s, hum_text=%s, hum_audio=%s), Stutters: %s",
+        "Audio Analysis - WPM: %.1f, Pauses >0.5s: %s, Fillers: %s (lexical=%s, hum_text=%s, hum_audio=%s), "
+        "Stutters: %s, PitchMean: %.1fHz, PitchStd: %.2fst, Voiced: %.0f%%, RMS-Range: %.1fdB",
         wpm,
         pause_count,
         filler_count,
@@ -275,6 +329,10 @@ def analyze_audio_file(
         hum_filler_count,
         acoustic_hum_count,
         stutter_count,
+        pitch_mean_hz,
+        pitch_std_st,
+        voiced_ratio * 100.0,
+        rms_dynamic_range_db,
     )
 
     metrics = AudioMetrics(
@@ -284,6 +342,10 @@ def analyze_audio_file(
         filler_count=filler_count,
         stutter_count=stutter_count,
         total_duration=round(total_duration, 2),
+        pitch_mean_hz=round(pitch_mean_hz, 2),
+        pitch_std_semitones=round(pitch_std_st, 3),
+        voiced_ratio=round(voiced_ratio, 3),
+        rms_dynamic_range_db=round(rms_dynamic_range_db, 2),
     )
 
     return metrics, energy_curve

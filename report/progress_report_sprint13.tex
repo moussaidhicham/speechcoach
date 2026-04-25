@@ -88,6 +88,23 @@ L'analyse a montré que le problème venait de plusieurs sources : chaînes arab
 
 Le correctif final inclut : restauration des chaînes arabes correctes, suppression du prompt multilingue global, stratégie en deux passes (détection langue puis langue forcée avec prompt spécifique), amélioration des listes de fillers en anglais/français/arabe, exclusion de marqueurs discursifs trop généraux, conservation de fillers pédagogiquement pertinents, ajout d'un détecteur acoustique pour fillers nasaux, et amélioration du comptage des répétitions.
 
+\textbf{Détails techniques des correctifs :}
+
+\begin{itemize}
+    \item \textbf{Suppression du prompt multilingue} : désactivation des prompts de langue initiaux (ex: \texttt{"Euh, hum, hmm, mm, mmm, ah, ben, alors, donc"} pour français) qui interféraient avec la détection des fillers. Ces prompts favorisaient les hallucinations et réduisaient la précision de la transcription pour les cas réels.
+
+    \item \textbf{Stratégie en deux passes} : première passe pour la détection automatique de la langue sans forcer, suivie d'une seconde passe pour la transcription avec la langue détectée et des paramètres spécifiques. Cette approche est plus précise que le forçage a priori d'une langue.
+
+    \item \textbf{Détecteur acoustique pour fillers nasaux} : implémentation via la bibliothèque \texttt{librosa} d'une fonction \texttt{\_estimate\_hum\_like\_fillers()} qui analyse les segments audio non transcrits par l'ASR. La technique utilise 4 features acoustiques :
+    \begin{itemize}
+        \item \textbf{RMS (Root Mean Square)} : mesure l'énergie du signal pour identifier les segments avec une amplitude suffisante
+        \item \textbf{ZCR (Zero Crossing Rate)} : distingue les sons voisés des sons non-voisés, utile pour identifier les hummings
+        \item \textbf{Centroid spectral} : mesure la luminosité du son (fréquence moyenne pondérée par l'énergie), les sons nasaux ayant généralement un centroid plus bas
+        \item \textbf{Rolloff spectral} : mesure le contenu fréquentiel (fréquence au-dessous de laquelle se trouve 85\% de l'énergie), les sons nasaux ayant un rolloff plus bas
+    \end{itemize}
+    Ce détecteur est particulièrement important pour l'arabe, où les fillers nasaux (\textit{mm}, \textit{mmm}, \textit{hamam}) sont fréquents mais souvent lissés par Faster-Whisper.
+\end{itemize}
+
 \subsection{Résultats observés par langue}
 \textbf{Anglais} : Cas le plus stable. Fillers (\textit{um}, \textit{uh}, \textit{mmm}, \textit{hmm}) mieux conservés. Répétitions (\textit{like like like}, \textit{the system, the system}) correctement détectées.
 

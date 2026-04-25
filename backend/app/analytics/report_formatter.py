@@ -484,6 +484,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
     audio = metrics.get('audio_metrics') or {}
     vision = metrics.get('vision_metrics') or {}
     metadata = metrics.get('metadata') or {}
+    eq_metrics = metrics.get('eq_metrics') or {}
     llm_coaching = metrics.get('llm_coaching') or {}
     enrichment_status = str(metrics.get('enrichment_status') or 'completed')
 
@@ -615,6 +616,9 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
             'language': language,
             'fps': round(fps, 2),
             'resolution': [resolution[0], resolution[1]],
+            'device_type': str(metadata.get('device_type') or 'unknown'),
+            'device_source': str(metadata.get('device_source') or 'fallback'),
+            'device_confidence': round(_safe_float(metadata.get('device_confidence')), 3),
             'processing_time': round(_safe_float(metadata.get('processing_time')), 2),
         },
         'summary': summary_payload,
@@ -653,6 +657,7 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         'exercise_recommendation': exercise_recommendation,
         'training_plan_markdown': training_plan_markdown,
         'transcript': transcript,
+        'eq_metrics': eq_metrics if isinstance(eq_metrics, dict) else {},
         'enrichment_status': enrichment_status,
         'visuals': {
             'audio_energy': f"/storage/processing/{str(session.id)}/audio_energy.png",
@@ -669,6 +674,7 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
     strengths = report.get('strengths') or []
     weaknesses = report.get('weaknesses') or []
     exercise_recommendation = report.get('exercise_recommendation') or {}
+    training_plan = report.get('training_plan') or {}
     transcript = report.get('transcript') or []
 
     lines: List[str] = [
@@ -746,6 +752,138 @@ def build_report_markdown(report: Dict[str, Any]) -> str:
         "- Objectif : Mouvement equilibre (2.5 a 6.5/10)",
         '',
     ])
+
+    eq_metrics = report.get('eq_metrics') or {}
+
+    # Metriques vocales
+    lines.extend([
+        '### Metriques vocales',
+        '',
+    ])
+    lines.extend([
+        f"- **Debit (WPM)** : {metrics.get('wpm', 0)} mots/min ({_format_pace_label(metrics.get('wpm', 0))})",
+        "  Objectif : Entre 120 et 160 mots/min (Maitrise)",
+        '',
+        f"- **Pauses (>0.5s)** : {metrics.get('pause_count', 0)} pause(s)",
+        "  Objectif : Moins de 4 pauses longues par minute",
+        '',
+        f"- **Hesitations** : {metrics.get('filler_count', 0)} detectee(s)",
+        "  Objectif : Moins de 2 mots parasites par minute",
+        '',
+        f"- **Repetitions** : {metrics.get('stutter_count', 0)} detectee(s)",
+        "  Objectif : Aucune repetition pour un score optimal",
+        '',
+    ])
+
+    # Qualite visuelle
+    lines.extend([
+        '### Qualite visuelle',
+        '',
+    ])
+    lines.extend([
+        f"- **Luminosite** : {metrics.get('brightness', 0)} ({_format_lighting_label(metrics.get('brightness', 0))})",
+        "  Objectif : Entre 70 et 210 pour eviter l'eblouissement",
+        '',
+        f"- **Nettete** : {metrics.get('blur', 0)} ({_format_sharpness_label(metrics.get('blur', 0))})",
+        "  Objectif : Score superieur a 40 pour une image nette",
+        '',
+    ])
+
+    # Metriques visuelles
+    lines.extend([
+        '### Metriques visuelles',
+        '',
+    ])
+    lines.extend([
+        f"- **Presence visage** : {metrics.get('face_presence_ratio', 0)}%",
+        "  Objectif : Superieure a 80% dans le cadre",
+        '',
+        f"- **Contact visuel** : {metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})",
+        "  Objectif : Soutenir la camera (> 70% du temps)",
+        '',
+        f"- **Mains visibles** : {metrics.get('hands_visibility_ratio', 0)}% ({_format_hands_label(metrics.get('hands_visibility_ratio', 0))})",
+        "  Objectif : Mains dans le cadre (> 60% du temps)",
+        '',
+        f"- **Intensite gestuelle** : {metrics.get('hands_activity_score', 0)}/10 ({metrics.get('hands_intensity_label', 'N/A')})",
+        "  Objectif : Mouvement equilibre (2.5 a 6.5/10)",
+        '',
+    ])
+
+    # Indicateurs emotionnels (EQ metrics) - at the end since they're derived from other metrics
+    if eq_metrics and isinstance(eq_metrics, dict):
+        eq_scores = eq_metrics.get('scores') or {}
+        eq_objectives = eq_metrics.get('objectives') or {}
+        emotion_scores = eq_metrics.get('emotion_scores') or {}
+
+        lines.extend([
+            '### Indicateurs emotionnels',
+            '',
+        ])
+
+        stress_score = _safe_int(eq_scores.get('stress', 0))
+        stress_aspects = ', '.join(eq_objectives.get('stress', {}).get('aspects', []))
+        lines.extend([
+            f"- **Stress** : {stress_score}/100",
+            f"  Indicateurs : {stress_aspects}" if stress_aspects else "",
+            '',
+        ])
+
+        confidence_score = _safe_int(eq_scores.get('confidence', 0))
+        confidence_aspects = ', '.join(eq_objectives.get('confidence', {}).get('aspects', []))
+        lines.extend([
+            f"- **Confiance** : {confidence_score}/100",
+            f"  Indicateurs : {confidence_aspects}" if confidence_aspects else "",
+            '',
+        ])
+
+        articulation_score = _safe_int(eq_scores.get('articulation', 0))
+        articulation_aspects = ', '.join(eq_objectives.get('articulation', {}).get('aspects', []))
+        lines.extend([
+            f"- **Articulation** : {articulation_score}/100",
+            f"  Indicateurs : {articulation_aspects}" if articulation_aspects else "",
+            '',
+        ])
+
+        # Comparison: Rule-Based vs Model-Based
+        if emotion_scores and isinstance(emotion_scores, dict):
+            rule_based = emotion_scores.get('rule_based') or {}
+            model_based = emotion_scores.get('model_based') or {}
+
+            rule_eq = rule_based.get('eq_scores') or {}
+            model_eq = model_based.get('eq_scores') or {}
+            vision_available = model_based.get('vision_available', True)
+
+            if rule_eq and model_eq:
+                lines.extend([
+                    '#### Comparaison des méthodes d\'analyse',
+                    '',
+                    '| Méthode | Stress | Confiance | Articulation |',
+                    '|---------|--------|-----------|--------------|',
+                    f"| Règles (Librosa/MediaPipe) | {_safe_int(rule_eq.get('stress', 0))}/100 | {_safe_int(rule_eq.get('confidence', 0))}/100 | {_safe_int(rule_eq.get('articulation', 0))}/100 |",
+                ])
+
+                # Adjust label based on vision availability
+                method_label = "IA (Wav2Vec2)" if not vision_available else "IA (Wav2Vec2/HSEmotion)"
+                lines.append(f"| {method_label} | {_safe_int(model_eq.get('stress', 0))}/100 | {_safe_int(model_eq.get('confidence', 0))}/100 | {_safe_int(model_eq.get('articulation', 0))}/100 |")
+                lines.append('')
+
+                if not vision_available:
+                    lines.extend([
+                        '*Note : Analyse visuelle non disponible (problème de compatibilité), basée sur l\'audio uniquement.*',
+                        '',
+                    ])
+
+                # Show top emotions from model-based approach
+                fused_emotions = model_based.get('fused_emotions') or {}
+                if fused_emotions:
+                    top_emotions = sorted(fused_emotions.items(), key=lambda x: x[1], reverse=True)[:3]
+                    emotion_labels = ', '.join([f"{label} ({int(prob*100)}%)" for label, prob in top_emotions])
+                    lines.extend([
+                        '#### Émotions détectées (IA)',
+                        '',
+                        f"- Émotions dominantes : {emotion_labels}",
+                        '',
+                    ])
 
     lines.extend([
         '## Prochain exercice',
@@ -885,6 +1023,7 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
     exercise_recommendation = report.get('exercise_recommendation') or {}
     transcript = report.get('transcript') or []
     enrichment_status = str(report.get('enrichment_status') or 'completed')
+    eq_metrics = report.get('eq_metrics') or {}
 
     title = escape(str(session.get('title', 'Rapport SpeechCoach')))
     created_at = _format_date(str(session.get('created_at', '')))
@@ -909,12 +1048,12 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
         """
     elif exercise_recommendation.get('should_display', True):
         steps = [escape(str(step)) for step in (exercise_recommendation.get('steps') or []) if str(step).strip()]
-        summary = escape(str(exercise_recommendation.get('summary') or 'Reprenez votre discours en appliquant le conseil prioritaire.'))
+        exercise_summary = escape(str(exercise_recommendation.get('summary') or 'Reprenez votre discours en appliquant le conseil prioritaire.'))
         if steps:
             numbered_steps = ''.join(f'<li>{step}</li>' for step in steps)
-            practice_body = f'<div class="note">{summary}</div><ol style="margin: 12px 0 0; padding-left: 20px;">{numbered_steps}</ol>'
+            practice_body = f'<div class="note">{exercise_summary}</div><ol style="margin: 12px 0 0; padding-left: 20px;">{numbered_steps}</ol>'
         else:
-            practice_body = f'<div class="note">{summary}</div>'
+            practice_body = f'<div class="note">{exercise_summary}</div>'
 
         practice_section = f"""
         <article class=\"card\">
@@ -923,7 +1062,7 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
         </article>
         """
 
-    return f"""
+    html = f"""
 <!DOCTYPE html>
 <html lang=\"fr\">
   <head>
@@ -1109,8 +1248,117 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
             <div class=\"metric-item\"><strong>Regard caméra</strong><span>{metrics.get('eye_contact_ratio', 0)}% ({_format_eye_contact_label(metrics.get('eye_contact_ratio', 0))})</span></div>
             <div class=\"metric-item\"><strong>Intensité gestuelle</strong><span>{metrics.get('hands_activity_score', 0)}/10 ({metrics.get('hands_intensity_label', 'N/A')})</span></div>
           </div>
-        </article>
+        </article>"""
 
+    # Add EQ metrics section if available
+    if eq_metrics and isinstance(eq_metrics, dict):
+        eq_scores = eq_metrics.get('scores') or {}
+        eq_objectives = eq_metrics.get('objectives') or {}
+        eq_version = eq_metrics.get('version', 'v2')
+        eq_reliability = eq_metrics.get('reliability') or {}
+        eq_reliability_pct = int(round(_safe_float(eq_reliability.get('overall', 0)) * 100))
+        eq_should_interpret = eq_metrics.get('interpretation', {}).get('should_interpret', eq_reliability_pct >= 55)
+        emotion_scores = eq_metrics.get('emotion_scores') or {}
+
+        stress_score = _safe_int(eq_scores.get('stress', 0))
+        stress_aspects = ', '.join(eq_objectives.get('stress', {}).get('aspects', []))
+        confidence_score = _safe_int(eq_scores.get('confidence', 0))
+        confidence_aspects = ', '.join(eq_objectives.get('confidence', {}).get('aspects', []))
+        articulation_score = _safe_int(eq_scores.get('articulation', 0))
+        articulation_aspects = ', '.join(eq_objectives.get('articulation', {}).get('aspects', []))
+
+        reliability_warning = ''
+        if not eq_should_interpret:
+            reliability_warning = f'<div class="note" style="margin-bottom: 12px; border-color: #c8873c; background: rgba(200, 135, 60, 0.08);"><strong>Note :</strong> Signal EQ encore fragile. Interpretation prudente recommandee (fiabilite {eq_reliability_pct}%).</div>'
+
+        html += f"""
+        <article class=\"card\">
+          <div class=\"section-title\">
+            <h2>Indicateurs emotionnels</h2>
+            <span class=\"badge\">{escape(eq_version)}</span>
+          </div>
+          <div class="note" style="margin-bottom: 12px; font-size: 12px; color: var(--muted);">Indicateurs comportementaux, pas émotions réelles</div>
+          {reliability_warning}
+          <div class="stack" style="gap: 12px;">
+            <div class="context-row">
+              <strong>Stress</strong>
+              <span>{stress_score}/100</span>
+            </div>
+            <div class="note" style="margin-top: 8px; font-size: 13px;"><strong>Facteurs :</strong> {escape(stress_aspects)}</div>
+            <div class="context-row">
+              <strong>Confiance</strong>
+              <span>{confidence_score}/100</span>
+            </div>
+            <div class="note" style="margin-top: 8px; font-size: 13px;"><strong>Facteurs :</strong> {escape(confidence_aspects)}</div>
+            <div class="context-row">
+              <strong>Articulation</strong>
+              <span>{articulation_score}/100</span>
+            </div>
+            <div class="note" style="margin-top: 8px; font-size: 13px;"><strong>Facteurs :</strong> {escape(articulation_aspects)}</div>
+          </div>
+        </article>"""
+
+        # Add comparison section if emotion_scores available
+        if emotion_scores and isinstance(emotion_scores, dict):
+            rule_based = emotion_scores.get('rule_based') or {}
+            model_based = emotion_scores.get('model_based') or {}
+
+            rule_eq = rule_based.get('eq_scores') or {}
+            model_eq = model_based.get('eq_scores') or {}
+            vision_available = model_based.get('vision_available', True)
+
+            if rule_eq and model_eq:
+                method_label = "IA (Wav2Vec2)" if not vision_available else "IA (Wav2Vec2/HSEmotion)"
+                vision_note = '<div class="note" style="margin-bottom: 12px; border-color: #c8873c; background: rgba(200, 135, 60, 0.08);"><strong>Note :</strong> Analyse visuelle non disponible (problème de compatibilité), basée sur l\'audio uniquement.</div>' if not vision_available else ''
+
+                html += f"""
+        <article class=\"card\">
+          <div class=\"section-title\">
+            <h2>Comparaison des méthodes d'analyse</h2>
+            <span class=\"badge\">Dual-Track</span>
+          </div>
+          <div class="note" style="margin-bottom: 12px; font-size: 12px; color: var(--muted);">Comparaison entre l'analyse par règles (math rigide) et l'analyse par IA (intuition)</div>
+          {vision_note}
+          <table style="width: 100%; border-collapse: collapse; margin-top: 12px;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border);">
+                <th style="text-align: left; padding: 8px; font-size: 13px;">Méthode</th>
+                <th style="text-align: center; padding: 8px; font-size: 13px;">Stress</th>
+                <th style="text-align: center; padding: 8px; font-size: 13px;">Confiance</th>
+                <th style="text-align: center; padding: 8px; font-size: 13px;">Articulation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border);">
+                <td style="padding: 8px; font-size: 13px; font-weight: 500;">Règles (Librosa/MediaPipe)</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(rule_eq.get('stress', 0))}/100</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(rule_eq.get('confidence', 0))}/100</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(rule_eq.get('articulation', 0))}/100</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px; font-size: 13px; font-weight: 500;">{escape(method_label)}</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(model_eq.get('stress', 0))}/100</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(model_eq.get('confidence', 0))}/100</td>
+                <td style="text-align: center; padding: 8px; font-size: 13px;">{_safe_int(model_eq.get('articulation', 0))}/100</td>
+              </tr>
+            </tbody>
+          </table>"""
+
+                # Show top emotions from model-based approach
+                fused_emotions = model_based.get('fused_emotions') or {}
+                if fused_emotions:
+                    top_emotions = sorted(fused_emotions.items(), key=lambda x: x[1], reverse=True)[:3]
+                    emotion_badges = ' '.join([f'<span class="badge" style="background: var(--primary-soft);">{label} ({int(prob*100)}%)</span>' for label, prob in top_emotions])
+                    html += f"""
+          <div style="margin-top: 16px;">
+            <div style="font-size: 13px; font-weight: 500; margin-bottom: 8px;">Émotions détectées (IA) :</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">{emotion_badges}</div>
+          </div>"""
+
+                html += """
+        </article>"""
+
+    html += f"""
         <article class=\"card\">
           <div class=\"section-title\">
             <h2>Votre prochaine action</h2>
@@ -1133,3 +1381,4 @@ def build_report_print_html(report: Dict[str, Any]) -> str:
 </html>
     """
 
+    return html
