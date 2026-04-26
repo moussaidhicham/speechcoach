@@ -152,7 +152,7 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
             <Link
               key={label}
               href={href}
-              className="rounded-lg px-4 py-2 transition-all duration-300 hover:bg-white/5 hover:text-foreground"
+              className="rounded-lg px-4 py-2 transition-all duration-300 hover:bg-primary/5 hover:text-foreground"
             >
               {label}
             </Link>
@@ -190,7 +190,7 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-300 hover:bg-white/5 hover:text-foreground md:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-300 hover:bg-primary/5 hover:text-foreground md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-expanded={mobileOpen}
             aria-controls="landing-mobile-nav"
@@ -202,13 +202,13 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
       </div>
 
       {mobileOpen && (
-        <div id="landing-mobile-nav" className="border-t border-white/5 bg-background/95 backdrop-blur-xl md:hidden">
+        <div id="landing-mobile-nav" className="border-t border-primary/10 bg-background/95 backdrop-blur-xl md:hidden">
           <div className="mx-auto max-w-6xl space-y-1 px-4 py-4">
             {navItems.map(({ href, label }) => (
               <Link
                 key={label}
                 href={href}
-                className="block rounded-lg px-4 py-3 text-sm font-medium transition-all duration-300 hover:bg-white/5"
+                className="block rounded-lg px-4 py-3 text-sm font-medium transition-all duration-300 hover:bg-primary/5"
                 onClick={() => setMobileOpen(false)}
               >
                 {label}
@@ -306,7 +306,7 @@ export default function LandingPage() {
               </div>
 
               {/* Quick stats */}
-              <div className="mt-10 flex items-center gap-6 border-t border-white/5 pt-8">
+              <div className="mt-10 flex items-center gap-6 border-t border-primary/10 pt-8">
                 {[
                   ['142', 'mots/min'],
                   ['78%', 'contact visuel'],
@@ -324,7 +324,7 @@ export default function LandingPage() {
             <motion.div {...scaleIn(0.1)} className="relative">
               <div className="score-card rounded-2xl p-6 sm:p-8">
                 <div className="flex items-center justify-between mb-6">
-                  <Badge variant="outline" className="rounded-full border-white/10 bg-white/5 text-xs">
+                  <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 text-xs text-foreground">
                     Apercu rapport
                   </Badge>
                   <span className="text-xs text-muted-foreground">Demo live</span>
@@ -394,7 +394,7 @@ export default function LandingPage() {
                   <h3 className="font-display text-lg font-semibold">{item.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
                   
-                  <div className="mt-4 pt-4 border-t border-white/5">
+                  <div className="mt-4 pt-4 border-t border-primary/10">
                     <div className={cn(
                       'text-xl font-bold',
                       item.accent === 'violet' && 'text-violet-400',
@@ -532,7 +532,7 @@ export default function LandingPage() {
                         </p>
                       </div>
 
-                      <div className="mt-5 flex items-center gap-3 border-t border-white/5 pt-4">
+                      <div className="mt-5 flex items-center gap-3 border-t border-primary/10 pt-4">
                         {item.user_profile?.avatar_url ? (
                           <AvatarCustom
                             src={item.user_profile.avatar_url}
@@ -571,7 +571,7 @@ export default function LandingPage() {
               <motion.div {...fadeUp(0.3)} className="mt-6 flex items-center justify-center gap-4">
                 <Link
                   href="/public-feedback"
-                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2 rounded-lg border-white/10 hover:bg-white/5')}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2 rounded-lg border-primary/20 hover:bg-primary/5')}
                 >
                   Voir tous les avis
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -632,7 +632,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="footer-section relative z-10 border-t border-white/5">
+      <footer className="footer-section relative z-10 border-t border-primary/10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground glow-primary transition-all duration-300 group-hover:scale-105">

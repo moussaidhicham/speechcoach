@@ -49,25 +49,25 @@
   --radius-3xl: 2rem;
 }
 
-/* ─── Light mode - Premium dark theme for impact ─────────────────── */
+/* ─── Light mode - Premium warm light theme ──────────────────────── */
 :root {
-  --background: 240 10% 4%;         /* #09090b - Rich black */
-  --foreground: 0 0% 98%;           /* #FAFAFA - Pure white */
+  --background: 40 33% 98%;          /* #FDFBF7 - Warm cream */
+  --foreground: 240 10% 10%;         /* #1A1A1F - Rich dark */
   
-  --card: 240 6% 10%;               /* Elevated surface */
-  --card-foreground: 0 0% 98%;
+  --card: 0 0% 100%;                 /* Pure white */
+  --card-foreground: 240 10% 10%;
   
-  --popover: 240 6% 10%;
-  --popover-foreground: 0 0% 98%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
   
-  --primary: 262 83% 58%;           /* #8B5CF6 - Vibrant violet */
+  --primary: 262 83% 58%;            /* #8B5CF6 - Vibrant violet */
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 240 4% 16%;          /* Dark gray */
-  --secondary-foreground: 0 0% 98%;
+  --secondary: 40 20% 95%;           /* Warm light gray */
+  --secondary-foreground: 240 10% 20%;
   
-  --muted: 240 4% 16%;
-  --muted-foreground: 240 5% 65%;   /* Soft gray text */
+  --muted: 40 15% 93%;
+  --muted-foreground: 240 5% 45%;    /* Medium gray text */
   
   --accent: 262 83% 58%;
   --accent-foreground: 0 0% 100%;
@@ -75,8 +75,8 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
+  --border: 40 15% 90%;
+  --input: 40 15% 90%;
   --ring: 262 83% 58%;
   
   --radius: 1rem;
@@ -110,7 +110,7 @@
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.3);
+    background: hsl(var(--primary) / 0.2);
     color: hsl(var(--foreground));
   }
 }
@@ -120,119 +120,119 @@
   position: relative;
   overflow: hidden;
   background: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, hsla(262, 83%, 58%, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 100% 50%, hsla(280, 80%, 50%, 0.08) 0%, transparent 40%),
-    radial-gradient(ellipse 50% 30% at 0% 80%, hsla(188, 80%, 45%, 0.06) 0%, transparent 35%),
-    hsl(240 10% 4%);
+    radial-gradient(ellipse 80% 50% at 50% -20%, hsla(262, 83%, 65%, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 100% 50%, hsla(280, 80%, 60%, 0.05) 0%, transparent 40%),
+    radial-gradient(ellipse 50% 30% at 0% 80%, hsla(188, 80%, 50%, 0.04) 0%, transparent 35%),
+    hsl(40 33% 98%);
 }
 
-/* Animated gradient orbs */
+/* Animated gradient orbs - light version */
 .gradient-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
+  filter: blur(120px);
   pointer-events: none;
   will-change: transform, opacity;
 }
 
 .gradient-orb-1 {
-  width: 600px;
-  height: 600px;
-  top: -15%;
-  left: 10%;
-  background: radial-gradient(circle, hsla(262, 83%, 58%, 0.25) 0%, transparent 70%);
-  animation: orbit-1 20s ease-in-out infinite;
+  width: 700px;
+  height: 700px;
+  top: -20%;
+  left: 5%;
+  background: radial-gradient(circle, hsla(262, 83%, 65%, 0.15) 0%, transparent 70%);
+  animation: orbit-1 25s ease-in-out infinite;
 }
 
 .gradient-orb-2 {
-  width: 500px;
-  height: 500px;
-  top: 30%;
-  right: -10%;
-  background: radial-gradient(circle, hsla(280, 80%, 50%, 0.2) 0%, transparent 70%);
-  animation: orbit-2 25s ease-in-out infinite;
+  width: 600px;
+  height: 600px;
+  top: 40%;
+  right: -15%;
+  background: radial-gradient(circle, hsla(188, 80%, 55%, 0.12) 0%, transparent 70%);
+  animation: orbit-2 30s ease-in-out infinite;
 }
 
 .gradient-orb-3 {
-  width: 400px;
-  height: 400px;
-  bottom: 10%;
-  left: -5%;
-  background: radial-gradient(circle, hsla(188, 80%, 50%, 0.15) 0%, transparent 70%);
-  animation: orbit-3 18s ease-in-out infinite;
+  width: 500px;
+  height: 500px;
+  bottom: 5%;
+  left: -10%;
+  background: radial-gradient(circle, hsla(35, 90%, 60%, 0.1) 0%, transparent 70%);
+  animation: orbit-3 22s ease-in-out infinite;
 }
 
 @keyframes orbit-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.8; }
-  33% { transform: translate(50px, 30px) scale(1.1); opacity: 1; }
-  66% { transform: translate(-30px, 50px) scale(0.95); opacity: 0.9; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  33% { transform: translate(60px, 40px) scale(1.1); opacity: 1; }
+  66% { transform: translate(-40px, 60px) scale(0.95); opacity: 0.8; }
 }
 
 @keyframes orbit-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
-  50% { transform: translate(-60px, -40px) scale(1.15); opacity: 1; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
+  50% { transform: translate(-70px, -50px) scale(1.15); opacity: 0.9; }
 }
 
 @keyframes orbit-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-  33% { transform: translate(40px, -30px) scale(1.05); opacity: 0.9; }
-  66% { transform: translate(20px, 40px) scale(1.1); opacity: 0.8; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  33% { transform: translate(50px, -40px) scale(1.05); opacity: 0.8; }
+  66% { transform: translate(30px, 50px) scale(1.1); opacity: 0.7; }
 }
 
-/* ─── Grid pattern overlay ───────────────────────────────────────── */
+/* ─── Grid pattern overlay - light version ───────────────────────── */
 .grid-pattern {
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(hsla(262, 83%, 58%, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(262, 83%, 58%, 0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
+    linear-gradient(hsla(262, 60%, 70%, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, hsla(262, 60%, 70%, 0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 70%);
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 70%);
   pointer-events: none;
 }
 
-/* ─── Glassmorphism cards (premium dark) ─────────────────────────── */
+/* ─── Glassmorphism cards (light version) ────────────────────────── */
 .glass-card {
-  background: hsla(240, 6%, 12%, 0.6);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid hsla(0, 0%, 100%, 0.06);
+  background: hsla(0, 0%, 100%, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsla(262, 40%, 80%, 0.3);
   box-shadow: 
-    0 0 0 1px hsla(0, 0%, 0%, 0.3),
-    0 8px 32px -8px hsla(0, 0%, 0%, 0.4),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.04);
+    0 1px 2px hsla(262, 60%, 50%, 0.03),
+    0 8px 32px -8px hsla(262, 60%, 50%, 0.08),
+    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.8);
   transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .glass-card:hover {
-  background: hsla(240, 6%, 14%, 0.7);
-  border-color: hsla(262, 83%, 58%, 0.2);
+  background: hsla(0, 0%, 100%, 0.85);
+  border-color: hsla(262, 70%, 65%, 0.4);
   box-shadow: 
-    0 0 0 1px hsla(262, 83%, 58%, 0.1),
-    0 16px 48px -12px hsla(262, 83%, 58%, 0.15),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.06);
+    0 1px 2px hsla(262, 60%, 50%, 0.04),
+    0 16px 48px -12px hsla(262, 70%, 55%, 0.15),
+    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
   transform: translateY(-2px);
 }
 
 .glass-card-strong {
-  background: hsla(240, 6%, 10%, 0.8);
+  background: hsla(0, 0%, 100%, 0.85);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border: 1px solid hsla(262, 50%, 75%, 0.35);
   box-shadow: 
-    0 0 0 1px hsla(0, 0%, 0%, 0.4),
-    0 24px 64px -16px hsla(0, 0%, 0%, 0.5),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.05);
+    0 1px 3px hsla(262, 60%, 50%, 0.04),
+    0 24px 64px -16px hsla(262, 60%, 55%, 0.12),
+    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
 }
 
 /* ─── Glowing gradient text ──────────────────────────────────────── */
 .gradient-text {
   background: linear-gradient(135deg, 
-    hsl(262 100% 70%) 0%, 
-    hsl(280 90% 65%) 40%, 
-    hsl(300 80% 60%) 70%,
-    hsl(262 100% 70%) 100%
+    hsl(262 83% 55%) 0%, 
+    hsl(280 80% 50%) 40%, 
+    hsl(300 70% 45%) 70%,
+    hsl(262 83% 55%) 100%
   );
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -247,45 +247,45 @@
 }
 
 .gradient-text-subtle {
-  background: linear-gradient(135deg, hsl(0 0% 98%) 0%, hsl(262 60% 80%) 100%);
+  background: linear-gradient(135deg, hsl(262 70% 45%) 0%, hsl(262 83% 58%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ─── Glow shadows ───────────────────────────────────────────────── */
+/* ─── Glow shadows - light version ───────────────────────────────── */
 .glow-primary {
   box-shadow: 
-    0 0 20px -5px hsla(262, 83%, 58%, 0.4),
-    0 0 50px -10px hsla(262, 83%, 58%, 0.2);
+    0 4px 14px -4px hsla(262, 83%, 58%, 0.35),
+    0 0 30px -8px hsla(262, 83%, 58%, 0.2);
 }
 
 .glow-primary-strong {
   box-shadow: 
-    0 0 30px -5px hsla(262, 83%, 58%, 0.5),
-    0 0 80px -15px hsla(262, 83%, 58%, 0.3),
-    0 0 120px -20px hsla(280, 80%, 50%, 0.2);
+    0 8px 25px -5px hsla(262, 83%, 58%, 0.4),
+    0 0 50px -12px hsla(262, 83%, 58%, 0.25),
+    0 0 80px -15px hsla(280, 80%, 50%, 0.15);
 }
 
 .glow-teal {
   box-shadow: 
-    0 0 20px -5px hsla(188, 80%, 50%, 0.3),
-    0 0 50px -10px hsla(188, 80%, 50%, 0.15);
+    0 4px 14px -4px hsla(188, 80%, 45%, 0.3),
+    0 0 30px -8px hsla(188, 80%, 50%, 0.15);
 }
 
 .glow-amber {
   box-shadow: 
-    0 0 20px -5px hsla(35, 90%, 55%, 0.3),
-    0 0 50px -10px hsla(35, 90%, 55%, 0.15);
+    0 4px 14px -4px hsla(35, 90%, 50%, 0.3),
+    0 0 30px -8px hsla(35, 90%, 55%, 0.15);
 }
 
-/* ─── Feature cards with accent colors ───────────────────────────── */
+/* ─── Feature cards with accent colors - light version ───────────── */
 .feature-card {
   position: relative;
-  background: hsla(240, 6%, 10%, 0.5);
+  background: hsla(0, 0%, 100%, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid hsla(0, 0%, 100%, 0.05);
+  border: 1px solid hsla(262, 40%, 85%, 0.5);
   transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   overflow: hidden;
 }
@@ -296,18 +296,19 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, hsla(262, 83%, 58%, 0.5), transparent);
+  height: 3px;
+  background: linear-gradient(90deg, transparent, hsla(262, 83%, 58%, 0.6), transparent);
   opacity: 0;
   transition: opacity 0.4s ease;
 }
 
 .feature-card:hover {
-  border-color: hsla(262, 83%, 58%, 0.2);
+  background: hsla(0, 0%, 100%, 0.9);
+  border-color: hsla(262, 70%, 70%, 0.5);
   transform: translateY(-4px);
   box-shadow: 
-    0 20px 50px -15px hsla(262, 83%, 58%, 0.2),
-    0 8px 20px -8px hsla(0, 0%, 0%, 0.3);
+    0 20px 40px -15px hsla(262, 70%, 55%, 0.18),
+    0 8px 16px -8px hsla(262, 60%, 50%, 0.1);
 }
 
 .feature-card:hover::before {
@@ -315,27 +316,27 @@
 }
 
 .feature-card-violet {
-  border-color: hsla(262, 83%, 58%, 0.1);
+  border-color: hsla(262, 70%, 80%, 0.4);
 }
 .feature-card-violet:hover {
-  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.08) 0%, hsla(240, 6%, 10%, 0.5) 50%);
-  border-color: hsla(262, 83%, 58%, 0.3);
+  background: linear-gradient(135deg, hsla(262, 83%, 65%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
+  border-color: hsla(262, 83%, 65%, 0.5);
 }
 
 .feature-card-teal {
-  border-color: hsla(188, 80%, 50%, 0.1);
+  border-color: hsla(188, 70%, 75%, 0.4);
 }
 .feature-card-teal:hover {
-  background: linear-gradient(135deg, hsla(188, 80%, 50%, 0.08) 0%, hsla(240, 6%, 10%, 0.5) 50%);
-  border-color: hsla(188, 80%, 50%, 0.3);
+  background: linear-gradient(135deg, hsla(188, 80%, 50%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
+  border-color: hsla(188, 80%, 55%, 0.5);
 }
 
 .feature-card-amber {
-  border-color: hsla(35, 90%, 55%, 0.1);
+  border-color: hsla(35, 80%, 75%, 0.4);
 }
 .feature-card-amber:hover {
-  background: linear-gradient(135deg, hsla(35, 90%, 55%, 0.08) 0%, hsla(240, 6%, 10%, 0.5) 50%);
-  border-color: hsla(35, 90%, 55%, 0.3);
+  background: linear-gradient(135deg, hsla(35, 90%, 55%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
+  border-color: hsla(35, 90%, 55%, 0.5);
 }
 
 /* ─── Icon containers ────────────────────────────────────────────── */
@@ -349,8 +350,8 @@
   position: absolute;
   inset: -4px;
   border-radius: inherit;
-  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.3), hsla(280, 80%, 50%, 0.2));
-  filter: blur(12px);
+  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.25), hsla(280, 80%, 50%, 0.15));
+  filter: blur(10px);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: -1;
@@ -360,12 +361,12 @@
   opacity: 1;
 }
 
-/* ─── Nav glassmorphism (dark) ───────────────────────────────────── */
+/* ─── Nav glassmorphism (light) ──────────────────────────────────── */
 .nav-glass {
-  background: hsla(240, 10%, 6%, 0.8);
+  background: hsla(40, 33%, 98%, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid hsla(0, 0%, 100%, 0.05);
+  border-bottom: 1px solid hsla(262, 40%, 85%, 0.4);
 }
 
 /* ─── Button effects ─────────────────────────────────────────────── */
@@ -380,8 +381,8 @@
   position: absolute;
   inset: -3px;
   border-radius: inherit;
-  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.5), hsla(280, 80%, 50%, 0.4));
-  filter: blur(16px);
+  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.4), hsla(280, 80%, 50%, 0.3));
+  filter: blur(14px);
   opacity: 0;
   transition: opacity 0.3s ease;
   z-index: -1;
@@ -392,7 +393,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.1) 0%, transparent 50%);
+  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.2) 0%, transparent 50%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -407,45 +408,46 @@
 
 .btn-glow:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px -8px hsla(262, 83%, 58%, 0.4);
+  box-shadow: 0 8px 25px -6px hsla(262, 83%, 58%, 0.4);
 }
 
 /* ─── Stats counter styles ───────────────────────────────────────── */
 .stat-number {
   @apply font-display text-5xl font-bold leading-none;
-  background: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(262 80% 80%) 100%);
+  background: linear-gradient(135deg, hsl(262 70% 45%) 0%, hsl(262 83% 58%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* ─── Hero score card ────────────────────────────────────────────── */
+/* ─── Hero score card - light version ────────────────────────────── */
 .score-card {
   position: relative;
   background: 
-    radial-gradient(ellipse 100% 100% at 50% 0%, hsla(262, 83%, 58%, 0.1) 0%, transparent 50%),
-    hsla(240, 6%, 8%, 0.9);
+    radial-gradient(ellipse 100% 100% at 50% 0%, hsla(262, 83%, 65%, 0.08) 0%, transparent 50%),
+    hsla(0, 0%, 100%, 0.9);
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid hsla(262, 83%, 58%, 0.15);
+  border: 1px solid hsla(262, 70%, 75%, 0.4);
   box-shadow: 
-    0 0 0 1px hsla(0, 0%, 0%, 0.3),
-    0 32px 80px -20px hsla(262, 83%, 58%, 0.25),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.05);
+    0 1px 2px hsla(262, 50%, 50%, 0.04),
+    0 24px 64px -16px hsla(262, 70%, 55%, 0.18),
+    0 12px 24px -8px hsla(262, 60%, 50%, 0.08),
+    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
 }
 
 .score-display {
   background: linear-gradient(180deg, 
-    hsl(262 100% 75%) 0%, 
-    hsl(280 90% 65%) 50%,
-    hsl(262 100% 70%) 100%
+    hsl(262 83% 50%) 0%, 
+    hsl(280 80% 45%) 50%,
+    hsl(262 83% 55%) 100%
   );
   background-size: 100% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: score-pulse 3s ease-in-out infinite;
-  filter: drop-shadow(0 0 30px hsla(262, 83%, 58%, 0.5));
+  filter: drop-shadow(0 4px 20px hsla(262, 83%, 58%, 0.3));
 }
 
 @keyframes score-pulse {
@@ -453,31 +455,31 @@
   50% { background-position: 0% 100%; }
 }
 
-/* ─── Testimonial card ───────────────────────────────────────────── */
+/* ─── Testimonial card - light version ───────────────────────────── */
 .testimonial-card {
-  background: hsla(240, 6%, 10%, 0.5);
+  background: hsla(0, 0%, 100%, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid hsla(0, 0%, 100%, 0.05);
+  border: 1px solid hsla(262, 40%, 85%, 0.5);
   transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .testimonial-card:hover {
-  background: hsla(240, 6%, 12%, 0.6);
-  border-color: hsla(262, 83%, 58%, 0.2);
+  background: hsla(0, 0%, 100%, 0.9);
+  border-color: hsla(262, 70%, 70%, 0.5);
   transform: translateY(-4px);
   box-shadow: 
-    0 20px 50px -15px hsla(262, 83%, 58%, 0.15),
-    0 8px 20px -8px hsla(0, 0%, 0%, 0.2);
+    0 20px 40px -15px hsla(262, 70%, 55%, 0.15),
+    0 8px 16px -8px hsla(262, 60%, 50%, 0.08);
 }
 
-/* ─── CTA section ────────────────────────────────────────────────── */
+/* ─── CTA section - vibrant gradient ─────────────────────────────── */
 .cta-section {
   position: relative;
   background: linear-gradient(135deg, 
-    hsl(262 83% 50%) 0%, 
-    hsl(280 80% 45%) 50%,
-    hsl(262 83% 55%) 100%
+    hsl(262 83% 55%) 0%, 
+    hsl(280 75% 50%) 50%,
+    hsl(262 83% 58%) 100%
   );
   overflow: hidden;
 }
@@ -487,7 +489,7 @@
   position: absolute;
   inset: 0;
   background: 
-    radial-gradient(circle at 30% 20%, hsla(0, 0%, 100%, 0.1) 0%, transparent 30%),
+    radial-gradient(circle at 30% 20%, hsla(0, 0%, 100%, 0.15) 0%, transparent 30%),
     radial-gradient(circle at 70% 80%, hsla(280, 80%, 60%, 0.2) 0%, transparent 30%);
   pointer-events: none;
 }
@@ -511,17 +513,17 @@
   display: none;
 }
 
-/* ─── Footer ─────────────────────────────────────────────────────── */
+/* ─── Footer - light version ─────────────────────────────────────── */
 .footer-section {
-  background: hsla(240, 10%, 5%, 0.8);
+  background: hsla(40, 33%, 96%, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* ─── Metric badges ──────────────────────────────────────────────── */
+/* ─── Metric badges - light version ──────────────────────────────── */
 .metric-badge {
-  background: hsla(240, 6%, 12%, 0.6);
-  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  background: hsla(0, 0%, 100%, 0.8);
+  border: 1px solid hsla(262, 40%, 85%, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -531,7 +533,7 @@
   position: absolute;
   width: 4px;
   height: 4px;
-  background: hsla(262, 83%, 58%, 0.4);
+  background: hsla(262, 83%, 58%, 0.3);
   border-radius: 50%;
   pointer-events: none;
   animation: float-particle 15s ease-in-out infinite;
