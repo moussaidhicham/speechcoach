@@ -13,6 +13,7 @@ import {
   Menu,
   Mic,
   Play,
+  ShieldCheck,
   Sparkles,
   Target,
   Users,
@@ -100,8 +101,53 @@ const useCases = [
   { text: 'Entrainement quotidien', icon: BarChart3 },
 ];
 
+const trustItems = [
+  {
+    icon: BarChart3,
+    title: 'Mesures objectives',
+    description: 'Debit, pauses, contact visuel, visibilite des mains et qualite video.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Rapport detaille',
+    description: 'Score global, points forts/a ameliorer et exercices concrets.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Historique complet',
+    description: 'Suivez votre progression dans le temps avec toutes vos sessions.',
+  },
+];
+
+const outputItems = [
+  {
+    icon: BarChart3,
+    title: 'Score global',
+    description: 'Note sur 100 avec verdict automatique',
+    accent: 'violet',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Points forts',
+    description: 'Vos atouts detectes automatiquement',
+    accent: 'teal',
+  },
+  {
+    icon: ArrowRight,
+    title: 'Axes de progression',
+    description: 'Elements a corriger en priorite',
+    accent: 'amber',
+  },
+  {
+    icon: Target,
+    title: 'Exercice recommande',
+    description: 'Plan d\'action pour la prochaine session',
+    accent: 'violet',
+  },
+];
+
 const fadeUp = (delay = 0) => ({
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, amount: 0.3 },
   transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1], delay },
@@ -113,6 +159,7 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const navItems = [
     { href: '#produit', label: 'Produit' },
     { href: '#process', label: 'Methode' },
+    { href: '#resultats', label: 'Resultats' },
     { href: '#testimonials', label: 'Avis' },
   ] as const;
 
@@ -131,12 +178,12 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
   return (
     <header className="nav-clean sticky top-0 z-[200]">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
+      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
             <Mic className="h-4 w-4" />
           </div>
-          <span className="font-display text-lg font-semibold">SpeechCoach</span>
+          <span className="font-semibold text-foreground">SpeechCoach</span>
         </Link>
 
         <nav className="hidden items-center gap-1 text-sm text-muted-foreground md:flex">
@@ -144,7 +191,7 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
             <Link
               key={label}
               href={href}
-              className="rounded-lg px-3 py-2 transition-colors duration-200 hover:bg-secondary hover:text-foreground"
+              className="rounded-lg px-3 py-1.5 transition-colors duration-200 hover:bg-secondary hover:text-foreground"
             >
               {label}
             </Link>
@@ -182,7 +229,7 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-secondary hover:text-foreground md:hidden"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors duration-200 hover:bg-secondary hover:text-foreground md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-expanded={mobileOpen}
             aria-controls="landing-mobile-nav"
@@ -195,12 +242,12 @@ function LandingNav({ isAuthenticated }: { isAuthenticated: boolean }) {
 
       {mobileOpen && (
         <div id="landing-mobile-nav" className="border-t border-border bg-background md:hidden">
-          <div className="mx-auto max-w-6xl space-y-1 px-4 py-3">
+          <div className="mx-auto max-w-6xl space-y-1 px-4 py-2">
             {navItems.map(({ href, label }) => (
               <Link
                 key={label}
                 href={href}
-                className="block rounded-lg px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:bg-secondary"
+                className="block rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-secondary"
                 onClick={() => setMobileOpen(false)}
               >
                 {label}
@@ -247,8 +294,8 @@ export default function LandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="pt-12 pb-16 sm:pt-16 sm:pb-20">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:items-center">
+        <section className="pt-10 pb-12 sm:pt-14 sm:pb-16">
+          <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12 lg:items-center">
             <motion.div {...fadeUp(0)} className="max-w-xl">
               <Badge 
                 variant="secondary" 
@@ -258,21 +305,21 @@ export default function LandingPage() {
                 Coaching IA pour l&apos;oral
               </Badge>
               
-              <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[3.5rem]">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
                 Transformez chaque{' '}
                 <span className="text-gradient">prise de parole</span>{' '}
                 en succes.
               </h1>
               
-              <p className="mt-5 text-base leading-relaxed text-muted-foreground sm:text-lg">
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
                 Analyse IA de votre voix et presence. Metriques precises, feedback instantane, 
                 progression visible des la premiere session.
               </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-3">
+              <div className="mt-6 flex flex-wrap items-center gap-3">
                 <Link 
                   href={isAuthenticated ? '/studio' : '/register'} 
-                  className={cn(buttonVariants({ size: 'lg' }), 'rounded-xl btn-primary px-6')}
+                  className={cn(buttonVariants({ size: 'default' }), 'rounded-lg btn-primary px-5')}
                 >
                   {isAuthenticated ? 'Lancer une analyse' : 'Essayer gratuitement'}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -280,21 +327,21 @@ export default function LandingPage() {
                 
                 <Link 
                   href="#produit" 
-                  className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'rounded-xl px-6')}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'default' }), 'rounded-lg px-5')}
                 >
                   Voir un exemple
                 </Link>
               </div>
 
               {/* Quick stats */}
-              <div className="mt-10 flex items-center gap-8 border-t border-border pt-6">
+              <div className="mt-8 flex items-center gap-6 border-t border-border pt-5">
                 {[
                   ['142', 'mots/min'],
                   ['78%', 'contact visuel'],
                   ['85', 'score global'],
                 ].map(([value, label]) => (
                   <div key={label}>
-                    <div className="font-display text-2xl font-semibold text-gradient">{value}</div>
+                    <div className="text-xl font-semibold text-gradient">{value}</div>
                     <div className="text-xs text-muted-foreground">{label}</div>
                   </div>
                 ))}
@@ -303,21 +350,21 @@ export default function LandingPage() {
 
             {/* Hero Score Card */}
             <motion.div {...fadeUp(0.1)} className="relative">
-              <div className="score-card rounded-2xl p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-5">
+              <div className="score-card rounded-xl p-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
                   <Badge variant="outline" className="rounded-full text-xs">
                     Apercu rapport
                   </Badge>
                   <span className="text-xs text-muted-foreground">Demo live</span>
                 </div>
                 
-                <div className="text-center mb-6">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Score global</div>
-                  <div className="font-display text-7xl font-bold score-number sm:text-8xl">78</div>
-                  <div className="mt-2 text-sm text-muted-foreground">Bon - Progression en cours</div>
+                <div className="text-center mb-5">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Score global</div>
+                  <div className="text-6xl font-bold score-number sm:text-7xl">78</div>
+                  <div className="mt-1 text-sm text-muted-foreground">Bon - Progression en cours</div>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {[
                     { label: 'Point fort', value: 'Debit optimal et structure claire', color: 'text-emerald-600' },
                     { label: 'A ameliorer', value: 'Contact visuel a 52% (cible >70%)', color: 'text-amber-600' },
@@ -325,7 +372,7 @@ export default function LandingPage() {
                   ].map((item) => (
                     <div 
                       key={item.label}
-                      className="card-elevated rounded-xl px-4 py-3"
+                      className="card-elevated rounded-lg px-3 py-2.5"
                     >
                       <div className={cn('text-xs font-medium', item.color)}>{item.label}</div>
                       <div className="mt-0.5 text-sm text-foreground">{item.value}</div>
@@ -338,13 +385,13 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section id="produit" className="py-12 sm:py-16 bg-secondary/30">
+        <section id="produit" className="py-10 sm:py-14 bg-secondary/40">
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <motion.div {...fadeUp(0)} className="text-center mb-10">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            <motion.div {...fadeUp(0)} className="text-center mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Analyse <span className="text-gradient">complete</span> en une session
               </h2>
-              <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
+              <p className="mt-2 text-muted-foreground max-w-2xl mx-auto text-sm">
                 Trois axes essentiels mesures avec precision pour une progression concrete.
               </p>
             </motion.div>
@@ -353,7 +400,7 @@ export default function LandingPage() {
               {analysisPillars.map((item, i) => (
                 <motion.div
                   key={item.title}
-                  {...fadeUp(i * 0.06)}
+                  {...fadeUp(i * 0.05)}
                   className={cn(
                     'feature-card rounded-xl p-5',
                     item.accent === 'violet' && 'feature-card-violet',
@@ -362,7 +409,7 @@ export default function LandingPage() {
                   )}
                 >
                   <div className={cn(
-                    'icon-box mb-4 flex h-10 w-10 items-center justify-center rounded-lg',
+                    'icon-box mb-3 flex h-10 w-10 items-center justify-center rounded-lg',
                     item.accent === 'violet' && 'bg-violet-100 text-violet-600',
                     item.accent === 'teal' && 'bg-teal-100 text-teal-600',
                     item.accent === 'amber' && 'bg-amber-100 text-amber-600'
@@ -370,12 +417,12 @@ export default function LandingPage() {
                     <item.icon className="h-5 w-5" />
                   </div>
                   
-                  <h3 className="font-display text-lg font-semibold">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
                   
-                  <div className="mt-4 pt-4 border-t border-border">
+                  <div className="mt-3 pt-3 border-t border-border">
                     <div className={cn(
-                      'text-xl font-bold',
+                      'text-lg font-bold',
                       item.accent === 'violet' && 'text-violet-600',
                       item.accent === 'teal' && 'text-teal-600',
                       item.accent === 'amber' && 'text-amber-600'
@@ -391,13 +438,13 @@ export default function LandingPage() {
         </section>
 
         {/* Process Section */}
-        <section id="process" className="py-12 sm:py-16">
+        <section id="process" className="py-10 sm:py-14">
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <motion.div {...fadeUp(0)} className="text-center mb-10">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            <motion.div {...fadeUp(0)} className="text-center mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Simple. Rapide. <span className="text-gradient">Efficace.</span>
               </h2>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-2 text-muted-foreground text-sm">
                 De la prise de parole au plan d&apos;action en quelques minutes.
               </p>
             </motion.div>
@@ -406,32 +453,32 @@ export default function LandingPage() {
               {journeySteps.map((step, i) => (
                 <motion.div
                   key={step.step}
-                  {...fadeUp(i * 0.08)}
+                  {...fadeUp(i * 0.05)}
                   className="feature-card feature-card-violet rounded-xl p-5 text-center"
                 >
-                  <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <step.icon className="h-5 w-5" />
                   </div>
-                  <div className="mb-1.5 font-mono text-xs text-primary/70">{step.step}</div>
-                  <h3 className="font-display text-lg font-semibold">{step.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{step.description}</p>
+                  <div className="mb-1 font-mono text-xs text-primary/70">{step.step}</div>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted-foreground">{step.description}</p>
                 </motion.div>
               ))}
             </div>
 
             {/* Use cases */}
-            <motion.div {...fadeUp(0.25)} className="mt-8">
-              <div className="card-highlight rounded-xl p-5">
-                <div className="text-center mb-4">
+            <motion.div {...fadeUp(0.15)} className="mt-6">
+              <div className="card-highlight rounded-xl p-4">
+                <div className="text-center mb-3">
                   <div className="text-sm font-medium text-foreground">Ideal pour</div>
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
                   {useCases.map((item) => (
                     <div 
                       key={item.text}
-                      className="metric-badge flex items-center gap-2 rounded-full px-4 py-2 text-sm"
+                      className="metric-badge flex items-center gap-2 rounded-full px-3 py-1.5 text-sm"
                     >
-                      <item.icon className="h-4 w-4 text-primary" />
+                      <item.icon className="h-3.5 w-3.5 text-primary" />
                       <span className="text-muted-foreground">{item.text}</span>
                     </div>
                   ))}
@@ -441,14 +488,109 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
-        <section id="testimonials" className="py-12 sm:py-16 bg-secondary/30">
+        {/* Trust Section */}
+        <section className="py-10 sm:py-14 bg-secondary/40">
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-            <motion.div {...fadeUp(0)} className="text-center mb-10">
-              <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+            <motion.div {...fadeUp(0)} className="text-center mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Des mesures <span className="text-gradient">objectives</span> et fiables
+              </h2>
+              <p className="mt-2 text-muted-foreground text-sm max-w-2xl mx-auto">
+                Chaque session vous donne des donnees precises pour suivre votre progression.
+              </p>
+            </motion.div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              {trustItems.map((item, i) => (
+                <motion.div
+                  key={item.title}
+                  {...fadeUp(i * 0.05)}
+                  className={cn(
+                    'feature-card rounded-xl p-5',
+                    i === 0 && 'feature-card-violet',
+                    i === 1 && 'feature-card-teal',
+                    i === 2 && 'feature-card-amber'
+                  )}
+                >
+                  <div className={cn(
+                    'icon-box mb-3 flex h-10 w-10 items-center justify-center rounded-lg',
+                    i === 0 && 'bg-violet-100 text-violet-600',
+                    i === 1 && 'bg-teal-100 text-teal-600',
+                    i === 2 && 'bg-amber-100 text-amber-600'
+                  )}>
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{item.description}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Output Section */}
+        <section id="resultats" className="py-10 sm:py-14">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <motion.div {...fadeUp(0)} className="text-center mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                Un rapport complet, <span className="text-gradient">pret a l&apos;action</span>
+              </h2>
+              <p className="mt-2 text-muted-foreground text-sm max-w-2xl mx-auto">
+                Chaque session genere un rapport structure avec des metriques precises.
+              </p>
+            </motion.div>
+
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {outputItems.map((item, i) => (
+                <motion.div
+                  key={item.title}
+                  {...fadeUp(i * 0.05)}
+                  className={cn(
+                    'feature-card rounded-xl p-4',
+                    item.accent === 'violet' && 'feature-card-violet',
+                    item.accent === 'teal' && 'feature-card-teal',
+                    item.accent === 'amber' && 'feature-card-amber'
+                  )}
+                >
+                  <div className={cn(
+                    'icon-box mb-3 flex h-9 w-9 items-center justify-center rounded-lg',
+                    item.accent === 'violet' && 'bg-violet-100 text-violet-600',
+                    item.accent === 'teal' && 'bg-teal-100 text-teal-600',
+                    item.accent === 'amber' && 'bg-amber-100 text-amber-600'
+                  )}>
+                    <item.icon className="h-4 w-4" />
+                  </div>
+                  <h3 className="font-semibold text-sm">{item.title}</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Export info */}
+            <motion.div {...fadeUp(0.2)} className="mt-5">
+              <div className="card-highlight rounded-xl p-4 flex items-start gap-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FileText className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm">Export multi-format</h4>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Chaque rapport peut etre exporte en PDF, Markdown ou copie dans le presse-papiers.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section id="testimonials" className="py-10 sm:py-14 bg-secondary/40">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+            <motion.div {...fadeUp(0)} className="text-center mb-8">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                 Ils progressent avec <span className="text-gradient">SpeechCoach</span>
               </h2>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-2 text-muted-foreground text-sm">
                 Retours authentiques de nos utilisateurs.
               </p>
             </motion.div>
@@ -456,19 +598,19 @@ export default function LandingPage() {
             {/* Stats banner */}
             {stats && (
               <motion.div
-                {...fadeUp(0.06)}
-                className="card-highlight mb-6 grid grid-cols-3 gap-4 rounded-xl p-5"
+                {...fadeUp(0.05)}
+                className="card-highlight mb-5 grid grid-cols-3 gap-3 rounded-xl p-4"
               >
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gradient">{stats.average_rating.toFixed(1)}/5</div>
+                  <div className="text-xl font-bold text-gradient">{stats.average_rating.toFixed(1)}/5</div>
                   <div className="text-xs text-muted-foreground">Note moyenne</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gradient">{Math.round((stats.average_rating / 5) * 100)}%</div>
+                  <div className="text-xl font-bold text-gradient">{Math.round((stats.average_rating / 5) * 100)}%</div>
                   <div className="text-xs text-muted-foreground">Satisfaction</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gradient">{stats.total_reviews}</div>
+                  <div className="text-xl font-bold text-gradient">{stats.total_reviews}</div>
                   <div className="text-xs text-muted-foreground">Avis verifies</div>
                 </div>
               </motion.div>
@@ -478,7 +620,7 @@ export default function LandingPage() {
             <div className="grid gap-4 sm:grid-cols-3">
               {isLoadingFeedbacks ? (
                 Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-44 animate-pulse rounded-xl bg-secondary" />
+                  <div key={i} className="h-40 animate-pulse rounded-xl bg-secondary" />
                 ))
               ) : feedbacks.length > 0 ? (
                 feedbacks.slice(0, 3).map((item, i) => {
@@ -497,21 +639,21 @@ export default function LandingPage() {
                   return (
                     <motion.div
                       key={item.id}
-                      {...fadeUp(i * 0.06)}
-                      className="testimonial-card relative flex flex-col justify-between rounded-xl p-5"
+                      {...fadeUp(i * 0.05)}
+                      className="testimonial-card relative flex flex-col justify-between rounded-xl p-4"
                     >
-                      <div className="pointer-events-none absolute right-4 top-2 font-serif text-5xl leading-none text-primary/10 select-none">
+                      <div className="pointer-events-none absolute right-3 top-2 font-serif text-4xl leading-none text-primary/10 select-none">
                         &ldquo;
                       </div>
 
                       <div>
                         <RatingStars rating={item.rating} editable={false} size="sm" />
-                        <p className="relative mt-3 text-sm leading-relaxed text-muted-foreground">
+                        <p className="relative mt-2 text-sm leading-relaxed text-muted-foreground">
                           {item.comments || 'Analyse claire, recommandations precises et progression visible des les premieres sessions.'}
                         </p>
                       </div>
 
-                      <div className="mt-4 flex items-center gap-3 border-t border-border pt-4">
+                      <div className="mt-3 flex items-center gap-2.5 border-t border-border pt-3">
                         {item.user_profile?.avatar_url ? (
                           <AvatarCustom
                             src={item.user_profile.avatar_url}
@@ -521,7 +663,7 @@ export default function LandingPage() {
                         ) : (
                           <div
                             className={cn(
-                              'flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-semibold text-white',
+                              'flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-semibold text-white',
                               gradients[i % gradients.length]
                             )}
                           >
@@ -530,7 +672,7 @@ export default function LandingPage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-sm font-medium">{name}</div>
-                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                             Avis verifie
                           </div>
@@ -540,14 +682,14 @@ export default function LandingPage() {
                   );
                 })
               ) : (
-                <div className="col-span-full rounded-xl card-elevated px-6 py-10 text-center text-sm text-muted-foreground">
+                <div className="col-span-full rounded-xl card-elevated px-5 py-8 text-center text-sm text-muted-foreground">
                   Les premiers avis apparaitront ici.
                 </div>
               )}
             </div>
 
             {feedbacks.length > 0 && (
-              <motion.div {...fadeUp(0.2)} className="mt-6 flex items-center justify-center gap-3">
+              <motion.div {...fadeUp(0.15)} className="mt-5 flex items-center justify-center gap-3">
                 <Link
                   href="/public-feedback"
                   className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-2 rounded-lg')}
@@ -569,26 +711,26 @@ export default function LandingPage() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-12 sm:py-16">
+        <section className="py-10 sm:py-14">
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
             <motion.div 
               {...fadeUp(0)}
-              className="cta-gradient rounded-2xl px-6 py-12 text-center sm:px-12 sm:py-14"
+              className="cta-gradient rounded-2xl px-6 py-10 text-center sm:px-10 sm:py-12"
             >
-              <h2 className="font-display text-3xl font-semibold text-white sm:text-4xl">
+              <h2 className="text-2xl font-semibold text-white sm:text-3xl">
                 Votre prochaine prise de parole commence ici.
               </h2>
               
-              <p className="mt-4 text-sm text-white/80 max-w-xl mx-auto sm:text-base">
+              <p className="mt-3 text-sm text-white/80 max-w-lg mx-auto">
                 Lancez une session, obtenez un feedback precis et appliquez une action concrete des aujourd&apos;hui.
               </p>
               
-              <div className="mt-8">
+              <div className="mt-6">
                 <Link 
                   href={isAuthenticated ? '/studio' : '/register'} 
                   className={cn(
-                    buttonVariants({ size: 'lg' }), 
-                    'rounded-xl bg-white text-primary hover:bg-white/95 px-8 font-semibold'
+                    buttonVariants({ size: 'default' }), 
+                    'rounded-lg bg-white text-primary hover:bg-white/95 px-6 font-semibold'
                   )}
                 >
                   {isAuthenticated ? 'Ouvrir le studio' : 'Creer un compte gratuit'}
@@ -602,22 +744,23 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="footer-clean">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
-              <Mic className="h-4 w-4" />
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
+              <Mic className="h-3.5 w-3.5" />
             </div>
             <div>
-              <div className="font-display text-sm font-semibold">SpeechCoach</div>
+              <div className="text-sm font-semibold">SpeechCoach</div>
               <div className="text-xs text-muted-foreground">Coaching oral par IA</div>
             </div>
           </Link>
           
-          <div className="flex flex-wrap items-center gap-5 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <Link href="#produit" className="transition-colors duration-200 hover:text-foreground">Produit</Link>
             <Link href="#process" className="transition-colors duration-200 hover:text-foreground">Methode</Link>
+            <Link href="#resultats" className="transition-colors duration-200 hover:text-foreground">Resultats</Link>
             <Link href="#testimonials" className="transition-colors duration-200 hover:text-foreground">Avis</Link>
-            <span className="text-muted-foreground/60">2026 SpeechCoach</span>
+            <span className="text-muted-foreground/60">2025 SpeechCoach</span>
           </div>
         </div>
       </footer>
