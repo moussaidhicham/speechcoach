@@ -49,25 +49,25 @@
   --radius-3xl: 2rem;
 }
 
-/* ─── Light mode - Premium warm light theme ──────────────────────── */
+/* ─── Light mode - Clean professional theme ──────────────────────── */
 :root {
-  --background: 40 33% 98%;          /* #FDFBF7 - Warm cream */
-  --foreground: 240 10% 10%;         /* #1A1A1F - Rich dark */
+  --background: 0 0% 99%;              /* #FCFCFC - Clean white */
+  --foreground: 220 15% 15%;           /* #222831 - Dark charcoal */
   
-  --card: 0 0% 100%;                 /* Pure white */
-  --card-foreground: 240 10% 10%;
+  --card: 0 0% 100%;                   /* Pure white */
+  --card-foreground: 220 15% 15%;
   
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 10%;
+  --popover-foreground: 220 15% 15%;
   
-  --primary: 262 83% 58%;            /* #8B5CF6 - Vibrant violet */
+  --primary: 262 83% 58%;              /* #8B5CF6 - Violet */
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 40 20% 95%;           /* Warm light gray */
-  --secondary-foreground: 240 10% 20%;
+  --secondary: 220 10% 96%;            /* Light gray */
+  --secondary-foreground: 220 15% 25%;
   
-  --muted: 40 15% 93%;
-  --muted-foreground: 240 5% 45%;    /* Medium gray text */
+  --muted: 220 10% 95%;
+  --muted-foreground: 220 10% 45%;
   
   --accent: 262 83% 58%;
   --accent-foreground: 0 0% 100%;
@@ -75,11 +75,11 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 40 15% 90%;
-  --input: 40 15% 90%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
   --ring: 262 83% 58%;
   
-  --radius: 1rem;
+  --radius: 0.75rem;
 }
 
 /* ─── Base layer ─────────────────────────────────────────────────── */
@@ -97,453 +97,193 @@
 
   body {
     @apply min-h-screen bg-background text-foreground;
-    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight leading-[1.1];
+    @apply font-display tracking-tight leading-[1.15];
   }
 
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.2);
+    background: hsl(var(--primary) / 0.15);
     color: hsl(var(--foreground));
   }
 }
 
-/* ─── Immersive background with animated gradient mesh ───────────── */
-.immersive-bg {
+/* ─── Clean background with subtle accent ────────────────────────── */
+.clean-bg {
   position: relative;
-  overflow: hidden;
-  background: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, hsla(262, 83%, 65%, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse 60% 40% at 100% 50%, hsla(280, 80%, 60%, 0.05) 0%, transparent 40%),
-    radial-gradient(ellipse 50% 30% at 0% 80%, hsla(188, 80%, 50%, 0.04) 0%, transparent 35%),
-    hsl(40 33% 98%);
+  background: hsl(0 0% 99%);
 }
 
-/* Animated gradient orbs - light version */
-.gradient-orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-
-.gradient-orb-1 {
-  width: 700px;
-  height: 700px;
-  top: -20%;
-  left: 5%;
-  background: radial-gradient(circle, hsla(262, 83%, 65%, 0.15) 0%, transparent 70%);
-  animation: orbit-1 25s ease-in-out infinite;
-}
-
-.gradient-orb-2 {
-  width: 600px;
-  height: 600px;
-  top: 40%;
-  right: -15%;
-  background: radial-gradient(circle, hsla(188, 80%, 55%, 0.12) 0%, transparent 70%);
-  animation: orbit-2 30s ease-in-out infinite;
-}
-
-.gradient-orb-3 {
-  width: 500px;
-  height: 500px;
-  bottom: 5%;
-  left: -10%;
-  background: radial-gradient(circle, hsla(35, 90%, 60%, 0.1) 0%, transparent 70%);
-  animation: orbit-3 22s ease-in-out infinite;
-}
-
-@keyframes orbit-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
-  33% { transform: translate(60px, 40px) scale(1.1); opacity: 1; }
-  66% { transform: translate(-40px, 60px) scale(0.95); opacity: 0.8; }
-}
-
-@keyframes orbit-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.6; }
-  50% { transform: translate(-70px, -50px) scale(1.15); opacity: 0.9; }
-}
-
-@keyframes orbit-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-  33% { transform: translate(50px, -40px) scale(1.05); opacity: 0.8; }
-  66% { transform: translate(30px, 50px) scale(1.1); opacity: 0.7; }
-}
-
-/* ─── Grid pattern overlay - light version ───────────────────────── */
-.grid-pattern {
-  position: absolute;
-  inset: 0;
-  background-image: 
-    linear-gradient(hsla(262, 60%, 70%, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, hsla(262, 60%, 70%, 0.04) 1px, transparent 1px);
-  background-size: 80px 80px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 30%, transparent 70%);
-  pointer-events: none;
-}
-
-/* ─── Glassmorphism cards (light version) ────────────────────────── */
-.glass-card {
-  background: hsla(0, 0%, 100%, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid hsla(262, 40%, 80%, 0.3);
-  box-shadow: 
-    0 1px 2px hsla(262, 60%, 50%, 0.03),
-    0 8px 32px -8px hsla(262, 60%, 50%, 0.08),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.8);
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.glass-card:hover {
-  background: hsla(0, 0%, 100%, 0.85);
-  border-color: hsla(262, 70%, 65%, 0.4);
-  box-shadow: 
-    0 1px 2px hsla(262, 60%, 50%, 0.04),
-    0 16px 48px -12px hsla(262, 70%, 55%, 0.15),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
-  transform: translateY(-2px);
-}
-
-.glass-card-strong {
-  background: hsla(0, 0%, 100%, 0.85);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border: 1px solid hsla(262, 50%, 75%, 0.35);
-  box-shadow: 
-    0 1px 3px hsla(262, 60%, 50%, 0.04),
-    0 24px 64px -16px hsla(262, 60%, 55%, 0.12),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
-}
-
-/* ─── Glowing gradient text ──────────────────────────────────────── */
-.gradient-text {
-  background: linear-gradient(135deg, 
-    hsl(262 83% 55%) 0%, 
-    hsl(280 80% 50%) 40%, 
-    hsl(300 70% 45%) 70%,
-    hsl(262 83% 55%) 100%
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-shift 8s ease-in-out infinite;
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% center; }
-  50% { background-position: 100% center; }
-}
-
-.gradient-text-subtle {
-  background: linear-gradient(135deg, hsl(262 70% 45%) 0%, hsl(262 83% 58%) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ─── Glow shadows - light version ───────────────────────────────── */
-.glow-primary {
-  box-shadow: 
-    0 4px 14px -4px hsla(262, 83%, 58%, 0.35),
-    0 0 30px -8px hsla(262, 83%, 58%, 0.2);
-}
-
-.glow-primary-strong {
-  box-shadow: 
-    0 8px 25px -5px hsla(262, 83%, 58%, 0.4),
-    0 0 50px -12px hsla(262, 83%, 58%, 0.25),
-    0 0 80px -15px hsla(280, 80%, 50%, 0.15);
-}
-
-.glow-teal {
-  box-shadow: 
-    0 4px 14px -4px hsla(188, 80%, 45%, 0.3),
-    0 0 30px -8px hsla(188, 80%, 50%, 0.15);
-}
-
-.glow-amber {
-  box-shadow: 
-    0 4px 14px -4px hsla(35, 90%, 50%, 0.3),
-    0 0 30px -8px hsla(35, 90%, 55%, 0.15);
-}
-
-/* ─── Feature cards with accent colors - light version ───────────── */
-.feature-card {
-  position: relative;
-  background: hsla(0, 0%, 100%, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid hsla(262, 40%, 85%, 0.5);
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-  overflow: hidden;
-}
-
-.feature-card::before {
+.clean-bg::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, hsla(262, 83%, 58%, 0.6), transparent);
-  opacity: 0;
-  transition: opacity 0.4s ease;
+  height: 600px;
+  background: linear-gradient(180deg, 
+    hsla(262, 83%, 58%, 0.03) 0%, 
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ─── Professional card styles ───────────────────────────────────── */
+.card-elevated {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 13% 91%);
+  box-shadow: 
+    0 1px 3px hsla(220, 15%, 15%, 0.04),
+    0 4px 12px hsla(220, 15%, 15%, 0.03);
+  transition: all 0.2s ease;
+}
+
+.card-elevated:hover {
+  border-color: hsl(220 13% 86%);
+  box-shadow: 
+    0 2px 4px hsla(220, 15%, 15%, 0.05),
+    0 8px 24px hsla(220, 15%, 15%, 0.06);
+  transform: translateY(-2px);
+}
+
+.card-highlight {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsla(262, 83%, 58%, 0.2);
+  box-shadow: 
+    0 1px 3px hsla(262, 60%, 50%, 0.04),
+    0 8px 24px hsla(262, 60%, 50%, 0.06);
+}
+
+.card-highlight:hover {
+  border-color: hsla(262, 83%, 58%, 0.35);
+  box-shadow: 
+    0 2px 4px hsla(262, 60%, 50%, 0.06),
+    0 12px 32px hsla(262, 60%, 50%, 0.1);
+}
+
+/* ─── Feature card variants ──────────────────────────────────────── */
+.feature-card {
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 13% 91%);
+  transition: all 0.2s ease;
 }
 
 .feature-card:hover {
-  background: hsla(0, 0%, 100%, 0.9);
-  border-color: hsla(262, 70%, 70%, 0.5);
-  transform: translateY(-4px);
-  box-shadow: 
-    0 20px 40px -15px hsla(262, 70%, 55%, 0.18),
-    0 8px 16px -8px hsla(262, 60%, 50%, 0.1);
+  border-color: hsl(220 13% 86%);
+  box-shadow: 0 8px 24px hsla(220, 15%, 15%, 0.06);
+  transform: translateY(-2px);
 }
 
-.feature-card:hover::before {
-  opacity: 1;
-}
-
-.feature-card-violet {
-  border-color: hsla(262, 70%, 80%, 0.4);
-}
 .feature-card-violet:hover {
-  background: linear-gradient(135deg, hsla(262, 83%, 65%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
-  border-color: hsla(262, 83%, 65%, 0.5);
+  border-color: hsla(262, 70%, 70%, 0.5);
+  box-shadow: 0 8px 24px hsla(262, 70%, 55%, 0.1);
 }
 
-.feature-card-teal {
-  border-color: hsla(188, 70%, 75%, 0.4);
-}
 .feature-card-teal:hover {
-  background: linear-gradient(135deg, hsla(188, 80%, 50%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
-  border-color: hsla(188, 80%, 55%, 0.5);
+  border-color: hsla(175, 70%, 50%, 0.5);
+  box-shadow: 0 8px 24px hsla(175, 70%, 45%, 0.1);
 }
 
-.feature-card-amber {
-  border-color: hsla(35, 80%, 75%, 0.4);
-}
 .feature-card-amber:hover {
-  background: linear-gradient(135deg, hsla(35, 90%, 55%, 0.06) 0%, hsla(0, 0%, 100%, 0.9) 50%);
-  border-color: hsla(35, 90%, 55%, 0.5);
+  border-color: hsla(38, 90%, 55%, 0.5);
+  box-shadow: 0 8px 24px hsla(38, 90%, 50%, 0.1);
 }
 
-/* ─── Icon containers ────────────────────────────────────────────── */
-.icon-glow {
-  position: relative;
-  transition: all 0.3s ease;
+/* ─── Simple gradient text ───────────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(262 83% 55%) 0%, hsl(280 75% 50%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.icon-glow::before {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.25), hsla(280, 80%, 50%, 0.15));
-  filter: blur(10px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
-.icon-glow:hover::before {
-  opacity: 1;
-}
-
-/* ─── Nav glassmorphism (light) ──────────────────────────────────── */
-.nav-glass {
-  background: hsla(40, 33%, 98%, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid hsla(262, 40%, 85%, 0.4);
+/* ─── Navigation ─────────────────────────────────────────────────── */
+.nav-clean {
+  background: hsla(0, 0%, 99%, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsl(220 13% 91%);
 }
 
 /* ─── Button effects ─────────────────────────────────────────────── */
-.btn-glow {
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-  overflow: hidden;
+.btn-primary {
+  transition: all 0.2s ease;
 }
 
-.btn-glow::before {
-  content: "";
-  position: absolute;
-  inset: -3px;
-  border-radius: inherit;
-  background: linear-gradient(135deg, hsla(262, 83%, 58%, 0.4), hsla(280, 80%, 50%, 0.3));
-  filter: blur(14px);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsla(262, 83%, 58%, 0.3);
 }
 
-.btn-glow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.2) 0%, transparent 50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
+.btn-primary:active {
+  transform: translateY(0);
 }
 
-.btn-glow:hover::before {
-  opacity: 1;
-}
-
-.btn-glow:hover::after {
-  opacity: 1;
-}
-
-.btn-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px -6px hsla(262, 83%, 58%, 0.4);
-}
-
-/* ─── Stats counter styles ───────────────────────────────────────── */
-.stat-number {
-  @apply font-display text-5xl font-bold leading-none;
-  background: linear-gradient(135deg, hsl(262 70% 45%) 0%, hsl(262 83% 58%) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ─── Hero score card - light version ────────────────────────────── */
+/* ─── Score card ─────────────────────────────────────────────────── */
 .score-card {
-  position: relative;
-  background: 
-    radial-gradient(ellipse 100% 100% at 50% 0%, hsla(262, 83%, 65%, 0.08) 0%, transparent 50%),
-    hsla(0, 0%, 100%, 0.9);
-  backdrop-filter: blur(32px);
-  -webkit-backdrop-filter: blur(32px);
-  border: 1px solid hsla(262, 70%, 75%, 0.4);
+  background: hsl(0 0% 100%);
+  border: 1px solid hsla(262, 70%, 70%, 0.25);
   box-shadow: 
-    0 1px 2px hsla(262, 50%, 50%, 0.04),
-    0 24px 64px -16px hsla(262, 70%, 55%, 0.18),
-    0 12px 24px -8px hsla(262, 60%, 50%, 0.08),
-    inset 0 1px 0 0 hsla(0, 0%, 100%, 0.9);
+    0 1px 3px hsla(262, 60%, 50%, 0.04),
+    0 12px 32px hsla(262, 60%, 50%, 0.08);
 }
 
-.score-display {
-  background: linear-gradient(180deg, 
-    hsl(262 83% 50%) 0%, 
-    hsl(280 80% 45%) 50%,
-    hsl(262 83% 55%) 100%
-  );
-  background-size: 100% 200%;
+.score-number {
+  background: linear-gradient(180deg, hsl(262 83% 55%) 0%, hsl(280 75% 50%) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: score-pulse 3s ease-in-out infinite;
-  filter: drop-shadow(0 4px 20px hsla(262, 83%, 58%, 0.3));
 }
 
-@keyframes score-pulse {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 0% 100%; }
-}
-
-/* ─── Testimonial card - light version ───────────────────────────── */
+/* ─── Testimonial card ───────────────────────────────────────────── */
 .testimonial-card {
-  background: hsla(0, 0%, 100%, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid hsla(262, 40%, 85%, 0.5);
-  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 13% 91%);
+  transition: all 0.2s ease;
 }
 
 .testimonial-card:hover {
-  background: hsla(0, 0%, 100%, 0.9);
-  border-color: hsla(262, 70%, 70%, 0.5);
-  transform: translateY(-4px);
-  box-shadow: 
-    0 20px 40px -15px hsla(262, 70%, 55%, 0.15),
-    0 8px 16px -8px hsla(262, 60%, 50%, 0.08);
+  border-color: hsl(220 13% 86%);
+  box-shadow: 0 8px 24px hsla(220, 15%, 15%, 0.06);
+  transform: translateY(-2px);
 }
 
-/* ─── CTA section - vibrant gradient ─────────────────────────────── */
-.cta-section {
-  position: relative;
-  background: linear-gradient(135deg, 
-    hsl(262 83% 55%) 0%, 
-    hsl(280 75% 50%) 50%,
-    hsl(262 83% 58%) 100%
-  );
-  overflow: hidden;
+/* ─── CTA section ────────────────────────────────────────────────── */
+.cta-gradient {
+  background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(280 75% 52%) 100%);
 }
 
-.cta-section::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 30% 20%, hsla(0, 0%, 100%, 0.15) 0%, transparent 30%),
-    radial-gradient(circle at 70% 80%, hsla(280, 80%, 60%, 0.2) 0%, transparent 30%);
-  pointer-events: none;
+/* ─── Stat badge ─────────────────────────────────────────────────── */
+.stat-badge {
+  background: hsla(262, 83%, 58%, 0.08);
+  border: 1px solid hsla(262, 83%, 58%, 0.15);
 }
 
-/* ─── Process step connectors ────────────────────────────────────── */
-.step-connector {
-  position: relative;
+/* ─── Icon containers ────────────────────────────────────────────── */
+.icon-box {
+  transition: all 0.2s ease;
 }
 
-.step-connector::after {
-  content: "";
-  position: absolute;
-  left: 24px;
-  top: 100%;
-  width: 2px;
-  height: 24px;
-  background: linear-gradient(180deg, hsla(262, 83%, 58%, 0.3) 0%, transparent 100%);
+.icon-box:hover {
+  transform: scale(1.05);
 }
 
-.step-connector:last-child::after {
-  display: none;
+/* ─── Footer ─────────────────────────────────────────────────────── */
+.footer-clean {
+  background: hsl(220 10% 97%);
+  border-top: 1px solid hsl(220 13% 91%);
 }
 
-/* ─── Footer - light version ─────────────────────────────────────── */
-.footer-section {
-  background: hsla(40, 33%, 96%, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* ─── Metric badges - light version ──────────────────────────────── */
+/* ─── Metric badge ───────────────────────────────────────────────── */
 .metric-badge {
-  background: hsla(0, 0%, 100%, 0.8);
-  border: 1px solid hsla(262, 40%, 85%, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-/* ─── Floating particles (optional enhancement) ──────────────────── */
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: hsla(262, 83%, 58%, 0.3);
-  border-radius: 50%;
-  pointer-events: none;
-  animation: float-particle 15s ease-in-out infinite;
-}
-
-@keyframes float-particle {
-  0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+  background: hsl(0 0% 100%);
+  border: 1px solid hsl(220 13% 91%);
 }
 
 /* ─── Accessibility ──────────────────────────────────────────────── */
@@ -573,29 +313,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  
-  .gradient-orb-1,
-  .gradient-orb-2,
-  .gradient-orb-3 {
-    animation: none !important;
-  }
-  
-  .gradient-text {
-    animation: none !important;
-  }
-  
-  .score-display {
-    animation: none !important;
-  }
 }
 
 /* ─── Print ──────────────────────────────────────────────────────── */
 @media print {
   .no-print { display: none !important; }
   body { background: white !important; color: black !important; }
-  .print-card {
-    border: 1px solid #ddd !important;
-    box-shadow: none !important;
-    break-inside: avoid;
-  }
 }
