@@ -1,10 +1,10 @@
-
 'use client';
- 
+
 import React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
- 
+import { API_BASE_URL } from '@/constants/api';
+
 interface AvatarCustomProps {
   src?: string | null;
   name?: string | null;
@@ -13,7 +13,7 @@ interface AvatarCustomProps {
   imagePositionY?: number | null;
   imageScale?: number | null;
 }
- 
+
 /*
   Palette uses CSS variables from the design system instead of hardcoded
   Tailwind color classes. Each pair is [background, text] as inline style values.
@@ -29,7 +29,7 @@ const PALETTE: [string, string][] = [
   ['hsl(40  40% 86%)', 'hsl(40  40% 26%)'],  // amber sand
   ['hsl(195 30% 86%)', 'hsl(195 32% 26%)'],  // sky slate
 ];
- 
+
 function getPalette(name?: string | null): [string, string] {
   if (!name) return PALETTE[0];
   const index = name
@@ -37,7 +37,7 @@ function getPalette(name?: string | null): [string, string] {
     .reduce((acc, char) => acc + char.charCodeAt(0), 0) % PALETTE.length;
   return PALETTE[index];
 }
- 
+
 function getInitials(name?: string | null): string {
   return (name || 'U')
     .split(' ')
@@ -47,16 +47,16 @@ function getInitials(name?: string | null): string {
     .slice(0, 2)
     .toUpperCase();
 }
- 
+
 const sizeClasses = {
   sm: 'h-7 w-7 text-[10px]',
   md: 'h-9 w-9 text-xs',
   lg: 'h-14 w-14 text-lg',
   xl: 'h-20 w-20 text-2xl',
 } as const;
- 
+
 const imageDimensions = { sm: 28, md: 36, lg: 56, xl: 80 } as const;
- 
+
 export function AvatarCustom({
   src,
   name,
@@ -66,20 +66,20 @@ export function AvatarCustom({
   imageScale,
 }: AvatarCustomProps) {
   const [hasImageError, setHasImageError] = React.useState(false);
- 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+  const apiUrl = API_BASE_URL;
   const fullSrc =
     src && !hasImageError
       ? (src.startsWith('http') || src.startsWith('blob:') || src.startsWith('data:'))
         ? src
         : `${apiUrl}${src}`
       : null;
- 
+
   const [bg, fg] = getPalette(name);
   const initials = getInitials(name);
   const safePositionY = typeof imagePositionY === 'number' ? imagePositionY : 50;
   const safeScale = typeof imageScale === 'number' ? imageScale : 1;
- 
+
   return (
     <div
       className={cn(

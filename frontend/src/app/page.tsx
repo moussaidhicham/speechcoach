@@ -21,13 +21,14 @@ import {
   X,
 } from 'lucide-react';
 
-import { LandingUserMenu } from '@/components/layout/landing-user-menu';
-import { AvatarCustom } from '@/components/ui/avatar-custom';
+import { LandingUserMenu } from '@/components/layout/LandingUserMenu';
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { RatingStars } from '@/components/ui/rating-stars';
 import { useAuth } from '@/context/auth-context';
 import api from '@/lib/api';
+import { FEEDBACK_ENDPOINTS } from '@/constants/api';
 import { cn } from '@/lib/utils';
 
 interface FeedbackItem {
@@ -220,8 +221,8 @@ export default function LandingPage() {
     const loadFeedbackData = async () => {
       try {
         const [feedbackRes, statsRes] = await Promise.all([
-          api.get('/feedback/platform/all'),
-          api.get('/feedback/platform/stats'),
+          api.get(FEEDBACK_ENDPOINTS.PLATFORM_ALL),
+          api.get(FEEDBACK_ENDPOINTS.PLATFORM_STATS),
         ]);
         setFeedbacks(feedbackRes.data.slice(0, 6));
         setStats(statsRes.data);

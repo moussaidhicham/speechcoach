@@ -1,6 +1,5 @@
-
 'use client';
- 
+
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,16 +17,16 @@ import {
   Video,
   X,
 } from 'lucide-react';
- 
-import { AvatarCustom } from '@/components/ui/avatar-custom';
+
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
 import { buttonVariants } from '@/components/ui/button';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/auth-context';
 import { UserProfile } from '@/types/auth';
 import { cn } from '@/lib/utils';
- 
+
 /* ─── Types ─────────────────────────────────────────────────────────── */
- 
+
 interface AppShellProps {
   title: string;
   subtitle?: string;
@@ -36,15 +35,15 @@ interface AppShellProps {
   maxWidth?: '4xl' | '5xl' | '6xl' | '7xl';
   requireAuth?: boolean;
 }
- 
+
 interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }
- 
+
 /* ─── Nav items ──────────────────────────────────────────────────────── */
- 
+
 const authenticatedNavItems: NavItem[] = [
   { href: '/',                label: 'Accueil',      icon: Home               },
   { href: '/dashboard',       label: 'Dashboard',    icon: LayoutDashboard    },
@@ -53,15 +52,15 @@ const authenticatedNavItems: NavItem[] = [
   { href: '/public-feedback', label: 'Avis',         icon: MessageSquareQuote },
   { href: '/settings',        label: 'Paramètres',   icon: Settings           },
 ];
- 
+
 const publicNavItems: NavItem[] = [
   { href: '/',                label: 'Accueil',      icon: Home               },
   { href: '/public-feedback', label: 'Avis',         icon: MessageSquareQuote },
   { href: '/login',           label: 'Connexion',    icon: LogIn              },
 ];
- 
+
 /* ─── Shared nav link ────────────────────────────────────────────────── */
- 
+
 function NavLink({
   item,
   pathname,
@@ -92,9 +91,9 @@ function NavLink({
     </Link>
   );
 }
- 
+
 /* ─── User card (shared between sidebar & drawer) ────────────────────── */
- 
+
 function UserCard({
   profile,
   onLogout,
@@ -125,7 +124,7 @@ function UserCard({
       </div>
     );
   }
- 
+
   return (
     <>
       <div className="flex items-center gap-3">
@@ -157,9 +156,9 @@ function UserCard({
     </>
   );
 }
- 
+
 /* ─── Desktop sidebar ────────────────────────────────────────────────── */
- 
+
 function DesktopSidebar({
   items,
   pathname,
@@ -191,14 +190,14 @@ function DesktopSidebar({
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Workspace</div>
         </div>
       </Link>
- 
+
       {/* Nav */}
       <nav className="mt-7 flex flex-col gap-0.5" aria-label="Navigation">
         {items.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
       </nav>
- 
+
       {/* User card */}
       <div className="mt-auto rounded-2xl border border-border/60 bg-background/70 p-4">
         <UserCard
@@ -210,9 +209,9 @@ function DesktopSidebar({
     </aside>
   );
 }
- 
+
 /* ─── Mobile drawer ──────────────────────────────────────────────────── */
- 
+
 function MobileDrawer({
   items,
   pathname,
@@ -270,14 +269,14 @@ function MobileDrawer({
               <X className="h-4 w-4" />
             </button>
           </div>
- 
+
           {/* Nav */}
           <nav className="mt-7 flex flex-col gap-0.5">
             {items.map((item) => (
               <NavLink key={item.href} item={item} pathname={pathname} onClick={onClose} />
             ))}
           </nav>
- 
+
           {/* User card */}
           <div className="mt-auto rounded-2xl border border-border/60 bg-card/70 p-4">
             <UserCard
@@ -292,9 +291,9 @@ function MobileDrawer({
     </AnimatePresence>
   );
 }
- 
+
 /* ─── AppShell ───────────────────────────────────────────────────────── */
- 
+
 export function AppShell({
   title,
   subtitle,
@@ -308,7 +307,7 @@ export function AppShell({
   const { logout, token, isLoading } = useAuth();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
- 
+
   /* Hydrate profile */
   React.useEffect(() => {
     if (!token) { setProfile(null); return; }
@@ -319,15 +318,15 @@ export function AppShell({
       .catch((err) => console.error('Shell profile hydration failed:', err));
     return () => { active = false; };
   }, [token]);
- 
+
   /* Auth guard */
   React.useEffect(() => {
     if (!isLoading && requireAuth && !token) router.replace('/login');
   }, [isLoading, requireAuth, router, token]);
- 
+
   /* Close drawer on route change */
   React.useEffect(() => { setMobileOpen(false); }, [pathname]);
- 
+
   /* Body scroll lock + Escape */
   React.useEffect(() => {
     if (!mobileOpen) { document.body.style.removeProperty('overflow'); return; }
@@ -339,10 +338,10 @@ export function AppShell({
       window.removeEventListener('keydown', onKey);
     };
   }, [mobileOpen]);
- 
+
   const isAuthenticated = Boolean(token);
   const items = isAuthenticated ? authenticatedNavItems : publicNavItems;
- 
+
   /* Auth redirect loading state */
   if (requireAuth && (isLoading || !token)) {
     return (
@@ -357,13 +356,13 @@ export function AppShell({
       </div>
     );
   }
- 
+
   return (
     <div className="min-h-screen bg-background text-foreground" suppressHydrationWarning>
       <a href="#main-content" className="skip-link">
         Aller au contenu principal
       </a>
- 
+
       <DesktopSidebar
         items={items}
         pathname={pathname}
@@ -371,7 +370,7 @@ export function AppShell({
         onLogout={logout}
         isAuthenticated={isAuthenticated}
       />
- 
+
       {mobileOpen && (
         <MobileDrawer
           items={items}
@@ -382,7 +381,7 @@ export function AppShell({
           isAuthenticated={isAuthenticated}
         />
       )}
- 
+
       <div className="min-h-screen lg:pl-64">
         {/* Top bar */}
         <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur-md">
@@ -397,7 +396,7 @@ export function AppShell({
             >
               <Menu className="h-4 w-4" />
             </button>
- 
+
             {/* Title */}
             <div className="min-w-0 flex-1">
               <h1 className="truncate font-display text-xl font-medium leading-tight">{title}</h1>
@@ -405,14 +404,14 @@ export function AppShell({
                 <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
               )}
             </div>
- 
+
             {/* Page actions */}
             {actions && (
               <div className="flex items-center gap-2">{actions}</div>
             )}
           </div>
         </header>
- 
+
         {/* Page content */}
         <main
           id="main-content"

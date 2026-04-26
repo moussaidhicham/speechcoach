@@ -1,3 +1,9 @@
+"""
+Session status/tracker endpoints
+
+Migrated from app/analytics/status_router.py in Phase 2
+"""
+
 import os
 import shutil
 import uuid as uuid_lib
@@ -10,9 +16,9 @@ from pydantic import BaseModel
 from sqlmodel import delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.analytics.models import AnalysisResult, CoachingFeedback, VideoSession
-from app.analytics.report_pdf import build_report_pdf
-from app.analytics.report_formatter import (
+from app.db.models import AnalysisResult, CoachingFeedback, VideoSession
+from app.reports.pdf import build_report_pdf
+from app.reports.formatter import (
     build_report_markdown,
     build_report_print_html,
     build_report_response,
@@ -20,8 +26,9 @@ from app.analytics.report_formatter import (
 from app.auth.router import current_active_user
 from app.db.database import get_session
 from app.db.models import User
+from app.utils.storage import STORAGE_BASE_DIR, STORAGE_URL_PREFIX
 
-status_router = APIRouter()
+router = APIRouter()
 
 
 async def _get_authorized_session(
@@ -203,7 +210,7 @@ def _build_dashboard_summary_payload(
     }
 
 
-@status_router.get('/status/{session_id}')
+@router.get('/status/{session_id}')
 async def get_session_status(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -220,7 +227,7 @@ async def get_session_status(
     }
 
 
-@status_router.get('/dashboard-summary')
+@router.get('/dashboard-summary')
 async def get_dashboard_summary(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_session),
@@ -229,7 +236,7 @@ async def get_dashboard_summary(
     return _build_dashboard_summary_payload(sessions, analyses_by_session_id)
 
 
-@status_router.get('/result/{session_id}')
+@router.get('/result/{session_id}')
 async def get_session_result(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -239,7 +246,7 @@ async def get_session_result(
     return build_report_response(session, analysis)
 
 
-@status_router.get('/report/{session_id}/markdown')
+@router.get('/report/{session_id}/markdown')
 async def export_report_markdown(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -260,7 +267,7 @@ async def export_report_markdown(
     )
 
 
-@status_router.get('/report/{session_id}/print', response_class=HTMLResponse)
+@router.get('/report/{session_id}/print', response_class=HTMLResponse)
 async def export_report_print_html(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -272,7 +279,7 @@ async def export_report_print_html(
     return HTMLResponse(content=html)
 
 
-@status_router.get('/report/{session_id}/pdf')
+@router.get('/report/{session_id}/pdf')
 async def export_report_pdf(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -297,7 +304,7 @@ async def export_report_pdf(
     )
 
 
-@status_router.get('/history')
+@router.get('/history')
 async def get_session_history(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_session),
@@ -309,7 +316,7 @@ async def get_session_history(
     ]
 
 
-@status_router.delete('/session/{session_id}')
+@router.delete('/session/{session_id}')
 async def delete_session(
     session_id: str,
     user: User = Depends(current_active_user),
@@ -327,10 +334,10 @@ async def delete_session(
     if session.user_id != user.id:
         raise HTTPException(status_code=403, detail='Not authorized to delete this session')
 
-    base_storage = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage'))
+    base_storage = STORAGE_BASE_DIR
 
-    if session.video_url and session.video_url.startswith('/storage/'):
-        rel_path = session.video_url.replace('/storage/', '')
+    if session.video_url and session.video_url.startswith(STORAGE_URL_PREFIX):
+        rel_path = session.video_url.replace(f'{STORAGE_URL_PREFIX}/', '')
         abs_path = os.path.join(base_storage, rel_path)
         if os.path.exists(abs_path):
             try:
@@ -338,7 +345,7 @@ async def delete_session(
             except Exception as error:
                 print(f'Failed to delete video file: {error}')
 
-    processing_dir = os.path.join(base_storage, 'processing', str(session.id))
+    processing_dir = os.path.join(STORAGE_BASE_DIR, 'processing', str(session.id))
     if os.path.exists(processing_dir):
         try:
             shutil.rmtree(processing_dir)
@@ -366,7 +373,7 @@ class SessionUpdate(BaseModel):
     title: str
 
 
-@status_router.patch('/session/{session_id}')
+@router.patch('/session/{session_id}')
 async def update_session(
     session_id: str,
     update_data: SessionUpdate,
@@ -388,3 +395,5 @@ async def update_session(
     await db.refresh(session)
 
     return {'status': 'updated', 'session_id': session_id, 'title': session.title}
+
+__all__ = ["router"]

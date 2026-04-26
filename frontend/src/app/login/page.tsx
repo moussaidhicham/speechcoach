@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, Mail, ShieldCheck, Sparkles, Video } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AuthShell } from '@/components/auth/auth-shell';
+import { AuthShell } from '@/components/auth/AuthShell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

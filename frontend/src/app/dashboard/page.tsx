@@ -33,9 +33,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/context/auth-context';
-import { EnhancedOnboardingWizard } from '@/features/auth/enhanced-onboarding-wizard';
+import { OnboardingWizard } from '@/features/auth/onboarding-wizard';
 import { formatReportDate } from '@/lib/report-utils';
 import { cn } from '@/lib/utils';
 import { authService } from '@/services/auth.service';
@@ -151,7 +151,7 @@ export default function DashboardPage() {
       <div suppressHydrationWarning className="w-full">
       <AnimatePresence>
         {showWizard ? (
-          <EnhancedOnboardingWizard
+          <OnboardingWizard
             onComplete={handleWizardComplete}
             onSkip={handleWizardSkip}
           />

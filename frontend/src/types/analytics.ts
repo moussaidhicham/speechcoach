@@ -132,6 +132,24 @@ export interface ReportEqMetrics {
     articulation_limiters?: string[];
   };
   flags: string[];
+  emotion_scores?: {
+    rule_based?: {
+      eq_scores?: {
+        stress: number;
+        confidence: number;
+        articulation: number;
+      };
+    };
+    model_based?: {
+      eq_scores?: {
+        stress: number;
+        confidence: number;
+        articulation: number;
+      };
+      vision_available?: boolean;
+      fused_emotions?: Record<string, number>;
+    };
+  };
 }
 
 export interface ReportResult {

@@ -1,8 +1,19 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SpeechCoach API"
     SECRET_KEY: str = "very_secret_key"
+
+    @field_validator('SECRET_KEY')
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        if v == "very_secret_key" or len(v) < 32:
+            raise ValueError(
+                "SECRET_KEY must be set to a strong random value of at least 32 characters. "
+                "Please set it in your .env file. See .env.example for details."
+            )
+        return v
     
     MYSQL_USER: str = "root"
     MYSQL_PASSWORD: str = ""

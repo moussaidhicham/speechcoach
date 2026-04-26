@@ -79,28 +79,28 @@ function VerifyEmailClient() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-background font-sans antialiased" suppressHydrationWarning>
       {/* Background Decor */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute -right-[5%] bottom-[5%] h-[400px] w-[400px] rounded-full bg-accent/10 blur-[100px]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" suppressHydrationWarning>
+        <div className="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[120px]" suppressHydrationWarning />
+        <div className="absolute -right-[5%] bottom-[5%] h-[400px] w-[400px] rounded-full bg-accent/10 blur-[100px]" suppressHydrationWarning />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen flex-col items-center justify-center p-4">
+      <div className="relative mx-auto flex min-h-screen flex-col items-center justify-center p-4" suppressHydrationWarning>
         <motion.div
            initial={{ opacity: 0, scale: 0.95 }}
            animate={{ opacity: 1, scale: 1 }}
            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
            className="w-full max-w-[480px]"
         >
-          <div className="overflow-hidden rounded-[32px] border border-border/50 bg-card/30 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.15)] backdrop-blur-xl">
-            <div className="p-8 sm:p-12 text-center">
+          <div className="overflow-hidden rounded-[32px] border border-border/50 bg-card/30 shadow-[0_32px_80px_-24px_rgba(0,0,0,0.15)] backdrop-blur-xl" suppressHydrationWarning>
+            <div className="p-8 sm:p-12 text-center" suppressHydrationWarning>
               
-              <div className="mb-8 flex justify-center">
+              <div className="mb-8 flex justify-center" suppressHydrationWarning>
                  {status === 'loading' && (
-                    <div className="relative">
-                      <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center">
+                    <div className="relative" suppressHydrationWarning>
+                      <div className="h-20 w-20 rounded-3xl bg-primary/10 flex items-center justify-center" suppressHydrationWarning>
                         <Loader2 className="h-10 w-10 text-primary animate-spin" />
                       </div>
-                      <motion.div 
+                      <motion.div
                         className="absolute -inset-4 rounded-full border border-dashed border-primary/20"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
@@ -108,7 +108,7 @@ function VerifyEmailClient() {
                     </div>
                  )}
                  {status === 'success' && (
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="h-20 w-20 rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shadow-inner"
@@ -117,7 +117,7 @@ function VerifyEmailClient() {
                     </motion.div>
                  )}
                  {status === 'error' && (
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.5, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="h-20 w-20 rounded-3xl bg-destructive/10 text-destructive flex items-center justify-center shadow-inner"
@@ -127,7 +127,7 @@ function VerifyEmailClient() {
                  )}
               </div>
 
-              <div className="space-y-3 mb-10">
+              <div className="space-y-3 mb-10" suppressHydrationWarning>
                 <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">
                   {status === 'loading' ? 'Vérification...' : 
                    status === 'success' ? 'Email Validé !' : 'Oups !'}
@@ -147,8 +147,8 @@ function VerifyEmailClient() {
               )}
 
               {status === 'success' && (
-                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/10">
-                    <motion.div 
+                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-emerald-500/10" suppressHydrationWarning>
+                    <motion.div
                       className="h-full bg-emerald-500"
                       initial={{ width: 0 }}
                       animate={{ width: "100%" }}
@@ -159,8 +159,8 @@ function VerifyEmailClient() {
             </div>
 
             {status === 'loading' && (
-               <div className="h-1 w-full bg-primary/5 overflow-hidden">
-                  <motion.div 
+               <div className="h-1 w-full bg-primary/5 overflow-hidden" suppressHydrationWarning>
+                  <motion.div
                     className="h-full bg-primary"
                     animate={{ x: ["-100%", "100%"] }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}

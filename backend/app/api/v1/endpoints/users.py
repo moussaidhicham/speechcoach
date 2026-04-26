@@ -1,3 +1,9 @@
+"""
+User profile endpoints
+
+Migrated from app/users/router.py in Phase 2
+"""
+
 import os
 import shutil
 import uuid
@@ -8,11 +14,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 from app.db.database import get_session
-from app.db.models import User, Profile
-from app.analytics.models import VideoSession, AnalysisResult, CoachingFeedback, PlatformFeedback
+from app.db.models import User, Profile, VideoSession, AnalysisResult, CoachingFeedback, PlatformFeedback
 from app.auth.router import current_active_user
+from app.utils.storage import STORAGE_AVATARS_DIR, STORAGE_BASE_DIR, AVATARS_URL_PREFIX
 
-profile_router = APIRouter()
+router = APIRouter()
 
 class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -25,9 +31,8 @@ class ProfileUpdate(BaseModel):
     avatar_offset_y: Optional[float] = None
     avatar_scale: Optional[float] = None
 
-AVATAR_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage/avatars'))
-os.makedirs(AVATAR_DIR, exist_ok=True)
-STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../storage'))
+AVATAR_DIR = STORAGE_AVATARS_DIR
+STORAGE_DIR = STORAGE_BASE_DIR
 
 
 def _delete_session_storage(video_url: Optional[str], session_id) -> None:
@@ -47,7 +52,7 @@ def _delete_session_storage(video_url: Optional[str], session_id) -> None:
         except Exception:
             print(f"Failed to delete processing dir for session {session_id}")
 
-@profile_router.get("/profile")
+@router.get("/profile")
 async def get_my_profile(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session)
@@ -66,7 +71,7 @@ async def get_my_profile(
     
     return profile
 
-@profile_router.patch("/profile")
+@router.patch("/profile")
 async def update_my_profile(
     update_data: ProfileUpdate,
     user: User = Depends(current_active_user),
@@ -82,7 +87,7 @@ async def update_my_profile(
         session.add(profile)
     
     # Apply updates
-    data = update_data.dict(exclude_unset=True)
+    data = update_data.model_dump(exclude_unset=True)
     for key, value in data.items():
         setattr(profile, key, value)
     
@@ -92,7 +97,7 @@ async def update_my_profile(
     
     return profile
 
-@profile_router.post("/profile/avatar")
+@router.post("/profile/avatar")
 async def upload_avatar(
     file: UploadFile = File(...),
     user: User = Depends(current_active_user),
@@ -123,14 +128,15 @@ async def upload_avatar(
         session.add(profile)
     
     # Construct accessible URL
-    profile.avatar_url = f"/storage/avatars/{filename}"
+    profile.avatar_url = f"{AVATARS_URL_PREFIX}/{filename}"
     
     session.add(profile)
     await session.commit()
     await session.refresh(profile)
     
     return {"avatar_url": profile.avatar_url}
-@profile_router.delete("/profile/avatar")
+
+@router.delete("/profile/avatar")
 async def delete_avatar(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session)
@@ -161,7 +167,7 @@ async def delete_avatar(
     
     return {"message": "Avatar deleted successfully."}
 
-@profile_router.delete("/account")
+@router.delete("/account")
 async def delete_account(
     user: User = Depends(current_active_user),
     session: AsyncSession = Depends(get_session)
@@ -205,3 +211,5 @@ async def delete_account(
     await session.commit()
     
     return {"message": "Account deleted successfully."}
+
+__all__ = ["router"]

@@ -11,7 +11,7 @@ import {
   Video,
 } from 'lucide-react';
 
-import { AvatarCustom } from '@/components/ui/avatar-custom';
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
 import { useAuth } from '@/context/auth-context';
 import { authService } from '@/services/auth.service';
 import { UserProfile } from '@/types/auth';

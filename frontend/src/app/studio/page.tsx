@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -346,7 +346,7 @@ export default function StudioPage() {
             setEstimatedSeconds(0);
 
             // Save processing history for better future estimates
-            if (sessionInfo.processingStartedAt && sessionInfo.durationSeconds) {
+            if (sessionInfo?.processingStartedAt && sessionInfo?.durationSeconds) {
               const start = new Date(sessionInfo.processingStartedAt).getTime();
               const now = Date.now();
               const processingTime = Math.round((now - start) / 1000);
@@ -621,9 +621,9 @@ export default function StudioPage() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                ['Préparation', 'Cadre, lumière, micro'],
-                ['Capture',     'Import ou webcam'],
-                ['Lecture',     'Traitement puis rapport'],
+                ['Préparation', 'Vérifiez votre cadre, votre lumière et votre micro avant de commencer.'],
+                ['Capture', 'Importez un fichier ou utilisez la webcam pour produire une session nette.'],
+                ['Analyse', 'Patientez pendant le traitement et ouvrez ensuite votre rapport structuré.'],
               ].map(([title, text]) => (
                 <div
                   key={title}
@@ -635,20 +635,6 @@ export default function StudioPage() {
               ))}
             </div>
           </div>
-        </section>
-
-        {/* ── Step guide ────────────────────────────────────────────── */}
-        <section className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-          {[
-            ['1. Préparation',     'Vérifiez votre cadre, votre lumière et votre micro avant de commencer.'],
-            ['2. Capture ou import', 'Importez un fichier ou utilisez la webcam pour produire une session nette.'],
-            ['3. Analyse',         'Patientez pendant le traitement et ouvrez ensuite votre rapport structuré.'],
-          ].map(([title, text]) => (
-            <div key={title} className="rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-sm">
-              <div className="text-sm font-medium text-foreground">{title}</div>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{text}</p>
-            </div>
-          ))}
         </section>
 
         {/* ── Mode panel ────────────────────────────────────────────── */}

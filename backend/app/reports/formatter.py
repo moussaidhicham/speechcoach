@@ -6,8 +6,22 @@ import re
 import unicodedata
 from typing import Any, Dict, List, Tuple
 
-from app.analytics.models import AnalysisResult, VideoSession
-
+from app.db.models import AnalysisResult, VideoSession
+from app.constants.language import LANGUAGE_LABELS
+from app.utils.formatters import (
+    _safe_float,
+    _safe_int,
+    _normalize_resolution,
+    _format_resolution,
+    _format_fps,
+    _format_sharpness_label,
+    _format_axis_score,
+    _format_intensity_label,
+    _format_pace_label,
+    _format_eye_contact_label,
+    _format_hands_label,
+)
+from app.utils.storage import PROCESSING_URL_PREFIX
 
 LANGUAGE_LABELS = {
     'fr': 'Francais',
@@ -660,8 +674,8 @@ def build_report_response(session: VideoSession, analysis: AnalysisResult) -> Di
         'eq_metrics': eq_metrics if isinstance(eq_metrics, dict) else {},
         'enrichment_status': enrichment_status,
         'visuals': {
-            'audio_energy': f"/storage/processing/{str(session.id)}/audio_energy.png",
-            'vision_timeline': f"/storage/processing/{str(session.id)}/vision_timeline.png",
+            'audio_energy': f"{PROCESSING_URL_PREFIX}/{str(session.id)}/audio_energy.png",
+            'vision_timeline': f"{PROCESSING_URL_PREFIX}/{str(session.id)}/vision_timeline.png",
         }
     }
 

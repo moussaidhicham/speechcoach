@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { ArrowLeft, ArrowRight, Loader2, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AuthShell } from '@/components/auth/auth-shell';
+import { AuthShell } from '@/components/auth/AuthShell';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

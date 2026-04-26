@@ -34,8 +34,7 @@ if BACKEND_DIR not in sys.path:
 
 from app.worker.celery_app import celery_app
 from app.db.database import SessionLocal
-from app.analytics.models import VideoSession, AnalysisResult, CoachingFeedback
-from app.db.models import Profile, User
+from app.db.models import VideoSession, AnalysisResult, CoachingFeedback, Profile, User
 from sqlmodel import select
 from app.analytics.engine.metrics.schema import Recommendation, Scores
 

@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { AUTH_ENDPOINTS, USER_ENDPOINTS } from '@/constants/api';
 import { AuthResponse, User, UserProfile } from '@/types/auth';
 
 interface RegisterPayload {
@@ -14,19 +15,19 @@ function notifyAuthChanged() {
 
 export const authService = {
   async login(params: URLSearchParams): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/jwt/login', params, {
+    const { data } = await api.post<AuthResponse>(AUTH_ENDPOINTS.LOGIN, params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     return data;
   },
 
   async register(userData: RegisterPayload): Promise<void> {
-    await api.post('/auth/register', userData);
+    await api.post(AUTH_ENDPOINTS.REGISTER, userData);
   },
 
   async getCurrentUser(): Promise<User> {
     try {
-      const { data } = await api.get<User>('/auth/me');
+      const { data } = await api.get<User>(AUTH_ENDPOINTS.ME);
       return data;
     } catch (error: unknown) {
       const status =
@@ -38,7 +39,7 @@ export const authService = {
           : null;
 
       if (status === 404) {
-        const { data } = await api.get<User>('/auth/users/me');
+        const { data } = await api.get<User>(AUTH_ENDPOINTS.USERS_ME);
         return data;
       }
 
@@ -47,38 +48,38 @@ export const authService = {
   },
 
   async getProfile(): Promise<UserProfile> {
-    const { data } = await api.get<UserProfile>('/user/profile');
+    const { data } = await api.get<UserProfile>(USER_ENDPOINTS.PROFILE);
     return data;
   },
 
   async updateProfile(profileData: Partial<UserProfile>): Promise<UserProfile> {
-    const { data } = await api.patch<UserProfile>('/user/profile', profileData);
+    const { data } = await api.patch<UserProfile>(USER_ENDPOINTS.PROFILE, profileData);
     return data;
   },
 
   async deleteAccount(): Promise<void> {
-    await api.delete('/user/account');
+    await api.delete(USER_ENDPOINTS.ACCOUNT);
   },
 
   async requestPasswordReset(email: string): Promise<void> {
-    await api.post('/auth/forgot-password', { email });
+    await api.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
   },
 
   async resetPassword(password: string, token: string): Promise<void> {
-    await api.post('/auth/reset-password', { password, token });
+    await api.post(AUTH_ENDPOINTS.RESET_PASSWORD, { password, token });
   },
 
   async verifyEmail(token: string): Promise<{ access_token: string; user: User }> {
-    const { data } = await api.post('/auth/verify', { token });
+    const { data } = await api.post(AUTH_ENDPOINTS.VERIFY, { token });
     return data;
   },
 
   async requestVerification(email: string): Promise<void> {
-    await api.post('/auth/request-verify', { email });
+    await api.post(AUTH_ENDPOINTS.REQUEST_VERIFY, { email });
   },
 
   async getStatus(): Promise<User & { is_verified: boolean }> {
-    const { data } = await api.get('/auth/status');
+    const { data } = await api.get(AUTH_ENDPOINTS.STATUS);
     return data;
   },
 

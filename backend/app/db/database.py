@@ -30,11 +30,25 @@ SessionLocal = sessionmaker(
 )
 
 async def init_db():
+    """
+    Initialize database schema.
+
+    WARNING: In production, use Alembic migrations instead of this function.
+    The manual ALTER TABLE statements below are legacy compatibility code for
+    databases that may not have run migrations. They should be replaced with
+    proper Alembic migrations in the future.
+
+    See: backend/alembic/versions/ for existing migrations.
+    """
     async with engine.begin() as conn:
         # Create all tables. Do not use in production with Alembic!
         await conn.run_sync(SQLModel.metadata.create_all)
 
         def ensure_feedback_created_at(sync_conn):
+            """
+            Legacy compatibility: Add created_at column if missing.
+            Should be replaced by Alembic migration 4e7e6f2e9b0b.
+            """
             inspector = inspect(sync_conn)
             if "platformfeedback" not in inspector.get_table_names():
                 return
@@ -49,6 +63,10 @@ async def init_db():
                 )
 
         def ensure_profile_preferences(sync_conn):
+            """
+            Legacy compatibility: Add profile columns if missing.
+            These columns should be added via Alembic migration in the future.
+            """
             inspector = inspect(sync_conn)
             if "profile" not in inspector.get_table_names():
                 return

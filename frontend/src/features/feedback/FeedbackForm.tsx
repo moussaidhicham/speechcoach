@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RatingStars } from '@/components/ui/rating-stars';
 import api from '@/lib/api';
+import { FEEDBACK_ENDPOINTS } from '@/constants/api';
 
 interface FeedbackFormProps {
   onSubmitted?: () => void;
@@ -46,12 +47,12 @@ export function FeedbackForm({ onSubmitted, existingFeedback }: FeedbackFormProp
     setIsSubmitting(true);
     try {
       if (existingFeedback) {
-        await api.patch(`/feedback/platform/${existingFeedback.id}`, {
+        await api.patch(FEEDBACK_ENDPOINTS.PLATFORM_UPDATE(existingFeedback.id), {
           rating, comments: comments.trim() || null,
         });
         toast.success('Votre avis a été mis à jour.');
       } else {
-        await api.post('/feedback/platform', {
+        await api.post(FEEDBACK_ENDPOINTS.PLATFORM, {
           rating, comments: comments.trim() || null,
         });
         toast.success('Merci pour votre retour.');
@@ -69,7 +70,7 @@ export function FeedbackForm({ onSubmitted, existingFeedback }: FeedbackFormProp
     if (!confirm('Êtes-vous sûr de vouloir supprimer votre avis ?')) return;
     setIsDeleting(true);
     try {
-      await api.delete(`/feedback/platform/${existingFeedback.id}`);
+      await api.delete(FEEDBACK_ENDPOINTS.PLATFORM_DELETE(existingFeedback.id));
       toast.success('Votre avis a été supprimé.');
       setRating(0); setComments(''); setSubmitted(false);
       onSubmitted?.();

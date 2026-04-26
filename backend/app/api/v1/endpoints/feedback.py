@@ -1,3 +1,9 @@
+"""
+Feedback endpoints
+
+Migrated from app/analytics/feedback_router.py in Phase 2
+"""
+
 import uuid
 import logging
 import datetime
@@ -7,12 +13,11 @@ from fastapi import APIRouter, Depends, HTTPException
 logger = logging.getLogger(__name__)
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.auth.router import current_active_user
-from app.db.models import User
-from app.analytics.models import PlatformFeedback
+from app.db.models import User, PlatformFeedback
 from app.analytics.schemas import PlatformFeedbackCreate, PlatformFeedbackRead, PlatformFeedbackUpdate
 from app.db.database import get_session
 
-feedback_router = APIRouter()
+router = APIRouter()
 
 
 def normalize_feedback_created_at(value):
@@ -31,7 +36,7 @@ def normalize_feedback_created_at(value):
 
     return None
 
-@feedback_router.post("/platform", response_model=PlatformFeedbackRead, status_code=201)
+@router.post("/platform", response_model=PlatformFeedbackRead, status_code=201)
 async def create_platform_feedback(
     feedback_in: PlatformFeedbackCreate,
     user: User = Depends(current_active_user),
@@ -50,7 +55,7 @@ async def create_platform_feedback(
     await db.refresh(feedback)
     return feedback
 
-@feedback_router.get("/platform/mine", response_model=list[PlatformFeedbackRead])
+@router.get("/platform/mine", response_model=list[PlatformFeedbackRead])
 async def get_my_feedback(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_session)
@@ -77,7 +82,7 @@ async def get_my_feedback(
 
     return response
 
-@feedback_router.get("/platform/check")
+@router.get("/platform/check")
 async def check_feedback_status(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_session)
@@ -91,7 +96,7 @@ async def check_feedback_status(
     count = result.scalar()
     return {"has_feedback": count > 0}
 
-@feedback_router.patch("/platform/{feedback_id}", response_model=PlatformFeedbackRead)
+@router.patch("/platform/{feedback_id}", response_model=PlatformFeedbackRead)
 async def update_platform_feedback(
     feedback_id: uuid.UUID,
     feedback_in: PlatformFeedbackUpdate,
@@ -108,8 +113,8 @@ async def update_platform_feedback(
     
     if not feedback:
         raise HTTPException(status_code=404, detail="Feedback not found or not owned by user.")
-    
-    update_data = feedback_in.dict(exclude_unset=True)
+
+    update_data = feedback_in.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(feedback, key, value)
     
@@ -118,7 +123,7 @@ async def update_platform_feedback(
     await db.refresh(feedback)
     return feedback
 
-@feedback_router.delete("/platform/{feedback_id}", status_code=204)
+@router.delete("/platform/{feedback_id}", status_code=204)
 async def delete_platform_feedback(
     feedback_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -139,7 +144,7 @@ async def delete_platform_feedback(
     await db.commit()
     return None
 
-@feedback_router.get("/platform/stats")
+@router.get("/platform/stats")
 async def get_feedback_stats(
     db: AsyncSession = Depends(get_session)
 ):
@@ -157,7 +162,7 @@ async def get_feedback_stats(
         "total_reviews": total_count or 0
     }
 
-@feedback_router.get("/platform/all", response_model=list[PlatformFeedbackRead])
+@router.get("/platform/all", response_model=list[PlatformFeedbackRead])
 async def get_all_feedback(
     db: AsyncSession = Depends(get_session)
 ):
@@ -223,3 +228,5 @@ async def get_all_feedback(
         )
 
     return response
+
+__all__ = ["router"]

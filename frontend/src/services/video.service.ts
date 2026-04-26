@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { VIDEO_ENDPOINTS, TRACKER_ENDPOINTS } from '@/constants/api';
 import { DashboardSummary, ReportResult, SessionHistory, SessionStatus, StatusResponse } from '@/types/analytics';
 
 export const videoService = {
@@ -13,7 +14,7 @@ export const videoService = {
     formData.append('device_type', deviceType);
     formData.append('language', language);
 
-    const { data } = await api.post<{ session_id: string }>('/video/upload', formData, {
+    const { data } = await api.post<{ session_id: string }>(VIDEO_ENDPOINTS.UPLOAD, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (progressEvent) => {
         if (onProgress) {
@@ -26,51 +27,51 @@ export const videoService = {
   },
 
   async getStatus(sessionId: string): Promise<StatusResponse> {
-    const { data } = await api.get<StatusResponse>(`/tracker/status/${sessionId}`);
+    const { data } = await api.get<StatusResponse>(TRACKER_ENDPOINTS.STATUS(sessionId));
     return data;
   },
 
   async getHistory(): Promise<SessionHistory[]> {
-    const { data } = await api.get<SessionHistory[]>('/tracker/history');
+    const { data } = await api.get<SessionHistory[]>(TRACKER_ENDPOINTS.HISTORY);
     return data;
   },
 
   async getDashboardSummary(): Promise<DashboardSummary> {
-    const { data } = await api.get<DashboardSummary>('/tracker/dashboard-summary');
+    const { data } = await api.get<DashboardSummary>(TRACKER_ENDPOINTS.DASHBOARD_SUMMARY);
     return data;
   },
 
   async getResult(sessionId: string): Promise<ReportResult> {
-    const { data } = await api.get<ReportResult>(`/tracker/result/${sessionId}`);
+    const { data } = await api.get<ReportResult>(TRACKER_ENDPOINTS.RESULT(sessionId));
     return data;
   },
 
   async getMarkdownExport(sessionId: string): Promise<Blob> {
-    const { data } = await api.get<Blob>(`/tracker/report/${sessionId}/markdown`, {
+    const { data } = await api.get<Blob>(TRACKER_ENDPOINTS.REPORT_MARKDOWN(sessionId), {
       responseType: 'blob',
     });
     return data;
   },
 
   async getPdfExport(sessionId: string): Promise<Blob> {
-    const { data } = await api.get<Blob>(`/tracker/report/${sessionId}/pdf`, {
+    const { data } = await api.get<Blob>(TRACKER_ENDPOINTS.REPORT_PDF(sessionId), {
       responseType: 'blob',
     });
     return data;
   },
 
   async getPrintExport(sessionId: string): Promise<string> {
-    const { data } = await api.get<string>(`/tracker/report/${sessionId}/print`, {
+    const { data } = await api.get<string>(TRACKER_ENDPOINTS.REPORT_PRINT(sessionId), {
       responseType: 'text',
     });
     return data;
   },
 
   async deleteSession(sessionId: string): Promise<void> {
-    await api.delete(`/tracker/session/${sessionId}`);
+    await api.delete(TRACKER_ENDPOINTS.SESSION_DELETE(sessionId));
   },
 
   async updateSession(sessionId: string, updates: { title: string }): Promise<void> {
-    await api.patch(`/tracker/session/${sessionId}`, updates);
+    await api.patch(TRACKER_ENDPOINTS.SESSION_UPDATE(sessionId), updates);
   },
 };

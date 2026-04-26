@@ -21,8 +21,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { API_BASE_URL, FEEDBACK_ENDPOINTS } from '@/constants/api';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,7 +58,7 @@ interface MetricProgressCardProps {
   icon:        LucideIcon;
 }
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const apiBaseUrl = API_BASE_URL;
 
 function formatResolutionValue(resolution: [number, number]) {
   if (!resolution || resolution[0] <= 0 || resolution[1] <= 0) {
@@ -188,7 +189,7 @@ export default function ReportPage() {
     try {
       const [reportData, feedbackStatus] = await Promise.all([
         videoService.getResult(sessionId),
-        api.get<{ has_feedback: boolean }>('/feedback/platform/check').catch(() => null),
+        api.get<{ has_feedback: boolean }>(FEEDBACK_ENDPOINTS.PLATFORM_CHECK).catch(() => null),
       ]);
       setReport(reportData);
       setShowFeedback(!(feedbackStatus?.data?.has_feedback ?? true));

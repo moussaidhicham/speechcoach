@@ -2,8 +2,12 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request, Body, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import os
 
 from pydantic import BaseModel
@@ -19,10 +23,14 @@ from app.auth.router import (
 )
 from app.users.schemas import UserRead, UserCreate, UserUpdate
 from app.core.config import settings
+from app.utils.storage import STORAGE_BASE_DIR, STORAGE_URL_PREFIX
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Rate limiter
+limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -40,6 +48,16 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Rate limiter state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Trusted Host Middleware (prevent Host header attacks)
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=["localhost", "127.0.0.1", "::1"]  # Add your production domain
+)
+
 # CORS Middleware (Allow frontend)
 app.add_middleware(
     CORSMiddleware,
@@ -53,19 +71,33 @@ app.add_middleware(
         "http://[::1]:3000",
         "http://[::1]:3001",
         "http://[::1]:3002",
-        "http://192.168.1.2:3000",  # Added for mobile/LAN access
+        "http://192.168.1.2:3000",  # For mobile/LAN access (development only)
     ],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
-# STATIC FILES
-STORAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "storage"))
-os.makedirs(STORAGE_DIR, exist_ok=True)
-app.mount("/storage", StaticFiles(directory=STORAGE_DIR), name="storage")
+# Security Headers Middleware
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+    # XSS protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # HSTS (HTTPS only in production)
+    # response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # Content Security Policy
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    return response
 
+# STATIC FILES
+app.mount(STORAGE_URL_PREFIX, StaticFiles(directory=STORAGE_BASE_DIR), name="storage")
+
+# Exception Handler (without leaking sensitive information)
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     import traceback
@@ -77,13 +109,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     if origin:
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
-        
+    
+    # In development, show the error message
+    # In production, show a generic error
+    if "localhost" in settings.PROJECT_NAME or "127.0.0.1" in settings.PROJECT_NAME:
+        detail = str(exc)
+    else:
+        detail = "Une erreur interne s'est produite. Veuillez réessayer plus tard."
+    
     return JSONResponse(
         status_code=500,
-        content={
-            "detail": str(exc),
-            "traceback": traceback.format_exc()
-        },
+        content={"detail": detail},
         headers=headers
     )
 
@@ -183,40 +219,20 @@ async def test_auth(request: Request):
     logger.info(f"Test endpoint called with auth header: {auth_header[:30] if auth_header else 'None'}...")
     return {"message": "Test works", "has_auth": bool(auth_header)}
 
-# --- Feature Modules ---
-from app.users.router import profile_router
+# --- API v1 (New Structure) ---
+from app.api.v1.api import api_router
 app.include_router(
-    profile_router,
-    prefix="/user",
-    tags=["profile"],
-)
-
-from app.analytics.video_router import video_router
-from app.analytics.status_router import status_router
-from app.analytics.feedback_router import feedback_router
-
-app.include_router(
-    video_router,
-    prefix="/video",
-    tags=["video"],
-)
-
-app.include_router(
-    status_router,
-    prefix="/tracker",
-    tags=["tracker"],
-)
-
-app.include_router(
-    feedback_router,
-    prefix="/feedback",
-    tags=["feedback"],
+    api_router,
+    prefix="/api/v1",
+    tags=["api-v1"],
 )
 
 @app.get("/")
-def read_root():
-    return {"message": f"Welcome to {settings.PROJECT_NAME}"}
+@limiter.limit("100/minute")
+def read_root(request: Request):
+    return {"message": f"Bienvenue sur {settings.PROJECT_NAME}"}
 
 @app.get("/authenticated-route")
-async def authenticated_route(user=Depends(get_current_user)):
-    return {"message": f"Hello {user.email}!"}
+@limiter.limit("60/minute")
+async def authenticated_route(request: Request, user=Depends(get_current_user)):
+    return {"message": f"Bonjour {user.email}!"}

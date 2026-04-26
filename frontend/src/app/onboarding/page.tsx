@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { AvatarCustom } from '@/components/ui/avatar-custom';
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -78,8 +78,8 @@ const weakPointOptions = [
   'Gestion du temps',
   'Fluidite et mots de remplissage',
   'Structure et clarte du discours',
-  'Regard, posture et gestuelle',
-  'Voix, debit et articulation',
+  'Regard posture et gestuelle',
+  'Voix debit et articulation',
   'Autre',
 ];
 
@@ -206,7 +206,7 @@ export default function OnboardingPage() {
       if (pendingAvatarFile) {
         const formData = new FormData();
         formData.append('file', pendingAvatarFile);
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/profile/avatar`, {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/user/profile/avatar`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           body: formData,
@@ -467,7 +467,7 @@ export default function OnboardingPage() {
                               <p className="text-sm leading-6 text-muted-foreground">
                                 Selectionnez les domaines sur lesquels vous souhaitez travailler.
                               </p>
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div className="relative z-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {weakPointOptions.map((option) => {
                                   const isSelected = formState.weak_points?.split(',').map(s => s.trim()).filter(Boolean).includes(option);
                                   return (
@@ -482,12 +482,12 @@ export default function OnboardingPage() {
                                         updateField('weak_points', newSelection.join(', '));
                                       }}
                                       className={cn(
-                                        'flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
+                                        'group flex items-start gap-3 rounded-xl border p-3 text-left transition-all pointer-events-auto',
                                         isSelected ? 'border-primary bg-primary/10 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.5)] ring-2 ring-primary/20' : 'border-border/60 bg-background hover:border-primary/40 hover:bg-secondary/30'
                                       )}
                                     >
                                       <div className={cn('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg transition-all', isSelected ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30' : 'bg-secondary text-muted-foreground')}>
-                                        {isSelected ? <CheckCircle2 className="h-4 w-4 text-emerald-500 drop-shadow-lg" /> : null}
+                                        {isSelected && <CheckCircle2 className="h-4 w-4 text-emerald-500 drop-shadow-lg" />}
                                       </div>
                                       <span className={cn('text-sm leading-5 flex-1', isSelected ? 'text-foreground' : 'text-muted-foreground')}>{option}</span>
                                     </button>

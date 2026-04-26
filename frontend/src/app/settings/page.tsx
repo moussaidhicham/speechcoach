@@ -24,10 +24,10 @@ import {
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { AvatarCustom } from '@/components/ui/avatar-custom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,6 +45,7 @@ import api from '@/lib/api';
 import { authService } from '@/services/auth.service';
 import { UserProfile } from '@/types/auth';
 import { FeedbackForm } from '@/features/feedback/FeedbackForm';
+import { FEEDBACK_ENDPOINTS } from '@/constants/api';
 
 /* Section */
 
@@ -132,7 +133,7 @@ function SettingsClient() {
     try {
       const [profileData, feedbackData] = await Promise.all([
         authService.getProfile(),
-        api.get('/feedback/platform/mine'),
+        api.get(FEEDBACK_ENDPOINTS.PLATFORM_MINE),
       ]);
       setProfile(profileData);
       setUserFeedback(feedbackData.data?.[0] ?? null);
@@ -281,7 +282,7 @@ function SettingsClient() {
   };
 
   const refreshUserFeedback = React.useCallback(async () => {
-    const { data } = await api.get('/feedback/platform/mine');
+    const { data } = await api.get(FEEDBACK_ENDPOINTS.PLATFORM_MINE);
     setUserFeedback(data?.[0] ?? null);
   }, []);
 
@@ -448,7 +449,7 @@ function UserFeedbackSection({
   onSubmitted: () => Promise<void>;
 }) {
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -520,8 +521,8 @@ function ProfileSection({
     'Gestion du temps',
     'Fluidite et mots de remplissage',
     'Structure et clarte du discours',
-    'Regard, posture et gestuelle',
-    'Voix, debit et articulation',
+    'Regard posture et gestuelle',
+    'Voix debit et articulation',
     'Autre',
   ];
 
@@ -566,7 +567,7 @@ function ProfileSection({
   const completionColor = profileCompletion < 40 ? 'bg-destructive' : profileCompletion < 70 ? 'bg-amber-500' : 'bg-emerald-500';
 
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -816,25 +817,25 @@ function ProfileSection({
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   Sélectionnez les domaines sur lesquels vous souhaitez travailler.
                 </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div className="relative z-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {weakPointOptions.map((option) => (
                     <button
                       key={option}
                       type="button"
                       onClick={() => toggleWeakPoint(option)}
-                      className={[
-                        'flex items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-all',
+                      className={cn(
+                        'group flex items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition-all pointer-events-auto',
                         selectedWeakPoints.includes(option)
-                          ? 'border-primary bg-primary/10 shadow-[0_8px_30px_-12px_rgba(37,99,235,0.5)] ring-2 ring-primary/20'
-                          : 'border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:bg-secondary/30',
-                      ].join(' ')}
+                          ? 'border-primary bg-primary/10 shadow-[0_4px_12px_-2px_rgba(37,99,235,0.3)] ring-2 ring-primary/20'
+                          : 'border-border/60 bg-background text-muted-foreground hover:border-primary/40 hover:bg-secondary/30'
+                      )}
                     >
-                      <div className={[
+                      <div className={cn(
                         'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg transition-all',
                         selectedWeakPoints.includes(option)
                           ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
-                          : 'bg-secondary text-muted-foreground',
-                      ].join(' ')}>
+                          : 'bg-secondary text-muted-foreground'
+                      )}>
                         {selectedWeakPoints.includes(option) && <CheckCircle2 className="h-4 w-4 text-emerald-500 drop-shadow-lg" />}
                       </div>
                       <span className={selectedWeakPoints.includes(option) ? 'text-foreground' : 'text-muted-foreground'}>{option}</span>
@@ -865,17 +866,17 @@ function ProfileSection({
           </div>
         </div>
 
-        {/* Save */}
-        <div className="flex justify-end">
-          <Button onClick={onSave} disabled={isSaving}>
-            {isSaving
-              ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
-              : <Save       className="mr-2 h-3.5 w-3.5" />
-            }
-            Enregistrer
-          </Button>
-        </div>
       </CardContent>
+
+      <CardFooter className="justify-end border-t border-border/60 bg-secondary/10 px-7 py-5">
+        <Button onClick={onSave} disabled={isSaving}>
+          {isSaving
+            ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+            : <Save       className="mr-2 h-3.5 w-3.5" />
+          }
+          Enregistrer
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
@@ -899,7 +900,7 @@ function SecuritySection({
 }: SecuritySectionProps) {
   const strength = passwordStrength(passwordData.new_password);
   return (
-    <Card>
+    <Card className="overflow-visible">
       <CardHeader>
         <CardTitle>Securite du compte</CardTitle>
         <CardDescription>
@@ -1030,21 +1031,21 @@ function SecuritySection({
           </div>
         </div>
 
-        {/* Update password button */}
-        <div className="flex justify-start">
-          <Button
-            variant="outline"
-            onClick={onSave}
-            disabled={isSaving || !passwordData.new_password}
-          >
-            {isSaving
-              ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
-              : <Lock       className="mr-2 h-3.5 w-3.5" />
-            }
-            Mettre a jour le mot de passe
-          </Button>
-        </div>
       </CardContent>
+
+      <CardFooter className="border-t border-border/60 bg-secondary/10 px-7 py-5">
+        <Button
+          variant="outline"
+          onClick={onSave}
+          disabled={isSaving || !passwordData.new_password}
+        >
+          {isSaving
+            ? <RefreshCw className="mr-2 h-3.5 w-3.5 animate-spin" />
+            : <Lock       className="mr-2 h-3.5 w-3.5" />
+          }
+          Mettre a jour le mot de passe
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

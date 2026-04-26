@@ -5,13 +5,14 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, MessageCircle, Star, Users } from 'lucide-react';
 import Link from 'next/link';
 
-import { AppShell } from '@/components/layout/app-shell';
+import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RatingStars } from '@/components/ui/rating-stars';
-import { AvatarCustom } from '@/components/ui/avatar-custom';
+import { AvatarCustom } from '@/components/ui/AvatarCustom';
 import { cn } from '@/lib/utils';
 import api from '@/lib/api';
+import { FEEDBACK_ENDPOINTS } from '@/constants/api';
 
 interface FeedbackStatResponse {
   average_rating: number;
@@ -40,8 +41,8 @@ export default function PublicFeedbackPage() {
     setIsError(false);
     try {
       const [statsRes, feedbacksRes] = await Promise.all([
-        api.get('/feedback/platform/stats'),
-        api.get('/feedback/platform/all'),
+        api.get(FEEDBACK_ENDPOINTS.PLATFORM_STATS),
+        api.get(FEEDBACK_ENDPOINTS.PLATFORM_ALL),
       ]);
 
       setStats(statsRes.data);

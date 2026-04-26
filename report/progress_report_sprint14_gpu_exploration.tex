@@ -365,10 +365,27 @@ Bien que l'approche par modèles de deep learning n'ait pas été retenue, l'exp
     \item \textbf{Comparaison systématique} : Essentielle pour des décisions informées.
 \end{itemize}
 
+\section{Audit Architectural et Sécurisation}
+
+En parallèle des travaux d'analyse, un audit complet du projet a été réalisé pour stabiliser l'infrastructure et garantir la sécurité des données.
+
+\subsection{Nettoyage et Modularisation}
+\begin{itemize}
+    \item \textbf{Refonte du Backend} : Réorganisation du code FastAPI selon une architecture modulaire pour faciliter la maintenance et l'évolutivité.
+    \item \textbf{Suppression des Redondances} : Élimination des fichiers orphelins et des duplications de logique métier.
+    \item \textbf{Normalisation des Chemins} : Remplacement des URLs locales par des variables d'environnement centralisées, rendant le projet portable.
+\end{itemize}
+
+\subsection{Renforcement de la Sécurité}
+\begin{itemize}
+    \item \textbf{Centralisation de l'Authentification} : Unification de la gestion des jetons JWT et des en-têtes de sécurité sur l'ensemble des services.
+    \item \textbf{Protection des Données} : Sécurisation des variables d'environnement et correction de bugs critiques dans le traitement des profils utilisateurs.
+\end{itemize}
+
 \section{Conclusion et recommandations}
 
 \subsection{Synthèse des travaux}
-Cette phase a permis : (1) une exploration exhaustive des solutions GPU (Modal, Colab, Kaggle, Hugging Face, NVIDIA NIM), (2) le développement et l'affinement d'indicateurs EQ basés sur des métriques comportementales, (3) une comparaison systématique entre approche par métriques observables et modèles de deep learning pour l'analyse émotionnelle.
+Cette phase a permis : (1) une exploration exhaustive des solutions GPU, (2) le développement d'indicateurs EQ comportementaux, (3) une comparaison systématique entre approches déterministes et deep learning, et (4) un audit architectural complet pour sécuriser et stabiliser l'infrastructure.
 
 \subsection{Décisions prises}
 \begin{itemize}
